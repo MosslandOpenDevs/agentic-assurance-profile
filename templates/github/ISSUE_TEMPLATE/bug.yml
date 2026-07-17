@@ -1,0 +1,46 @@
+# Copy to .github/ISSUE_TEMPLATE/bug.yml in the adopting repository.
+name: Bug report
+description: Report incorrect behavior that is safe to discuss publicly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suspected vulnerabilities do not belong here. Use GitHub Private
+        Vulnerability Reporting (see SECURITY.md), not a public issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Observed behavior, error output, or incorrect result.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Exact commands or steps, including versions and environment.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: affected-ids
+    attributes:
+      label: Affected assurance IDs (optional)
+      description: Related CLAIM-, INV-, DEF-, or RES- identifiers, if known.
+      placeholder: INV-EXAMPLE-001, RES-EXAMPLE-001
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

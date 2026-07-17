@@ -1,0 +1,61 @@
+name: Tooling defect
+description: Report a defect in a schema, the validator, a workflow, or the templates.
+labels:
+  - bug
+  - tooling
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tooling defects fix schema, validator, or workflow behavior. If the
+        defect could be exploited, use private reporting per SECURITY.md
+        instead of a public issue.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - schema
+        - validator
+        - workflow
+        - templates
+    validations:
+      required: true
+  - type: input
+    id: pin
+    attributes:
+      label: Pinned version and commit
+      description: The profile version and commit at which the defect reproduces.
+      placeholder: "unreleased, 0123456789abcdef0123456789abcdef01234567"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction command
+      description: The exact command that reproduces the defect.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs actual behavior
+      description: What you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: validator-output
+    attributes:
+      label: Validator output
+      description: Relevant `ERROR:` / `WARN:` lines or workflow log excerpt.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

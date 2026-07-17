@@ -1,0 +1,10 @@
+# Replace the placeholder team with real maintainer handles before enabling
+# required reviews (see GOVERNANCE.md).
+
+/PROFILE.md    @MosslandOpenDevs/assurance-maintainers
+/schemas/      @MosslandOpenDevs/assurance-maintainers
+/templates/    @MosslandOpenDevs/assurance-maintainers
+/docs/         @MosslandOpenDevs/assurance-maintainers
+/GOVERNANCE.md @MosslandOpenDevs/assurance-maintainers
+/RELEASING.md  @MosslandOpenDevs/assurance-maintainers
+/SECURITY.md   @MosslandOpenDevs/assurance-maintainers

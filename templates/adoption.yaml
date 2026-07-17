@@ -1,0 +1,43 @@
+upstream:
+  repository: MosslandOpenDevs/agentic-assurance-profile
+  version: REPLACE_WITH_PINNED_VERSION
+  # Before the first tagged release, use: unreleased
+  commit: REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA
+
+project:
+  name: REPLACE_WITH_PROJECT_NAME
+  repository: REPLACE_WITH_OWNER_AND_REPOSITORY
+  human_owner: REPLACE_WITH_PERSON_OR_GOVERNING_BODY
+
+profiles:
+  - core
+  # - service
+  # - trust-critical
+  # - data-curation
+  # - agent-runtime
+  # - archived
+
+specification_workflow:
+  system: existing
+  # openspec | spec-kit | adr-rfc | existing | minimal
+  root: REPLACE_WITH_SPECIFICATION_PATH
+
+paths:
+  system: assurance/SYSTEM.md
+  invariants: assurance/INVARIANTS.yaml
+  claims: assurance/CLAIMS.yaml
+  defeaters: assurance/DEFEATERS.yaml
+  residuals: assurance/RESIDUALS.yaml
+  threat_model: assurance/THREAT_MODEL.md
+  evidence: assurance/evidence
+
+security:
+  policy: SECURITY.md
+  public_assurance_root: assurance
+  restricted_record: external_private_system
+  # Never put a private tracker URL, token, or sensitive identifier in a public file.
+
+issue_integration:
+  stable_id_required: true
+  public_security_issues_allowed: false
+  closing_requires_artifact_update: true

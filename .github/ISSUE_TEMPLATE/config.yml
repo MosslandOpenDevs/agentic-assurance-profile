@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/MosslandOpenDevs/agentic-assurance-profile/security/advisories/new
+    about: Do not open a public issue for suspected vulnerabilities. See SECURITY.md.
+  - name: Adoption documentation
+    url: https://github.com/MosslandOpenDevs/agentic-assurance-profile/blob/main/docs/ADOPTION.md
+    about: Step-by-step adoption guidance. Read this before opening an adoption question.

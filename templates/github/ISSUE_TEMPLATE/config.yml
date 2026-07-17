@@ -1,0 +1,9 @@
+# Copy this whole ISSUE_TEMPLATE directory. Any file in your .github/ISSUE_TEMPLATE
+# disables ALL organization default templates, including config.yml — an incomplete
+# copy silently re-enables blank issues.
+# Replace REPLACE_WITH_OWNER_AND_REPOSITORY with the adopting repository slug.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/REPLACE_WITH_OWNER_AND_REPOSITORY/security/advisories/new
+    about: Do not open a public issue for suspected vulnerabilities. See SECURITY.md.

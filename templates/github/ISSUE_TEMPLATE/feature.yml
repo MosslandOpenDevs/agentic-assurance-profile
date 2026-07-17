@@ -1,0 +1,42 @@
+# Copy to .github/ISSUE_TEMPLATE/feature.yml in the adopting repository.
+name: Feature request
+description: Propose an enhancement or new capability.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A material change requires a change specification before implementation
+        (see AGENTIC_ASSURANCE.md §7). This issue starts that discussion; it does
+        not replace it.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What is missing or inadequate today, and for whom.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: The behavior you want, including intent and non-goals if known.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: input
+    id: affected-ids
+    attributes:
+      label: Affected assurance IDs (optional)
+      description: Related CLAIM-, INV-, DEF-, or RES- identifiers, if known.
+      placeholder: CLAIM-EXAMPLE-001
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

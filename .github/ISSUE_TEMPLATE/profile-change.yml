@@ -1,0 +1,67 @@
+name: Profile change
+description: Propose modifying a generic obligation, schema, or profile requirement.
+labels:
+  - profile/change
+  - needs-decision
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Profile changes modify normative text, schemas, or templates. See
+        [docs/DISCLOSURE-AND-ISSUES.md](https://github.com/MosslandOpenDevs/agentic-assurance-profile/blob/main/docs/DISCLOSURE-AND-ISSUES.md)
+        for issue routing. Do not include suspected vulnerability detail here;
+        use private reporting per SECURITY.md.
+  - type: input
+    id: affected
+    attributes:
+      label: Affected sections and IDs
+      description: PROFILE.md sections and stable identifiers (`AAP-...`) affected by this change.
+      placeholder: "PROFILE.md section 8, AAP-CORE-004"
+    validations:
+      required: true
+  - type: textarea
+    id: current-text
+    attributes:
+      label: Current text
+      description: Quote the current normative text, schema fragment, or template content.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-text
+    attributes:
+      label: Proposed text
+      description: The exact replacement text or schema fragment.
+    validations:
+      required: true
+  - type: dropdown
+    id: semver
+    attributes:
+      label: Semver classification
+      description: Per PROFILE.md section 16.
+      options:
+        - "major: removes, weakens, or materially changes an obligation"
+        - "minor: adds backward-compatible requirements, profiles, or fields"
+        - "patch: clarifies wording or repairs validation without changing intended obligations"
+    validations:
+      required: true
+  - type: textarea
+    id: adopter-impact
+    attributes:
+      label: Adopter impact
+      description: What an adopting repository pinned to the current version must do after this change.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and rationale
+      description: Why the change is needed, with concrete evidence where available.
+    validations:
+      required: true
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

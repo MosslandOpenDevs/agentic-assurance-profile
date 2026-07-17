@@ -1,0 +1,60 @@
+# Copy to .github/ISSUE_TEMPLATE/residual-review.yml in the adopting repository.
+name: Residual review
+description: Review a known limitation or an acceptance decision.
+labels: ["assurance/residual", "needs-human-approval"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Acceptance of a critical residual requires an explicit human decision.
+        An agent may prepare this review but must not accept the residual on
+        behalf of the human owner.
+  - type: input
+    id: residual-id
+    attributes:
+      label: Residual ID
+      description: The stable ID from the residual register.
+      placeholder: RES-EXAMPLE-001
+    validations:
+      required: true
+  - type: dropdown
+    id: current-status
+    attributes:
+      label: Current status
+      options:
+        - OPEN
+        - ACCEPTED
+        - RESOLVED
+    validations:
+      required: true
+  - type: textarea
+    id: review-trigger
+    attributes:
+      label: Review trigger
+      description: Why this review is happening now — review_after date reached, affected control changed, incident, new evidence, or other trigger.
+    validations:
+      required: true
+  - type: dropdown
+    id: proposed-decision
+    attributes:
+      label: Proposed decision
+      options:
+        - accept
+        - mitigate
+        - resolve
+    validations:
+      required: true
+  - type: input
+    id: acceptance-authority
+    attributes:
+      label: Acceptance authority
+      description: The named human owner or governing body who must approve the decision.
+    validations:
+      required: true
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

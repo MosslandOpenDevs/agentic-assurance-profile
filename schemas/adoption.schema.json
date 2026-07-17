@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MosslandOpenDevs/agentic-assurance-profile/main/schemas/adoption.schema.json",
+  "title": "Agentic Assurance Profile adoption declaration",
+  "description": "Schema for `.agentic-assurance/adoption.yaml` in an adopting repository. Declares the pinned upstream profile (version and full commit SHA), the adopting project, the selected adoption profiles, and optional mappings from profile artifacts to existing repository conventions. Additional top-level keys are permitted for local extensions; local extensions must not silently weaken the pinned upstream profile (PROFILE.md section 5).",
+  "type": "object",
+  "required": ["upstream", "project", "profiles"],
+  "additionalProperties": true,
+  "properties": {
+    "upstream": {
+      "type": "object",
+      "description": "The pinned upstream profile. A floating branch must not be the sole normative reference (PROFILE.md section 16).",
+      "required": ["repository", "version", "commit"],
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Upstream profile repository as owner/name.",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "version": {
+          "type": "string",
+          "description": "Pinned profile version: `unreleased` before the first tagged release, otherwise a release tag `vMAJOR.MINOR.PATCH` or pre-release `vMAJOR.MINOR.PATCH-rc.N`. The `-dev` suffix is only valid in the central repository's VERSION file, never in an adopter pin.",
+          "pattern": "^(unreleased|v\\d+\\.\\d+\\.\\d+(-rc\\.\\d+)?)$"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Full 40-character lowercase hexadecimal commit SHA of the pinned upstream profile.",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "description": "The adopting project.",
+      "required": ["name", "repository", "human_owner"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable project name."
+        },
+        "repository": {
+          "type": "string",
+          "description": "Adopting repository as owner/name."
+        },
+        "human_owner": {
+          "type": "string",
+          "description": "Named human owner or governing body with the authority defined in PROFILE.md section 3."
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "description": "Selected adoption profiles (PROFILE.md section 5). Use the smallest applicable set.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["core", "service", "trust-critical", "data-curation", "agent-runtime", "archived"]
+      }
+    },
+    "specification_workflow": {
+      "type": "object",
+      "description": "The existing specification or change workflow reused for material changes (PROFILE.md section 9).",
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "description": "Workflow system in use.",
+          "enum": ["openspec", "spec-kit", "adr-rfc", "existing", "minimal"]
+        },
+        "root": {
+          "type": "string",
+          "description": "Repository-relative path to the workflow's root directory or entry document."
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "description": "Mappings from profile artifacts to repository-relative paths. Omitted keys use the default `assurance/` layout. Additional mappings are permitted (see docs/MAPPINGS.md).",
+      "properties": {
+        "system": { "type": "string" },
+        "invariants": { "type": "string" },
+        "claims": { "type": "string" },
+        "defeaters": { "type": "string" },
+        "residuals": { "type": "string" },
+        "threat_model": { "type": "string" },
+        "evidence": { "type": "string" }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "security": {
+      "type": "object",
+      "description": "Security and disclosure locations. Never put a private tracker URL, token, or sensitive identifier in a public file.",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "description": "Repository-relative path to the security policy."
+        },
+        "public_assurance_root": {
+          "type": "string",
+          "description": "Repository-relative root of the public assurance artifacts."
+        },
+        "restricted_record": {
+          "type": "string",
+          "description": "Non-actionable label for where the restricted security record lives (for example `external_private_system`)."
+        }
+      }
+    },
+    "issue_integration": {
+      "type": "object",
+      "description": "How GitHub Issues integrate with durable profile artifacts (PROFILE.md section 14).",
+      "additionalProperties": false,
+      "properties": {
+        "stable_id_required": {
+          "type": "boolean",
+          "description": "Whether material Issues must reference stable profile IDs."
+        },
+        "public_security_issues_allowed": {
+          "type": "boolean",
+          "description": "Whether potentially exploitable findings may be filed as public Issues. Must be false for public repositories."
+        },
+        "closing_requires_artifact_update": {
+          "type": "boolean",
+          "description": "Whether closing a material Issue requires the related artifact, evidence, defeater, and residual updates to be complete."
+        }
+      }
+    }
+  }
+}

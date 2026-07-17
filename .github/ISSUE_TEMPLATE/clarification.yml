@@ -1,0 +1,47 @@
+name: Clarification
+description: Resolve ambiguous wording without changing intent.
+labels:
+  - profile/clarification
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A clarification resolves ambiguity without changing intended obligations.
+        If the intended obligation would change, open a profile change instead.
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: File and section containing the ambiguous text.
+      placeholder: "PROFILE.md section 12"
+    validations:
+      required: true
+  - type: textarea
+    id: ambiguous-text
+    attributes:
+      label: Ambiguous text
+      description: Quote the text as it currently stands.
+    validations:
+      required: true
+  - type: textarea
+    id: interpretations
+    attributes:
+      label: Interpretations in conflict
+      description: The plausible readings and where they diverge in practice.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-clarification
+    attributes:
+      label: Proposed clarification
+      description: Wording that removes the ambiguity without changing intent.
+    validations:
+      required: false
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

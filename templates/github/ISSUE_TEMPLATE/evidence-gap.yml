@@ -1,0 +1,42 @@
+# Copy to .github/ISSUE_TEMPLATE/evidence-gap.yml in the adopting repository.
+name: Evidence gap
+description: Add or refresh reproducible evidence for a claim, invariant, or control.
+labels: ["assurance/evidence"]
+body:
+  - type: textarea
+    id: affected-ids
+    attributes:
+      label: Affected assurance IDs
+      description: CLAIM-, INV-, DEF-, or RES- identifiers whose evidence is missing or stale.
+      placeholder: |
+        - CLAIM-EXAMPLE-001
+        - INV-EXAMPLE-001
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: Missing or stale evidence
+      description: What evidence is absent, unreproducible, or no longer current, and why. "All checks passed" is not evidence unless the underlying results are linked and reproducible.
+    validations:
+      required: true
+  - type: textarea
+    id: verification-command
+    attributes:
+      label: Reproduction or verification command
+      description: The command or procedure that should produce the evidence.
+      placeholder: |
+        $ ...
+  - type: input
+    id: revision-binding
+    attributes:
+      label: Revision binding
+      description: The commit SHA, artifact digest, or deployment identifier the evidence should be bound to.
+      placeholder: commit 0123456789abcdef0123456789abcdef01234567
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

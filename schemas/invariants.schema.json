@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MosslandOpenDevs/agentic-assurance-profile/main/schemas/invariants.schema.json",
+  "title": "Agentic Assurance Profile invariant register",
+  "description": "Schema for an invariant register (default location `assurance/INVARIANTS.yaml`). Each entry is a proposition that must remain true across every valid state and permitted change, with severity, intent classification, enforcement and verification references, and links to related defeaters and residuals (PROFILE.md sections 2 and 8). Critical invariants must not be considered verified solely because an agent states that tests pass.",
+  "type": "object",
+  "required": ["version", "invariants"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Invariant register format version."
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "statement", "severity", "scope", "status", "disclosure", "owner"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable invariant ID, independent of GitHub Issue numbers.",
+            "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Precise invariant title."
+          },
+          "statement": {
+            "type": "string",
+            "description": "The proposition that must remain true."
+          },
+          "severity": {
+            "description": "Severity of a violation of this invariant.",
+            "enum": ["critical", "high", "medium", "low"]
+          },
+          "intent": {
+            "type": "object",
+            "description": "Human intent behind the invariant.",
+            "additionalProperties": false,
+            "required": ["classification"],
+            "properties": {
+              "classification": {
+                "description": "Behavior classification (PROFILE.md section 4).",
+                "enum": ["INTENDED", "ACCIDENTAL", "COMPATIBILITY", "UNKNOWN", "DEPRECATED"]
+              },
+              "authority": {
+                "type": ["string", "null"],
+                "description": "Reference to the human decision or specification granting this intent, or null when not yet established."
+              }
+            }
+          },
+          "scope": {
+            "type": "string",
+            "description": "Bounded system scope of the invariant."
+          },
+          "assumptions": {
+            "type": "array",
+            "description": "Assumptions under which the invariant holds.",
+            "items": { "type": "string" }
+          },
+          "limitations": {
+            "type": "array",
+            "description": "Explicit limitations of the invariant.",
+            "items": { "type": "string" }
+          },
+          "enforcement": {
+            "type": "array",
+            "description": "References to mechanisms that prevent or block violation (constraints, guards, checks).",
+            "items": { "type": "string" }
+          },
+          "verification": {
+            "type": "array",
+            "description": "References to mechanisms that check the invariant (tests, static analysis, monitoring).",
+            "items": { "type": "string" }
+          },
+          "evidence": {
+            "type": "array",
+            "description": "Evidence references bound to a revision, release, artifact, or deployment.",
+            "items": { "type": "string" }
+          },
+          "defeaters": {
+            "type": "array",
+            "description": "IDs of defeaters affecting this invariant.",
+            "items": {
+              "type": "string",
+              "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            }
+          },
+          "residuals": {
+            "type": "array",
+            "description": "IDs of residuals affecting this invariant.",
+            "items": {
+              "type": "string",
+              "pattern": "^RES-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            }
+          },
+          "status": {
+            "description": "Conclusion classification (PROFILE.md section 4).",
+            "enum": ["VERIFIED", "INFERRED", "UNKNOWN", "CONTRADICTED"]
+          },
+          "disclosure": {
+            "description": "Disclosure classification (PROFILE.md section 13).",
+            "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]
+          },
+          "owner": {
+            "type": "string",
+            "description": "Named human owner of the invariant."
+          }
+        }
+      }
+    }
+  }
+}

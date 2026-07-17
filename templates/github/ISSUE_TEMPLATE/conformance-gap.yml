@@ -1,0 +1,60 @@
+# Copy to .github/ISSUE_TEMPLATE/conformance-gap.yml in the adopting repository.
+name: Conformance gap
+description: Track a non-sensitive mismatch between adopted obligations and current state.
+labels: ["assurance/gap"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form only when the gap itself is not exploitable. If closing
+        the gap would reveal an attack path, route it through GitHub Private
+        Vulnerability Reporting instead (see SECURITY.md).
+  - type: textarea
+    id: affected-ids
+    attributes:
+      label: Affected assurance IDs
+      description: AAP- requirement IDs and local CLAIM-, INV-, DEF-, or RES- identifiers.
+      placeholder: |
+        - AAP-CORE-004
+        - INV-EXAMPLE-001
+    validations:
+      required: true
+  - type: input
+    id: pinned-profile
+    attributes:
+      label: Pinned profile version and commit
+      description: The upstream pin from .agentic-assurance/adoption.yaml.
+      placeholder: unreleased @ 0123456789abcdef0123456789abcdef01234567
+    validations:
+      required: true
+  - type: textarea
+    id: obligation
+    attributes:
+      label: Obligation text
+      description: Quote the obligation from the pinned profile or local artifact.
+    validations:
+      required: true
+  - type: textarea
+    id: observed-state
+    attributes:
+      label: Observed state
+      description: What the repository or system currently does instead.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: File and line, test name, command output, or other concrete reference supporting the observed state.
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Proposed remediation
+      description: Expected durable artifact changes, controls, and evidence, plus acceptance criteria.
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

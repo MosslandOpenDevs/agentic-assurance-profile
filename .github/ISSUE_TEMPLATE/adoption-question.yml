@@ -1,0 +1,56 @@
+name: Adoption question
+description: Ask a question about adopting the profile in a repository.
+labels:
+  - assurance/adoption
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [docs/ADOPTION.md](https://github.com/MosslandOpenDevs/agentic-assurance-profile/blob/main/docs/ADOPTION.md)
+        and [docs/MAPPINGS.md](https://github.com/MosslandOpenDevs/agentic-assurance-profile/blob/main/docs/MAPPINGS.md)
+        before opening a question. Do not include project-specific exploit detail here.
+  - type: textarea
+    id: project-context
+    attributes:
+      label: Project context
+      description: What the project does and which conventions already exist (specifications, ADRs, threat model, CI).
+    validations:
+      required: true
+  - type: input
+    id: pin
+    attributes:
+      label: Pinned version and commit
+      description: The `upstream.version` and `upstream.commit` from your adoption file, if adoption has started.
+      placeholder: "unreleased, 0123456789abcdef0123456789abcdef01234567"
+    validations:
+      required: false
+  - type: input
+    id: profiles
+    attributes:
+      label: Profiles selected
+      description: The `profiles` list from your adoption file, if adoption has started.
+      placeholder: "core, service"
+    validations:
+      required: false
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: The specific question, including what you expected and what is unclear.
+    validations:
+      required: true
+  - type: textarea
+    id: docs-consulted
+    attributes:
+      label: Documentation consulted
+      description: Which documents and sections you already read (docs/ADOPTION.md, docs/MAPPINGS.md, PROFILE.md).
+    validations:
+      required: true
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Disclosure check
+      options:
+        - label: This issue contains no secrets, personal data, or actionable vulnerability detail
+          required: true

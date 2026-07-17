@@ -1,0 +1,16 @@
+version: 1
+residuals:
+  - id: RES-EXAMPLE-001
+    summary: Replace with a safe summary of remaining uncertainty.
+    private_detail_location: null
+    affected_claims: []
+    affected_invariants: []
+    impact: unknown
+    uncertainty: unknown
+    mitigation: []
+    status: OPEN
+    disclosure: SUMMARY_ONLY
+    owner: REPLACE_WITH_OWNER
+    accepted_by: null
+    accepted_at: null
+    review_after: YYYY-MM-DD
