@@ -60,7 +60,7 @@ The objective is not to eliminate all uncertainty. It is to make the boundary be
 
 This profile descends from a question Donald Knuth answered for an earlier era. *TeX: The Program* treated a program as something to be explained to people, not merely executed: the reasoning, the invariants, and the argument for correctness were part of the work itself. AI coding agents invert the economics that once made that discipline optional. Implementation is now cheap, but design rationale, invariants, evidence, and known limitations do not write themselves — and they are exactly what a project loses when code is produced faster than intent can be recorded.
 
-The immediate origin is practical. Passport, a Mossland project, was built almost entirely by AI coding agents, without a conventional code editor. Working that way makes the gap concrete: the owner's role shifts from writing code to governing claims, invariants, evidence, and residual risk — and that governance needs a durable, inspectable form. This profile is that form.
+The immediate origin is practical. [Passport](https://passport.moss.land), a Mossland project, was built almost entirely by AI coding agents, without a conventional code editor. Working that way makes the gap concrete: the owner's role shifts from writing code to governing claims, invariants, evidence, and residual risk — and that governance needs a durable, inspectable form. This profile is that form.
 
 ---
 
