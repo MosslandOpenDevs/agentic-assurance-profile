@@ -203,7 +203,7 @@ After the intent review:
 
 ## 5. Pilot guidance
 
-For the initial Mossland pilot repositories (Passport-class projects):
+For the initial pilot adoptions of this profile (Passport-class projects):
 
 - select `core` only at first;
 - run the full §4 brownfield sequence before extending the profile set;
