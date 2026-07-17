@@ -1,10 +1,12 @@
-# Replace the placeholder team with real maintainer handles before enabling
-# required reviews (see GOVERNANCE.md).
+# Code owners for normative and adopter-facing content (see GOVERNANCE.md).
+# The team must have write access to this repository for code-owner review
+# to take effect, and "Require review from Code Owners" must be enabled in
+# the main branch ruleset.
 
-/PROFILE.md    @MosslandOpenDevs/assurance-maintainers
-/schemas/      @MosslandOpenDevs/assurance-maintainers
-/templates/    @MosslandOpenDevs/assurance-maintainers
-/docs/         @MosslandOpenDevs/assurance-maintainers
-/GOVERNANCE.md @MosslandOpenDevs/assurance-maintainers
-/RELEASING.md  @MosslandOpenDevs/assurance-maintainers
-/SECURITY.md   @MosslandOpenDevs/assurance-maintainers
+/PROFILE.md    @MosslandOpenDevs/maintainers
+/schemas/      @MosslandOpenDevs/maintainers
+/templates/    @MosslandOpenDevs/maintainers
+/docs/         @MosslandOpenDevs/maintainers
+/GOVERNANCE.md @MosslandOpenDevs/maintainers
+/RELEASING.md  @MosslandOpenDevs/maintainers
+/SECURITY.md   @MosslandOpenDevs/maintainers
