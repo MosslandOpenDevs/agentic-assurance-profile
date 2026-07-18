@@ -4,7 +4,35 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+### Added
+
+- Lite adoption layout for `core`: all assurance content in a single
+  `.agentic-assurance/assurance.yaml` (purpose, non-goals, optional
+  system description, and the invariant/residual/defeater registers),
+  declared with the new optional `layout` field in the adoption
+  declaration (`schemas/adoption.schema.json`; `split` or `lite`,
+  absent means `split`). The file is described by a thin envelope
+  schema (`schemas/assurance-lite.schema.json`) whose section items
+  follow the existing register schemas — no duplicated item shapes;
+  the validator extracts each present section, validates it against
+  the pinned register schemas, and runs the existing semantic checks
+  over the combined result. Lite is core-only: combining `layout: lite`
+  with any profile beyond `core`/`archived` is an error, and the
+  graduation to the split layout preserves every ID. Starter template
+  at `templates/assurance.yaml`. The 25-file/1,867-line first-adoption
+  cost observed in the pilots drops to four files for `core`.
+
+### Changed
+
+- Adoption guide restructured around lite-first `core` adoption: new
+  §3.0 documents the four-file lite layout, the core-only rule, and
+  the ID-preserving graduation path; §3.1–§3.5 now explicitly describe
+  the split layout used from `service` upward; §3.6 documents the lite
+  validation differences. The `templates/github/` issue-template bundle
+  and `CODEOWNERS` are now optional at `core` — recommended when the
+  repository takes external contributions, and `CODEOWNERS` wherever a
+  second maintainer exists. Both READMEs and the review guide present
+  the lite layout as the `core` minimum.
 
 ## v0.1.2 — 2026-07-18
 

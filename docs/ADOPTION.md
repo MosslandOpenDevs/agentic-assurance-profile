@@ -68,9 +68,32 @@ Until the profile publishes its first tagged release, pin `version: unreleased` 
 
 The step-by-step sequence for a repository adopting from the start — or for an existing repository after the archaeology of §4 has been reviewed.
 
+### 3.0 Lite adoption — the default for core
+
+A repository adopting `core` only does not need the full split layout that the rest of this section describes. The lite layout collapses the assurance registers into a single file and brings first adoption down to four files: an `AGENTS.md` carrying the assurance reading-order section (§3.3), `AGENTIC_ASSURANCE.md` at the root, `.agentic-assurance/adoption.yaml` (§3.2) declaring `layout: lite`, and `.agentic-assurance/assurance.yaml` holding all assurance content. Copy from the same CC0-1.0 template set:
+
+| Copy from | To (adopting repository) |
+|---|---|
+| [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) | `AGENTIC_ASSURANCE.md` |
+| [templates/AGENTS.md](../templates/AGENTS.md) | `AGENTS.md` (merge if one exists; see §3.3) |
+| [templates/adoption.yaml](../templates/adoption.yaml) | `.agentic-assurance/adoption.yaml`, adding `layout: lite` |
+| [templates/assurance.yaml](../templates/assurance.yaml) | `.agentic-assurance/assurance.yaml` |
+
+`assurance.yaml` starts with `version: 1` and carries the `core` obligations of [PROFILE.md §6.1](../PROFILE.md) as sections:
+
+- `purpose` (string, required) and `non_goals` (list of strings, required) — §6.1 requires human-approved purpose and non-goals;
+- `system` (string, optional) — a short as-built description satisfying §6.1's "current system description or mapping to an existing equivalent". When omitted, keep a separate system description at the `paths.system` location instead (`assurance/SYSTEM.md` by default); one of the two must exist;
+- `invariants` (optional; recommended at `core` — it anchors the regression protection), `residuals` (required), and `defeaters` (optional) — arrays whose entries have exactly the same shape as in the split register files. The item schemas are not forked: the validator checks each present section against the corresponding register schema and runs the same semantic checks over the combined result, so lite and split registers are interchangeable content.
+
+**Lite is core-only.** Declaring `layout: lite` together with any profile beyond `core` or `archived` — `service`, `trust-critical`, `data-curation`, or `agent-runtime` — is a validation error. The graduation path preserves every ID: move the section arrays into `assurance/INVARIANTS.yaml`, `assurance/RESIDUALS.yaml`, and `assurance/DEFEATERS.yaml`, move the `system` text into `assurance/SYSTEM.md`, and drop `layout: lite`. The validator enforces the split layout from `service` upward.
+
+At `core`, the [templates/github/](../templates/github/) issue-template bundle (§3.5) and `CODEOWNERS` are optional rather than part of the minimum: copy the bundle when the repository takes external contributions — recommended in that case, and copy it whole, since the shadowing warning of §3.5 applies — and `CODEOWNERS` remains recommended wherever a second maintainer exists to review.
+
+§3.1–§3.5 describe the split layout, used from `service` upward or at `core` by preference. Local validation for both layouts is §3.6.
+
 ### 3.1 Copy the templates
 
-Everything under [../templates/](../templates/) is published under CC0-1.0: copy it into your repository freely, with no attribution obligation.
+This and the following subsections describe the split layout — one register per file — used from `service` upward, or at `core` by preference (§3.0 covers the lite alternative). Everything under [../templates/](../templates/) is published under CC0-1.0: copy it into your repository freely, with no attribution obligation.
 
 | Copy from | To (adopting repository) |
 |---|---|
@@ -85,7 +108,7 @@ Everything under [../templates/](../templates/) is published under CC0-1.0: copy
 | [templates/THREAT_MODEL.md](../templates/THREAT_MODEL.md) | `assurance/THREAT_MODEL.md` (when applicable) |
 | [templates/github/](../templates/github/) | `.github/` — copy the whole bundle; see §3.5 |
 
-The minimum layout matches [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) and PROFILE.md §6.1: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, `assurance/SYSTEM.md`, and `assurance/RESIDUALS.yaml`. `assurance/INVARIANTS.yaml` is recommended at `core` — it anchors the regression protection, and both pilots kept one — but becomes required only from the `service` profile. Optional additions: `assurance/CLAIMS.yaml`, `assurance/DEFEATERS.yaml`, `assurance/THREAT_MODEL.md`, `assurance/decisions/`, `assurance/reviews/`, and `assurance/evidence/`.
+The split-layout minimum matches [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) and PROFILE.md §6.1: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, `assurance/SYSTEM.md`, and `assurance/RESIDUALS.yaml`. `assurance/INVARIANTS.yaml` is recommended at `core` — it anchors the regression protection, and both pilots kept one — but becomes required only from the `service` profile. Optional additions: `assurance/CLAIMS.yaml`, `assurance/DEFEATERS.yaml`, `assurance/THREAT_MODEL.md`, `assurance/decisions/`, `assurance/reviews/`, and `assurance/evidence/`.
 
 These files must live in the adopting repository itself, never only in an organization-level `.github` repository: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, and everything under `assurance/` (including `DEFEATERS.yaml` when used). Organization defaults may host issue templates and a fallback `SECURITY.md`, but the assurance artifacts are project truth and belong in the project.
 
@@ -96,6 +119,7 @@ Replace every `REPLACE_WITH_` token — the validator treats a leftover token in
 - the `upstream` pin per §2;
 - `project` name, repository slug, and `human_owner`;
 - the `profiles` list (smallest applicable set);
+- `layout: lite` when using the single-file layout of §3.0 (the field is optional; absent means the split layout);
 - the `specification_workflow` you identified in §1;
 - `paths` mappings when reusing existing conventions ([MAPPINGS.md](MAPPINGS.md)); the defaults are fine for a fresh layout.
 
@@ -168,6 +192,8 @@ The validator strict-checks the adoption file against the pinned adoption schema
 | `core`, and any other non-`archived` profile | the `system` and `residuals` artifacts |
 | `service` | additionally the `invariants` and `threat_model` artifacts |
 | `trust-critical` | additionally the `claims` artifact |
+
+Under `layout: lite` (§3.0) the same command applies, with two differences. `.agentic-assurance/assurance.yaml` is validated — the envelope against the lite schema, each present section against the corresponding register schema, and the combined content through the same semantic checks. And the split per-profile file checks are replaced by the lite rules: the file itself must exist, `residuals` must be present, either a `system` section or a file at `paths.system` must exist, and any profile beyond `core`/`archived` is an error pointing to the graduation path of §3.0.
 
 It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); and selection of the provisional `data-curation` or `agent-runtime` profiles.
 

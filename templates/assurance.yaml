@@ -1,0 +1,93 @@
+# OpenDevs Agentic Assurance — single-file lite layout (core adopters).
+#
+# What this is: the entire local assurance record for a `core` adoption in one
+# file — purpose, non-goals, residuals, and (recommended) invariants — instead
+# of the split assurance/ directory.
+#
+# Placement: copy this file to `.agentic-assurance/assurance.yaml` in the
+# adopting repository, next to `adoption.yaml`.
+#
+# How to declare it: add `layout: lite` to `.agentic-assurance/adoption.yaml`.
+# Without that line the default split layout applies and this file is ignored.
+#
+# When to graduate: the lite layout is valid only for the `core` (or
+# `archived`) profile. Selecting `service`, `trust-critical`, `data-curation`,
+# or `agent-runtime` requires the split layout. Split-out preserves IDs — move
+# the section arrays into assurance/INVARIANTS.yaml, assurance/RESIDUALS.yaml,
+# and assurance/DEFEATERS.yaml unchanged, and drop `layout: lite`.
+#
+# Section items use exactly the same shapes as the split register templates
+# (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml, templates/DEFEATERS.yaml).
+
+version: 1
+
+# One paragraph: what this system is for, who uses it, and the boundary of what
+# it promises. This is human-approved intent — an agent must not rewrite it to
+# match current behavior, and it outranks implementation when the two disagree.
+purpose: REPLACE_WITH_ONE_PARAGRAPH_PURPOSE
+
+# Load-bearing: what this system deliberately does not do.
+non_goals:
+  - REPLACE_WITH_A_DELIBERATE_NON_GOAL
+
+# Optional: a short as-built system description (PROFILE.md section 6.1).
+# Either uncomment and fill this in, OR keep a separate SYSTEM.md at the path
+# declared in adoption.yaml `paths.system`. One of the two must exist.
+# system: |
+#   REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
+
+# Recommended at core; 5-15 entries; same fields as assurance/INVARIANTS.yaml —
+# graduating to split is a copy.
+invariants:
+  - id: INV-EXAMPLE-001
+    title: Replace with a precise invariant title
+    statement: Replace with a proposition that must remain true.
+    severity: critical
+    intent:
+      classification: UNKNOWN
+      authority: null
+    scope: Replace with bounded system scope.
+    assumptions: []
+    limitations: []
+    enforcement: []
+    verification: []
+    evidence: []
+    defeaters: []
+    residuals: []
+    status: UNKNOWN
+    disclosure: PUBLIC
+    owner: REPLACE_WITH_OWNER
+
+# Required: known limitations, unverified assumptions, accepted
+# inconsistencies, and remaining doubt. Same fields as assurance/RESIDUALS.yaml.
+residuals:
+  - id: RES-EXAMPLE-001
+    summary: Replace with a safe summary of remaining uncertainty.
+    private_detail_location: null
+    affected_claims: []
+    affected_invariants: []
+    impact: unknown
+    uncertainty: unknown
+    mitigation: []
+    status: OPEN
+    disclosure: SUMMARY_ONLY
+    owner: REPLACE_WITH_OWNER
+    accepted_by: null
+    accepted_at: null
+    # Optional disposition fields:
+    # acceptance_rationale: The human owner's recorded reason for an ACCEPTED disposition (expected when status is ACCEPTED).
+    # resolution_note: How a RESOLVED residual was closed, with a remediation reference (expected when status is RESOLVED).
+    review_after: YYYY-MM-DD
+
+# Optional: concrete reasons a claim may be false or incomplete. Same fields
+# as assurance/DEFEATERS.yaml.
+# defeaters:
+#   - id: DEF-EXAMPLE-001
+#     statement: Replace with a concrete reason a claim may be false or incomplete.
+#     affected_claims: []
+#     affected_invariants: []
+#     evidence: []
+#     status: OPEN
+#     disclosure: PUBLIC
+#     owner: REPLACE_WITH_OWNER
+#     review_after: YYYY-MM-DD

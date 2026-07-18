@@ -233,7 +233,17 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 ## Adoption model
 
-An adopting repository should add:
+At `core`, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content in a single `assurance.yaml`:
+
+```text
+AGENTS.md
+AGENTIC_ASSURANCE.md
+.agentic-assurance/
+├── adoption.yaml
+└── assurance.yaml
+```
+
+From `service` upward (or at `core` by preference), the split layout gives each register its own file:
 
 ```text
 AGENTS.md
@@ -327,6 +337,7 @@ Layout of this central repository:
 │   └── REVIEW-GUIDE.md
 ├── schemas/
 │   ├── adoption.schema.json
+│   ├── assurance-lite.schema.json
 │   ├── claims.schema.json
 │   ├── defeaters.schema.json
 │   ├── invariants.schema.json
@@ -344,6 +355,7 @@ Layout of this central repository:
     ├── SYSTEM.md
     ├── THREAT_MODEL.md
     ├── adoption.yaml
+    ├── assurance.yaml
     └── github/
         ├── CODEOWNERS
         ├── ISSUE_TEMPLATE/

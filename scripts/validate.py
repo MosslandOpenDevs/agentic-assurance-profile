@@ -74,7 +74,20 @@ SCHEMA_FILES = (
     "invariants.schema.json",
     "defeaters.schema.json",
     "residuals.schema.json",
+    "assurance-lite.schema.json",
 )
+
+# Lite layout (adoption.yaml `layout: lite`): one consolidated assurance file
+# instead of the split per-register files. The envelope schema types the prose
+# fields; register entry shapes stay defined solely by the register schemas,
+# against which the validator checks each section (no schema drift).
+LITE_SCHEMA_FILE = "assurance-lite.schema.json"
+LITE_ASSURANCE_PATH = ".agentic-assurance/assurance.yaml"
+LITE_TEMPLATE = "assurance.yaml"
+# Register sections a lite assurance file may carry, in output order.
+LITE_SECTION_KINDS = ("invariants", "defeaters", "residuals")
+# Lite is core-only; any other profile requires graduating to the split layout.
+LITE_PROFILES = ("core", "archived")
 
 # Artifact kind -> (schema file, default repository-relative path).
 ARTIFACT_KINDS = {
@@ -362,6 +375,7 @@ def check_semantics(
     report: Report,
     strict_review_dates: bool = False,
     today: datetime.date | None = None,
+    ok_label: str = "semantic checks",
 ) -> None:
     """Cross-entry semantic checks over the four registers.
 
@@ -519,7 +533,53 @@ def check_semantics(
 
     errors_after = sum(1 for level, _ in report.results if level == "error")
     if errors_after == errors_before:
-        report.ok("semantic checks — ids unique, references resolve, statuses grounded")
+        report.ok(f"{ok_label} — ids unique, references resolve, statuses grounded")
+
+
+def check_lite_sections(
+    document: object,
+    label: str,
+    schemas: dict[str, dict],
+    report: Report,
+    schema_label_prefix: str = "",
+) -> dict[str, list | None]:
+    """Validate the register sections of a lite assurance document.
+
+    Register entry shapes are defined solely by the register schemas: each
+    present section is extracted into a synthetic register document
+    (``{version: 1, <kind>: [...]}``) and validated against the corresponding
+    register schema, so nothing is duplicated in the lite envelope schema.
+
+    Returns the same kind -> entries mapping ``check_artifacts`` produces for
+    the split layout: key absent = section absent, value ``None`` = section
+    unusable, value list = usable entries. Feed it to ``check_semantics``.
+    """
+    registers: dict[str, list | None] = {}
+    if not isinstance(document, dict):
+        return registers
+    for kind in LITE_SECTION_KINDS:
+        if kind not in document:
+            continue
+        schema_name, _default = ARTIFACT_KINDS[kind]
+        synthetic = {"version": 1, kind: document[kind]}
+        registers[kind] = register_entries(synthetic, kind)
+        schema = schemas.get(schema_name)
+        if schema is None:
+            report.error(
+                f"{label}: section '{kind}' cannot be validated, "
+                f"{schema_label_prefix}{schema_name} unusable"
+            )
+            continue
+        errors = schema_errors(synthetic, schema, f"{label}: section '{kind}'")
+        if errors:
+            for message in errors:
+                report.error(message)
+        else:
+            report.ok(
+                f"{label}: section '{kind}' items validate against "
+                f"{schema_label_prefix}{schema_name}"
+            )
+    return registers
 
 
 # ---------------------------------------------------------------------------
@@ -594,6 +654,38 @@ def check_template(
     return substituted
 
 
+def check_lite_template(repo_root: Path, schemas: dict[str, dict], report: Report) -> None:
+    """Validate templates/assurance.yaml through the lite-layout flow.
+
+    Mirrors what an adopter's ``.agentic-assurance/assurance.yaml`` faces:
+    envelope validation against the lite schema, per-section validation
+    against the register schemas, and the shared semantic checks.
+    """
+    label = f"templates/{LITE_TEMPLATE}"
+    schema = schemas.get(LITE_SCHEMA_FILE)
+    if schema is None:
+        report.error(f"{label}: cannot validate, schemas/{LITE_SCHEMA_FILE} unusable")
+        return
+    document, error = load_yaml(repo_root / "templates" / LITE_TEMPLATE)
+    if error is not None:
+        report.error(f"{label}: {error}")
+        return
+    substituted = substitute_placeholders(document)
+    errors = schema_errors(substituted, schema, label)
+    if errors:
+        for message in errors:
+            report.error(message)
+    else:
+        report.ok(
+            f"{label} validates against schemas/{LITE_SCHEMA_FILE} "
+            "(placeholders substituted)"
+        )
+    registers = check_lite_sections(
+        substituted, label, schemas, report, schema_label_prefix="schemas/"
+    )
+    check_semantics(registers, report, ok_label=f"{label} semantic checks")
+
+
 def check_forbidden_string(repo_root: Path, report: Report) -> None:
     """Check that no repository file contains the abolished version string.
 
@@ -647,6 +739,7 @@ def run_self_check(args: argparse.Namespace) -> int:
     # existing; template drift is caught by the same semantic checks that
     # adopter registers face.
     check_semantics(registers, report)
+    check_lite_template(repo_root, schemas, report)
     check_forbidden_string(repo_root, report)
 
     return report.emit("self-check", args.json)
@@ -818,6 +911,111 @@ def check_adopter_warnings(project_root: Path, profiles: list[str], report: Repo
             )
 
 
+def check_lite_profiles(profiles: list[str], report: Report) -> None:
+    """Layout 'lite' is core-only; richer profiles need the split layout."""
+    beyond_core = [profile for profile in profiles if profile not in LITE_PROFILES]
+    if beyond_core:
+        listed = ", ".join(f"'{profile}'" for profile in beyond_core)
+        report.error(
+            f"layout 'lite' supports only the core and archived profiles, but "
+            f"profiles include {listed} — graduate to the split layout "
+            f"(split-out preserves IDs: move the section arrays of "
+            f"{LITE_ASSURANCE_PATH} into assurance/INVARIANTS.yaml etc. "
+            "and drop layout: lite)"
+        )
+    else:
+        report.ok("layout 'lite' is declared with core-only profiles")
+
+
+def check_lite_file(
+    project_root: Path, schemas: dict[str, dict], report: Report
+) -> tuple[dict | None, dict[str, list | None]]:
+    """Load and validate the single lite assurance file.
+
+    The path is fixed at ``.agentic-assurance/assurance.yaml`` — the lite
+    layout has exactly one assurance file, next to the adoption declaration.
+    Returns ``(document, registers)``: the placeholder-substituted document
+    (None when missing or unusable) and the same kind -> entries mapping the
+    split layout's ``check_artifacts`` returns, for ``check_semantics``.
+    """
+    relative = LITE_ASSURANCE_PATH
+    path = project_root / relative
+    if not path.is_file():
+        report.error(f"{relative} missing (required by layout 'lite')")
+        return None, {}
+    document, error = load_yaml(path)
+    if error is not None:
+        report.error(f"{relative}: {error}")
+        return None, {}
+    # Template placeholder values are tolerated, as in the split-layout
+    # registers, so a freshly copied template validates; the adoption
+    # declaration itself remains strict.
+    substituted = substitute_placeholders(document)
+    schema = schemas.get(LITE_SCHEMA_FILE)
+    if schema is None:
+        report.error(f"{relative}: cannot validate, {LITE_SCHEMA_FILE} unusable")
+    else:
+        errors = schema_errors(substituted, schema, relative)
+        if errors:
+            for message in errors:
+                report.error(message)
+        else:
+            report.ok(f"{relative} validates against {LITE_SCHEMA_FILE}")
+    registers = check_lite_sections(substituted, relative, schemas, report)
+    for entry_id, disclosure in entries_with_restricted_disclosure(document):
+        report.warn(
+            f"{relative}: entry {entry_id} has disclosure {disclosure} — "
+            "public repositories must not contain restricted material — "
+            "verify this file is not public"
+        )
+    if not isinstance(substituted, dict):
+        return None, registers
+    return substituted, registers
+
+
+def check_lite_required_files(
+    project_root: Path,
+    paths: dict[str, str],
+    lite_document: dict | None,
+    report: Report,
+) -> None:
+    """Presence checks for layout 'lite'.
+
+    AGENTIC_ASSURANCE.md and AGENTS.md stay required at the project root.
+    The residuals obligation is carried by the assurance file itself (its
+    schema requires the section). The system description must come from
+    either the file's `system` section or an existing paths.system file.
+    The split layout's per-profile file checks do not apply.
+    """
+    for name in ("AGENTIC_ASSURANCE.md", "AGENTS.md"):
+        if (project_root / name).is_file():
+            report.ok(f"{name} present at project root")
+        else:
+            report.error(f"{name} missing at project root")
+
+    has_system_section = isinstance(lite_document, dict) and nonempty_string(
+        lite_document.get("system")
+    )
+    system_relative = paths.get("system")
+    has_system_file = (
+        system_relative is not None and (project_root / system_relative).is_file()
+    )
+    if has_system_section:
+        report.ok(
+            f"system description present ('system' section of {LITE_ASSURANCE_PATH})"
+        )
+    elif has_system_file:
+        report.ok(
+            f"{system_relative} present (paths.system, system description "
+            "for layout 'lite')"
+        )
+    else:
+        report.error(
+            "system description missing: layout 'lite' requires a 'system' "
+            f"section in {LITE_ASSURANCE_PATH} or a file at paths.system"
+        )
+
+
 def run_adopter(args: argparse.Namespace) -> int:
     report = Report()
     adoption_path = Path(args.adoption)
@@ -840,9 +1038,18 @@ def run_adopter(args: argparse.Namespace) -> int:
     ]
 
     paths = check_declared_paths(project_root, resolve_paths(adoption), report)
-    registers = check_artifacts(project_root, paths, schemas, report)
-    check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
-    check_required_files(project_root, paths, profiles, report)
+    if adoption.get("layout") == "lite":
+        # Lite layout: one consolidated assurance file replaces the split
+        # registers. Sections face the same register schemas and the same
+        # semantic checks; only the file layout differs.
+        check_lite_profiles(profiles, report)
+        lite_document, registers = check_lite_file(project_root, schemas, report)
+        check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
+        check_lite_required_files(project_root, paths, lite_document, report)
+    else:
+        registers = check_artifacts(project_root, paths, schemas, report)
+        check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
+        check_required_files(project_root, paths, profiles, report)
     check_adopter_warnings(project_root, profiles, report)
 
     return report.emit("adopter", args.json)

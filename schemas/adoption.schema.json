@@ -59,6 +59,10 @@
         "enum": ["core", "service", "trust-critical", "data-curation", "agent-runtime", "archived"]
       }
     },
+    "layout": {
+      "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core (and archived) profiles. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
+      "enum": ["split", "lite"]
+    },
     "human_review": {
       "type": "object",
       "description": "Pointer to the most recent completed human review (PROFILE.md section 4.3) and its durable record. Additional keys are permitted for local review conventions.",
