@@ -591,6 +591,42 @@ class TestDriftRouting(ValidatorTestCase):
         self.assertEqual(code, 0, out)
         self.assertIn("assurance update references INV-CORE-001", out)
 
+    def test_assurance_diff_context_line_does_not_satisfy(self):
+        # The component's ID appearing only on an unchanged context line of
+        # the unified diff (an adjacent entry was edited) is not an update
+        # of that invariant.
+        code, out = self.run_drift(
+            drift_adoption(),
+            changed=["src/api/handler.py"],
+            assurance_diff=(
+                "   - id: INV-CORE-001\n"
+                "+  - id: INV-CORE-002\n"
+                "+    statement: unrelated neighbour updated\n"
+            ),
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("without an assurance update", out)
+
+    def test_assurance_diff_deletion_only_does_not_satisfy(self):
+        code, out = self.run_drift(
+            drift_adoption(),
+            changed=["src/api/handler.py"],
+            assurance_diff="-  - id: INV-CORE-001\n-    statement: removed\n",
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("without an assurance update", out)
+
+    def test_assurance_diff_nested_longer_id_does_not_satisfy(self):
+        # INV-CORE-001-EXT-002 is a valid ID that contains INV-CORE-001 as a
+        # substring; token-boundary matching must not let it satisfy.
+        code, out = self.run_drift(
+            drift_adoption(),
+            changed=["src/api/handler.py"],
+            assurance_diff="+  - id: INV-CORE-001-EXT-002\n",
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("without an assurance update", out)
+
     def test_assurance_diff_without_reference_warns(self):
         code, out = self.run_drift(
             drift_adoption(),

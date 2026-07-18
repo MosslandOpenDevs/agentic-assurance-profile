@@ -151,13 +151,19 @@ jobs:
           if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
               raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
 
+          # Single-line, like commit and adoption_stage: every value written
+          # to $GITHUB_OUTPUT must be validated against output injection.
+          version = str(upstream["version"])
+          if not version.strip() or "\n" in version or "\r" in version:
+              raise SystemExit(f"{path}: upstream.version must be a non-empty single-line string; see docs/ADOPTION.md.")
+
           stage = adoption.get("adoption_stage", "DRAFT")
           if not isinstance(stage, str) or not stage.strip() or "\n" in stage or "\r" in stage:
               raise SystemExit(f"{path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write(f"commit={commit}\n")
-              out.write(f"version={upstream['version']}\n")
+              out.write(f"version={version}\n")
               out.write(f"adoption_stage={stage}\n")
           EOF
 

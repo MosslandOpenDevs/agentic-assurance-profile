@@ -47,7 +47,11 @@ or ships a component map yet), which is why this is a patch release.
 - Both workflows now set `permissions: contents: read`, use
   `persist-credentials: false` on every checkout, pin every action to a
   full commit SHA, and install dependencies from a universal hash-pinned
-  lock (`requirements-ci.txt`, `pip install --require-hashes`).
+  lock (`requirements-ci.txt`, `pip install --require-hashes`). One
+  deliberate exception: each adopter-validate job first bootstraps the
+  pin reader with a version-pinned (not hash-pinned)
+  `pip install "pyyaml==6.0.3" --no-deps` — the lock only exists after
+  the pinned checkout that the pin reader itself enables.
 
 ### Changed
 

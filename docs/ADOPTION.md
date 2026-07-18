@@ -222,7 +222,7 @@ Each component names the repository paths it covers — gitwildmatch-style globs
 
 When the map is present, the reusable workflow (§3.4) runs a drift check on every pull request, against the pinned validator like everything else; push-event runs are unaffected. Changed files are computed rename-safely: a rename or copy counts both its source and its destination path, so moving code out of a mapped path cannot escape the component's globs. For each component whose `paths` match at least one changed file, the pull request satisfies that component if any of the following holds:
 
-1. the diff of the assurance artifacts (paths under `assurance/` or `.agentic-assurance/`) references at least one of the component's invariant IDs — merely touching some assurance file is not enough; an unrelated register edit does not satisfy an unrelated component;
+1. the **added lines** of the assurance-artifact diff (paths under `assurance/` or `.agentic-assurance/`) reference at least one of the component's invariant IDs, matched with token boundaries — merely touching some assurance file is not enough (an unrelated register edit does not satisfy an unrelated component), unchanged context lines around an edit do not count, deleting an entry does not count as an update, and a longer ID such as `INV-CORE-001-EXT-002` does not satisfy `INV-CORE-001`;
 2. the pull-request description mentions every invariant ID listed for the component (a plain substring match; listing them under "Affected assurance IDs" in the pull-request template is sufficient);
 3. the description carries an explicit no-impact statement — both lines at the start of a line, and the reason is mandatory (`Assurance impact: none` alone does not satisfy):
 

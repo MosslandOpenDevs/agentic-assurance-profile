@@ -1495,6 +1495,37 @@ def read_pr_body(path: Path) -> str:
         return ""
 
 
+def added_diff_lines(diff_text: str) -> str:
+    """The added ('+') lines of a unified diff, without the '+' prefixes.
+
+    Satisfaction must be judged on what the change *adds*: context lines
+    would let an unrelated edit three lines away from an invariant's entry
+    count as referencing it, and deletion-only changes (removing the entry)
+    must not count as an update.
+    """
+    return "\n".join(
+        line[1:]
+        for line in diff_text.splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    )
+
+
+def mentions_id(text: str, identifier: str) -> bool:
+    """Token-boundary match of a register ID inside free text.
+
+    A plain substring test would let INV-CORE-001-EXT-002 (a valid ID)
+    satisfy a requirement to mention INV-CORE-001. IDs are drawn from
+    [A-Z0-9-]; the boundary excludes exactly that class.
+    """
+    return (
+        re.search(
+            rf"(?<![A-Z0-9-]){re.escape(identifier)}(?![A-Z0-9-])",
+            text,
+        )
+        is not None
+    )
+
+
 def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]:
     """Assurance-significant changes of the head declaration vs the base one.
 
@@ -1594,8 +1625,9 @@ def run_drift(args: argparse.Namespace) -> int:
     A component is *touched* when any of its path globs matches a changed
     file (the CI caller lists rename/copy sources as well as destinations,
     so moving code out of a mapped path still counts). A touched component
-    is satisfied when the diff of the assurance artifacts references at
-    least one of the component's invariant IDs (``--assurance-diff``; when
+    is satisfied when the *added lines* of the assurance-artifact diff
+    reference (with token boundaries) at least one of the component's
+    invariant IDs (``--assurance-diff``; when
     the flag is absent — standalone use — any change under the assurance
     prefixes is accepted as the coarse fallback signal), when the PR
     description mentions every invariant ID mapped to the component, or
@@ -1680,10 +1712,12 @@ def run_drift(args: argparse.Namespace) -> int:
         report.error(f"changed-files list: {error}")
         return report.emit("drift", args.json)
 
-    assurance_diff_text: str | None = None
+    assurance_diff_added: str | None = None
     if args.assurance_diff is not None:
         try:
-            assurance_diff_text = Path(args.assurance_diff).read_text(encoding="utf-8")
+            assurance_diff_added = added_diff_lines(
+                Path(args.assurance_diff).read_text(encoding="utf-8")
+            )
         except OSError as exc:
             report.error(f"assurance diff: cannot read {args.assurance_diff}: {exc}")
             return report.emit("drift", args.json)
@@ -1736,18 +1770,18 @@ def run_drift(args: argparse.Namespace) -> int:
             [
                 invariant_id
                 for invariant_id in invariant_ids
-                if invariant_id in assurance_diff_text
+                if mentions_id(assurance_diff_added, invariant_id)
             ]
-            if assurance_diff_text is not None
+            if assurance_diff_added is not None
             else []
         )
         if diff_mentioned:
             verdict = f"assurance update references {', '.join(diff_mentioned)}"
             report.ok(f"{touched} — {verdict}")
-        elif assurance_diff_text is None and assurance_touched:
+        elif assurance_diff_added is None and assurance_touched:
             verdict = "assurance artifacts updated in the same change"
             report.ok(f"{touched} — {verdict}")
-        elif all(invariant_id in body for invariant_id in invariant_ids):
+        elif all(mentions_id(body, invariant_id) for invariant_id in invariant_ids):
             verdict = f"PR description mentions {ids}"
             report.ok(f"{touched} — {verdict}")
         elif no_impact_ok:
@@ -1872,9 +1906,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--assurance-diff",
         default=None,
         help="file holding the diff of the assurance artifacts; a touched "
-        "component is satisfied only when this diff references one of its "
-        "invariant IDs (absent: any assurance change satisfies, the coarse "
-        "standalone fallback)",
+        "component is satisfied only when the diff's added lines reference "
+        "one of its invariant IDs (absent: any assurance change satisfies, "
+        "the coarse standalone fallback)",
     )
     drift.add_argument(
         "--base-adoption",
