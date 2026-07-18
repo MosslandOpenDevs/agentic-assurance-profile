@@ -20,22 +20,41 @@
 #
 # The @ reference is pinned to the same full 40-character commit SHA as
 # upstream.commit in your adoption file and is updated together with the pin;
-# the structure job errors when the two disagree.
+# the pin-read step errors when the two disagree, and a caller that pins by
+# tag or branch instead of a full SHA is rejected outright.
+#
 # If your adoption file is not at the default location, pass it explicitly:
 #
 #       with:
 #         adoption-file: path/to/adoption.yaml
 #
-# TRUST BOUNDARY (why this workflow is safe to run on pull requests):
-# the validator code executed on the runner is ALWAYS checked out from the
-# canonical upstream (CANONICAL below), never from a repository named in the
-# adoption file — that field is only ever validated as data. A pull request
-# can change which COMMIT of the canonical upstream is used, but every commit
-# there is maintainer-reviewed, so it cannot introduce attacker code. The
-# workflow runs with contents:read only, does not persist checkout
-# credentials, pins every action to a full commit SHA, and installs
-# hash-locked dependencies. An adopter who forks the profile must run their
-# own copy of this workflow with CANONICAL changed to their fork.
+# TRUST BOUNDARY (what this workflow can and cannot guarantee):
+# the validator code executed on the runner is ALWAYS this workflow's own
+# repository at this workflow's own commit (job.workflow_repository /
+# job.workflow_sha — verified to be the canonical upstream, CANONICAL
+# below, before use). Nothing read from the adopter's tree ever selects the
+# code that runs: the adoption file's upstream fields are validated as
+# data, and upstream.commit must equal the workflow's own SHA. Every
+# dependency install is hash-locked, every action is pinned to a full
+# commit SHA, the token is contents:read, and no checkout persists
+# credentials.
+#
+# What this workflow CANNOT defend: the caller workflow file itself lives
+# in the adopting repository, and pull_request events run the PR's version
+# of it — a pull request can change the @ reference (or replace the caller
+# entirely) and thereby run an older or different workflow. That boundary
+# is governed by repository controls, not by this file: keep
+# .github/workflows/ under CODEOWNERS with required code-owner review (the
+# adopter bundle's CODEOWNERS template covers the caller), and see
+# docs/ADOPTION.md section 3.4 for the organization-level options
+# (Actions allow-lists; organization rulesets with required workflows on
+# GitHub Team/Enterprise). A caller swap is always visible in the PR diff.
+#
+# The job.workflow_* contexts this workflow relies on are unavailable on
+# GitHub Enterprise Server — this workflow targets GitHub.com.
+#
+# An adopter who forks the profile must run their own copy of this
+# workflow with CANONICAL (in every job) changed to their fork.
 #
 # Two validation jobs run on every event. `structure` (check name
 # "assurance / structure" with the caller above) is the structural
@@ -54,11 +73,15 @@
 # against the optional `components:` map in the adoption file (impact
 # routing): it warns when a mapped component changes without an assurance
 # update referencing its invariants, an invariant mention, or an explicit
-# no-impact statement in the PR description. It also screens the adoption
-# declaration itself against the base branch: stage downgrades, upstream
-# pin changes, and component removals/narrowings fail unless the PR
-# description carries an explicit `Assurance policy change: <why>` line.
-# Push-event callers are unaffected. To turn routing warnings into failures:
+# no-impact statement in the PR description. It also screens the assurance
+# policy against the base branch — the adoption declaration (stage
+# downgrade, pin change, component removal/narrowing, owner/path moves)
+# and the registers themselves (deleted entries, severity/status/proof-tier
+# downgrades, evidence removal, stable-ID diff) — failing unless the PR
+# description carries an explicit `Assurance policy change: <why>` line;
+# when the base declaration's stage is HUMAN_REVIEWED or CONFORMANT the
+# findings stay errors even when acknowledged. Push-event callers are
+# unaffected. To turn routing warnings into failures:
 #
 #       with:
 #         strict-drift: true
@@ -99,21 +122,62 @@ jobs:
         with:
           persist-credentials: false
 
+      # The workflow's own identity is the trust anchor: everything below
+      # executes code from job.workflow_repository @ job.workflow_sha, so
+      # first pin that identity down. The suffix check on job.workflow_ref
+      # rejects callers that pin by tag or branch — a tag can move even
+      # when it currently resolves to the same commit.
+      - name: Verify workflow identity
+        env:
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          WORKFLOW_REF: ${{ job.workflow_ref }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          if [ -z "$WORKFLOW_SHA" ] || [ -z "$WORKFLOW_REPOSITORY" ] || [ -z "$WORKFLOW_REF" ]; then
+            echo "::error::job.workflow_repository / job.workflow_ref / job.workflow_sha are unavailable — this workflow requires GitHub.com (these contexts do not exist on GitHub Enterprise Server) and must be invoked via workflow_call."
+            exit 1
+          fi
+          if [ "$WORKFLOW_REPOSITORY" != "MosslandOpenDevs/agentic-assurance-profile" ]; then
+            echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream. A fork must run its own copy with the CANONICAL constants changed (see the header comment)."
+            exit 1
+          fi
+          case "$WORKFLOW_REF" in
+            *"@${WORKFLOW_SHA}")
+              echo "workflow identity: $WORKFLOW_REPOSITORY @ $WORKFLOW_SHA (caller pins the full SHA)"
+              ;;
+            *)
+              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA (docs/ADOPTION.md section 3.4), not a tag or branch."
+              exit 1
+              ;;
+          esac
+
+      # The trusted checkout doubles as the pinned profile: the pin-read
+      # step below enforces upstream.commit == job.workflow_sha, so this
+      # workflow's own source IS the pinned commit. No adopter-influenced
+      # code or dependency is installed before this point (the v0.2.1
+      # version-pinned pyyaml bootstrap is gone — the pin reader now runs
+      # on the hash-locked set from the trusted checkout).
+      - name: Check out this workflow's profile source (trusted)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .assurance-profile-pin
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      # Minimal, exact-version bootstrap so the pin-read step can parse the
-      # adopter's own YAML file. The validator itself runs later with the
-      # hash-locked dependency set from the canonical checkout.
-      - name: Bootstrap pin reader
-        run: pip install "pyyaml==6.0.3" --no-deps
+      - name: Install hash-locked validator dependencies
+        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
-      - name: Read upstream pin from adoption file
+      - name: Read and verify upstream pin
         id: pin
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
           python - "$ADOPTION_FILE" <<'EOF'
           import os
@@ -121,9 +185,8 @@ jobs:
 
           import yaml
 
-          # The validator is only ever run from this canonical upstream. The
-          # repository declared in the adoption file is validated as data,
-          # never used to choose the code that executes on the runner.
+          # The declared repository is validated as data, never used to
+          # choose the code that executes on the runner.
           CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
           path = sys.argv[1]
@@ -151,6 +214,16 @@ jobs:
           if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
               raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
 
+          # The documented same-change rule, enforced: the caller's @ SHA
+          # (this workflow's own commit) and the adoption pin move together.
+          workflow_sha = os.environ["WORKFLOW_SHA"]
+          if commit != workflow_sha:
+              raise SystemExit(
+                  f"{path}: upstream.commit is {commit} but the caller pins this reusable "
+                  f"workflow at {workflow_sha}. Update upstream.version, upstream.commit, and "
+                  "the caller's @ reference in the same change (docs/ADOPTION.md section 3.4)."
+              )
+
           # Single-line, like commit and adoption_stage: every value written
           # to $GITHUB_OUTPUT must be validated against output injection.
           version = str(upstream["version"])
@@ -162,56 +235,20 @@ jobs:
               raise SystemExit(f"{path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"commit={commit}\n")
               out.write(f"version={version}\n")
               out.write(f"adoption_stage={stage}\n")
           EOF
 
-      # The caller pins this reusable workflow at an @ SHA; ADOPTION.md
-      # section 3.4 requires that reference and upstream.commit to move
-      # together. Enforce the documented rule mechanically via the job
-      # context's identity of this very workflow file — it also guarantees
-      # that the validator checked out below is exactly the version this
-      # workflow file shipped with.
-      - name: Verify caller workflow reference matches the adoption pin
-        env:
-          PINNED_COMMIT: ${{ steps.pin.outputs.commit }}
-          WORKFLOW_SHA: ${{ job.workflow_sha }}
-          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
-        run: |
-          if [ -z "$WORKFLOW_SHA" ] || [ -z "$WORKFLOW_REPOSITORY" ]; then
-            echo "::error::job.workflow_sha / job.workflow_repository are empty — cannot verify that the caller's @ reference matches upstream.commit. This workflow must be invoked via workflow_call with an @<full-SHA> reference."
-            exit 1
-          fi
-          if [ "$WORKFLOW_REPOSITORY" != "MosslandOpenDevs/agentic-assurance-profile" ]; then
-            echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream. A fork must run its own copy with the CANONICAL constant changed (see the header comment)."
-            exit 1
-          fi
-          if [ "$WORKFLOW_SHA" != "$PINNED_COMMIT" ]; then
-            echo "::error::The caller pins this reusable workflow at $WORKFLOW_SHA but adoption.yaml pins upstream.commit $PINNED_COMMIT. Update upstream.version, upstream.commit, and the caller's @ reference in the same change (docs/ADOPTION.md section 3.4)."
-            exit 1
-          fi
-          echo "caller @ reference matches upstream.commit ($PINNED_COMMIT)"
-
-      - name: Check out pinned profile (canonical upstream)
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          repository: MosslandOpenDevs/agentic-assurance-profile
-          ref: ${{ steps.pin.outputs.commit }}
-          path: .assurance-profile-pin
-          persist-credentials: false
-
-      - name: Install hash-locked validator dependencies
-        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
-
       # A release identifier can appear in more than one commit's VERSION file
       # (the release PR's branch commit and the merge commit the tag points to).
       # Only the tag commit is the canonical pin; enforce that mechanically.
+      # The pinned commit is job.workflow_sha — proven equal to
+      # upstream.commit by the pin-read step above.
       - name: Verify release pin matches its tag
         if: ${{ steps.pin.outputs.version != 'unreleased' }}
         env:
           PINNED_VERSION: ${{ steps.pin.outputs.version }}
-          PINNED_COMMIT: ${{ steps.pin.outputs.commit }}
+          PINNED_COMMIT: ${{ job.workflow_sha }}
         run: |
           set -e
           if ! git -C .assurance-profile-pin fetch --quiet --depth 1 origin "refs/tags/${PINNED_VERSION}:refs/tags/${PINNED_VERSION}"; then
@@ -228,13 +265,20 @@ jobs:
       - name: Validate against the pinned profile
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
-        run: >
-          python .assurance-profile-pin/scripts/validate.py adopter
-          --adoption "$ADOPTION_FILE"
-          --project-root .
-          --schemas .assurance-profile-pin/schemas
-          --profile-checkout .assurance-profile-pin
-          --ignore-stage
+          REPO_VISIBILITY: ${{ github.event.repository.visibility }}
+        run: |
+          VISIBILITY_FLAG=""
+          if [ -n "$REPO_VISIBILITY" ]; then
+            VISIBILITY_FLAG="--repo-visibility $REPO_VISIBILITY"
+          fi
+          # shellcheck disable=SC2086  # VISIBILITY_FLAG splits into flag+value on purpose
+          python .assurance-profile-pin/scripts/validate.py adopter \
+            --adoption "$ADOPTION_FILE" \
+            --project-root . \
+            --schemas .assurance-profile-pin/schemas \
+            --profile-checkout .assurance-profile-pin \
+            --ignore-stage \
+            $VISIBILITY_FLAG
 
       - name: Check pin staleness (non-blocking)
         continue-on-error: true
@@ -289,21 +333,15 @@ jobs:
   # Declared-stage enforcement: the full stage-enforcing validation (no
   # --ignore-stage). Green means "the declared adoption_stage's requirements
   # are met" — at HUMAN_REVIEWED as well as CONFORMANT — which is why the
-  # check is not named "conformance" (renamed in v0.2.1; a green
-  # "conformance" at HUMAN_REVIEWED misread as a conformance statement).
-  # The job-level `if` gates on the adoption_stage output of the structure
-  # job's pin step (default DRAFT when absent), so DRAFT adopters skip this
-  # job entirely and the "assurance / declared-stage" check reports skipped
-  # rather than passed. A job-level `if` over `needs` was chosen over
-  # step-level guards for exactly that visible skip, and it is race-free:
-  # both jobs check out the same commit, so the gating value cannot diverge
-  # from the adoption file this job re-reads. The implicit success() in the
-  # `if` also skips this job when structure failed. The job is otherwise
-  # self-contained (like drift): it re-reads the pin and checks out the
-  # pinned profile itself, since jobs share no files. Stage self-downgrade
-  # in a PR (CONFORMANT -> DRAFT would skip this job) is caught by the
-  # drift job's policy regression check, which fails on downgrades that the
-  # PR description does not explicitly acknowledge.
+  # check is not named "conformance". The job-level `if` gates on the
+  # adoption_stage output of the structure job's pin step (default DRAFT
+  # when absent), so DRAFT adopters skip this job entirely and the
+  # "assurance / declared-stage" check reports skipped rather than passed.
+  # Race-free: both jobs run the workflow's own commit, so the gating value
+  # cannot diverge from the adoption file this job re-reads. The implicit
+  # success() in the `if` also skips this job when structure failed. Stage
+  # self-downgrade in a PR (CONFORMANT -> DRAFT would skip this job) is
+  # caught by the drift job's policy regression check.
   declared-stage:
     needs: structure
     if: needs.structure.outputs.adoption_stage != 'DRAFT'
@@ -314,18 +352,48 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify workflow identity
+        env:
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          WORKFLOW_REF: ${{ job.workflow_ref }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          if [ -z "$WORKFLOW_SHA" ] || [ -z "$WORKFLOW_REPOSITORY" ] || [ -z "$WORKFLOW_REF" ]; then
+            echo "::error::job.workflow_* contexts are unavailable — this workflow requires GitHub.com and must be invoked via workflow_call."
+            exit 1
+          fi
+          if [ "$WORKFLOW_REPOSITORY" != "MosslandOpenDevs/agentic-assurance-profile" ]; then
+            echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream."
+            exit 1
+          fi
+          case "$WORKFLOW_REF" in
+            *"@${WORKFLOW_SHA}") : ;;
+            *)
+              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA."
+              exit 1
+              ;;
+          esac
+
+      - name: Check out this workflow's profile source (trusted)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .assurance-profile-pin
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Bootstrap pin reader
-        run: pip install "pyyaml==6.0.3" --no-deps
+      - name: Install hash-locked validator dependencies
+        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
-      - name: Read upstream pin from adoption file
-        id: pin
+      - name: Verify upstream pin matches this workflow
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
           python - "$ADOPTION_FILE" <<'EOF'
           import os
@@ -344,47 +412,39 @@ jobs:
           upstream = adoption.get("upstream")
           if not isinstance(upstream, dict):
               raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
-          missing = [key for key in ("repository", "commit", "version") if key not in upstream]
-          if missing:
-              raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
-          if upstream["repository"] != CANONICAL:
+          if upstream.get("repository") != CANONICAL:
               raise SystemExit(
-                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
-                  f"workflow only validates against the canonical upstream {CANONICAL!r}."
+                  f"{path}: upstream.repository is {upstream.get('repository')!r}, but this "
+                  f"reusable workflow only validates against the canonical upstream {CANONICAL!r}."
               )
-          commit = str(upstream["commit"])
-          if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
-              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"commit={commit}\n")
+          commit = str(upstream.get("commit", ""))
+          if commit != os.environ["WORKFLOW_SHA"]:
+              raise SystemExit(
+                  f"{path}: upstream.commit is {commit!r} but the caller pins this reusable "
+                  f"workflow at {os.environ['WORKFLOW_SHA']} — update both in the same change."
+              )
           EOF
-
-      - name: Check out pinned profile (canonical upstream)
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          repository: MosslandOpenDevs/agentic-assurance-profile
-          ref: ${{ steps.pin.outputs.commit }}
-          path: .assurance-profile-pin
-          persist-credentials: false
-
-      - name: Install hash-locked validator dependencies
-        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
       - name: Enforce the declared adoption stage
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
-        run: >
-          python .assurance-profile-pin/scripts/validate.py adopter
-          --adoption "$ADOPTION_FILE"
-          --project-root .
-          --schemas .assurance-profile-pin/schemas
-          --profile-checkout .assurance-profile-pin
+          REPO_VISIBILITY: ${{ github.event.repository.visibility }}
+        run: |
+          VISIBILITY_FLAG=""
+          if [ -n "$REPO_VISIBILITY" ]; then
+            VISIBILITY_FLAG="--repo-visibility $REPO_VISIBILITY"
+          fi
+          # shellcheck disable=SC2086  # VISIBILITY_FLAG splits into flag+value on purpose
+          python .assurance-profile-pin/scripts/validate.py adopter \
+            --adoption "$ADOPTION_FILE" \
+            --project-root . \
+            --schemas .assurance-profile-pin/schemas \
+            --profile-checkout .assurance-profile-pin \
+            $VISIBILITY_FLAG
 
-  # Impact routing (pull requests only): route the PR's changed files against
-  # the optional `components:` map in the adoption file, using the pinned
-  # profile's validator. The PR body and both SHAs are passed through
-  # environment variables, never interpolated into scripts.
+  # Impact routing and policy regression (pull requests only). The PR body
+  # and both SHAs are passed through environment variables, never
+  # interpolated into scripts.
   drift:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -395,59 +455,40 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Verify workflow identity
+        env:
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          WORKFLOW_REF: ${{ job.workflow_ref }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          if [ -z "$WORKFLOW_SHA" ] || [ -z "$WORKFLOW_REPOSITORY" ] || [ -z "$WORKFLOW_REF" ]; then
+            echo "::error::job.workflow_* contexts are unavailable — this workflow requires GitHub.com and must be invoked via workflow_call."
+            exit 1
+          fi
+          if [ "$WORKFLOW_REPOSITORY" != "MosslandOpenDevs/agentic-assurance-profile" ]; then
+            echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream."
+            exit 1
+          fi
+          case "$WORKFLOW_REF" in
+            *"@${WORKFLOW_SHA}") : ;;
+            *)
+              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA."
+              exit 1
+              ;;
+          esac
+
+      - name: Check out this workflow's profile source (trusted)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .assurance-profile-pin
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
-
-      - name: Bootstrap pin reader
-        run: pip install "pyyaml==6.0.3" --no-deps
-
-      - name: Read upstream pin from adoption file
-        id: pin
-        env:
-          ADOPTION_FILE: ${{ inputs.adoption-file }}
-        run: |
-          python - "$ADOPTION_FILE" <<'EOF'
-          import os
-          import sys
-
-          import yaml
-
-          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
-
-          path = sys.argv[1]
-          with open(path, encoding="utf-8") as f:
-              adoption = yaml.safe_load(f)
-
-          if not isinstance(adoption, dict):
-              raise SystemExit(f"{path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
-          upstream = adoption.get("upstream")
-          if not isinstance(upstream, dict):
-              raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
-          missing = [key for key in ("repository", "commit", "version") if key not in upstream]
-          if missing:
-              raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
-          if upstream["repository"] != CANONICAL:
-              raise SystemExit(
-                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
-                  f"workflow only validates against the canonical upstream {CANONICAL!r}."
-              )
-          commit = str(upstream["commit"])
-          if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
-              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"commit={commit}\n")
-          EOF
-
-      - name: Check out pinned profile (canonical upstream)
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          repository: MosslandOpenDevs/agentic-assurance-profile
-          ref: ${{ steps.pin.outputs.commit }}
-          path: .assurance-profile-pin
-          persist-credentials: false
 
       - name: Install hash-locked validator dependencies
         run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
@@ -473,8 +514,9 @@ jobs:
           index = 0
           while index < len(tokens) and tokens[index]:
               status = tokens[index]
-              # R (rename) and C (copy) records carry two paths; both count
-              # as changed so code cannot move out of a mapped path unseen.
+              # R (rename) and C (copy) records carry two paths (source,
+              # destination); both count as changed so code cannot move out
+              # of a mapped path unseen.
               take = 2 if status[:1] in ("R", "C") else 1
               paths.extend(tokens[index + 1 : index + 1 + take])
               index += 1 + take
@@ -488,22 +530,81 @@ jobs:
         run: |
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
 
-      # The base branch's adoption declaration (for the policy regression
-      # check) and the diff of the assurance artifacts (so satisfaction is
-      # per component: the assurance change must reference the component's
-      # invariant IDs, not merely exist).
-      - name: Extract base adoption declaration and assurance diff
+      # The base branch's adoption declaration and register files (for the
+      # policy regression check), and the diff of the assurance artifacts —
+      # scoped by the paths BOTH declarations actually name (custom `paths:`
+      # mappings included), not just the default directories.
+      - name: Extract base declaration, base registers, and assurance diff
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           ADOPTION_FILE: ${{ inputs.adoption-file }}
         run: |
-          if git cat-file -e "$BASE_SHA:$ADOPTION_FILE" 2>/dev/null; then
-            git show "$BASE_SHA:$ADOPTION_FILE" > "$RUNNER_TEMP/base-adoption.yaml"
-          fi
-          git diff "$BASE_SHA...$HEAD_SHA" -- assurance .agentic-assurance > "$RUNNER_TEMP/assurance-diff.txt"
+          python - <<'EOF'
+          import os
+          import subprocess
+          import sys
 
-      - name: Route impact against the component map
+          sys.path.insert(0, ".assurance-profile-pin/scripts")
+          import yaml
+          from validate import DEFAULT_PATHS, LITE_ASSURANCE_PATH, REGISTER_KINDS, resolve_paths
+
+          base_sha = os.environ["BASE_SHA"]
+          head_sha = os.environ["HEAD_SHA"]
+          adoption_file = os.environ["ADOPTION_FILE"]
+          tmp = os.environ["RUNNER_TEMP"]
+
+          def show(ref, path):
+              result = subprocess.run(
+                  ["git", "show", f"{ref}:{path}"], capture_output=True
+              )
+              return result.stdout if result.returncode == 0 else None
+
+          diff_scope = {"assurance", ".agentic-assurance", adoption_file}
+          diff_scope |= set(DEFAULT_PATHS.values()) | {LITE_ASSURANCE_PATH}
+
+          with open(adoption_file, encoding="utf-8") as handle:
+              head_adoption = yaml.safe_load(handle)
+          if isinstance(head_adoption, dict):
+              diff_scope |= set(resolve_paths(head_adoption).values())
+
+          base_bytes = show(base_sha, adoption_file)
+          if base_bytes is None:
+              print(
+                  f"::notice::No adoption declaration at {adoption_file} on the base "
+                  "branch — policy comparison skipped (new adoption, or a moved "
+                  "declaration; a move should itself be treated as an assurance "
+                  "policy change)."
+              )
+          else:
+              with open(os.path.join(tmp, "base-adoption.yaml"), "wb") as handle:
+                  handle.write(base_bytes)
+              base_adoption = yaml.safe_load(base_bytes)
+              if isinstance(base_adoption, dict):
+                  resolved = resolve_paths(base_adoption)
+                  diff_scope |= set(resolved.values())
+                  wanted = {
+                      resolved[kind] for kind in REGISTER_KINDS if kind in resolved
+                  } | {LITE_ASSURANCE_PATH}
+                  for relative in sorted(wanted):
+                      content = show(base_sha, relative)
+                      if content is None:
+                          continue
+                      destination = os.path.join(tmp, "base-tree", relative)
+                      os.makedirs(os.path.dirname(destination), exist_ok=True)
+                      with open(destination, "wb") as handle:
+                          handle.write(content)
+
+          # git diff ignores pathspecs that match nothing, so the union is safe.
+          diff = subprocess.run(
+              ["git", "diff", f"{base_sha}...{head_sha}", "--", *sorted(diff_scope)],
+              capture_output=True,
+          )
+          with open(os.path.join(tmp, "assurance-diff.txt"), "wb") as handle:
+              handle.write(diff.stdout)
+          EOF
+
+      - name: Route impact and screen policy against the component map
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           STRICT_DRIFT: ${{ inputs.strict-drift }}
@@ -512,13 +613,14 @@ jobs:
           if [ "$STRICT_DRIFT" = "true" ]; then
             STRICT_FLAG="--strict"
           fi
-          BASE_FLAG=""
+          BASE_FLAGS=""
           if [ -f "$RUNNER_TEMP/base-adoption.yaml" ]; then
-            BASE_FLAG="--base-adoption $RUNNER_TEMP/base-adoption.yaml"
+            BASE_FLAGS="--base-adoption $RUNNER_TEMP/base-adoption.yaml --base-registers-root $RUNNER_TEMP/base-tree --project-root ."
           fi
+          # shellcheck disable=SC2086  # BASE_FLAGS/STRICT_FLAG split into flags on purpose
           python .assurance-profile-pin/scripts/validate.py drift \
             --adoption "$ADOPTION_FILE" \
             --changed-files "$RUNNER_TEMP/changed-files.txt" \
             --pr-body "$RUNNER_TEMP/pr-body.txt" \
             --assurance-diff "$RUNNER_TEMP/assurance-diff.txt" \
-            $BASE_FLAG $STRICT_FLAG
+            $BASE_FLAGS $STRICT_FLAG

@@ -4,7 +4,10 @@
   "title": "Agentic Assurance Profile invariant register",
   "description": "Schema for an invariant register (default location `assurance/INVARIANTS.yaml`). Each entry is a proposition that must remain true across every valid state and permitted change, with severity, intent classification, enforcement and verification references, and links to related defeaters and residuals (PROFILE.md sections 2 and 8). Critical invariants must not be considered verified solely because an agent states that tests pass.",
   "type": "object",
-  "required": ["version", "invariants"],
+  "required": [
+    "version",
+    "invariants"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
@@ -15,70 +18,120 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "title", "statement", "severity", "scope", "status", "disclosure", "owner"],
+        "required": [
+          "id",
+          "title",
+          "statement",
+          "severity",
+          "scope",
+          "status",
+          "disclosure",
+          "owner"
+        ],
         "additionalProperties": true,
         "properties": {
           "id": {
             "type": "string",
             "description": "Stable invariant ID, independent of GitHub Issue numbers.",
-            "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "minLength": 1
           },
           "title": {
             "type": "string",
-            "description": "Precise invariant title."
+            "description": "Precise invariant title.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "statement": {
             "type": "string",
-            "description": "The proposition that must remain true."
+            "description": "The proposition that must remain true.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "severity": {
             "description": "Severity of a violation of this invariant.",
-            "enum": ["critical", "high", "medium", "low"]
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
           },
           "intent": {
             "type": "object",
             "description": "Human intent behind the invariant.",
             "additionalProperties": false,
-            "required": ["classification"],
+            "required": [
+              "classification"
+            ],
             "properties": {
               "classification": {
                 "description": "Behavior classification (PROFILE.md section 4).",
-                "enum": ["INTENDED", "ACCIDENTAL", "COMPATIBILITY", "UNKNOWN", "DEPRECATED"]
+                "enum": [
+                  "INTENDED",
+                  "ACCIDENTAL",
+                  "COMPATIBILITY",
+                  "UNKNOWN",
+                  "DEPRECATED"
+                ]
               },
               "authority": {
-                "type": ["string", "null"],
-                "description": "Reference to the human decision or specification granting this intent, or null when not yet established."
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Reference to the human decision or specification granting this intent, or null when not yet established.",
+                "minLength": 1,
+                "pattern": "\\S"
               }
             }
           },
           "scope": {
             "type": "string",
-            "description": "Bounded system scope of the invariant."
+            "description": "Bounded system scope of the invariant.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "assumptions": {
             "type": "array",
             "description": "Assumptions under which the invariant holds.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "limitations": {
             "type": "array",
             "description": "Explicit limitations of the invariant.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "enforcement": {
             "type": "array",
             "description": "References to mechanisms that prevent or block violation (constraints, guards, checks).",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "verification": {
             "type": "array",
             "description": "References to mechanisms that check the invariant (tests, static analysis, monitoring).",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "evidence": {
             "type": "array",
             "description": "Evidence references bound to a revision, release, artifact, or deployment.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "defeaters": {
             "type": "array",
@@ -98,15 +151,27 @@
           },
           "status": {
             "description": "Conclusion classification (PROFILE.md section 4).",
-            "enum": ["VERIFIED", "INFERRED", "UNKNOWN", "CONTRADICTED"]
+            "enum": [
+              "VERIFIED",
+              "INFERRED",
+              "UNKNOWN",
+              "CONTRADICTED"
+            ]
           },
           "disclosure": {
             "description": "Disclosure classification (PROFILE.md section 13).",
-            "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]
+            "enum": [
+              "PUBLIC",
+              "SUMMARY_ONLY",
+              "RESTRICTED",
+              "EMBARGOED"
+            ]
           },
           "owner": {
             "type": "string",
-            "description": "Named human owner of the invariant."
+            "description": "Named human owner of the invariant.",
+            "minLength": 1,
+            "pattern": "\\S"
           }
         }
       }

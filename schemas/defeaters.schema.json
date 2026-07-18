@@ -4,7 +4,10 @@
   "title": "Agentic Assurance Profile defeater register",
   "description": "Schema for a defeater register (default location `assurance/DEFEATERS.yaml`). Each entry is a concrete reason a claim or assurance argument may be false, incomplete, stale, or inapplicable (PROFILE.md sections 2 and 12).",
   "type": "object",
-  "required": ["version", "defeaters"],
+  "required": [
+    "version",
+    "defeaters"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
@@ -15,24 +18,34 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "statement", "status", "disclosure", "owner"],
+        "required": [
+          "id",
+          "statement",
+          "status",
+          "disclosure",
+          "owner"
+        ],
         "additionalProperties": true,
         "properties": {
           "id": {
             "type": "string",
             "description": "Stable defeater ID, independent of GitHub Issue numbers.",
-            "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "minLength": 1
           },
           "statement": {
             "type": "string",
-            "description": "Concrete reason the affected claim or argument may be false or incomplete."
+            "description": "Concrete reason the affected claim or argument may be false or incomplete.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "affected_claims": {
             "type": "array",
             "description": "IDs of claims this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "minLength": 1
             }
           },
           "affected_invariants": {
@@ -40,29 +53,48 @@
             "description": "IDs of invariants this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "minLength": 1
             }
           },
           "evidence": {
             "type": "array",
             "description": "Evidence references supporting or bounding the defeater.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "status": {
             "description": "Defeater status. The v0.1 status set is: OPEN (the defeater stands and is unaddressed), MITIGATED (controls reduce but do not eliminate the defeater), RESOLVED (evidence shows the defeater no longer applies), WITHDRAWN (the defeater was recorded in error or is out of scope).",
-            "enum": ["OPEN", "MITIGATED", "RESOLVED", "WITHDRAWN"]
+            "enum": [
+              "OPEN",
+              "MITIGATED",
+              "RESOLVED",
+              "WITHDRAWN"
+            ]
           },
           "resolution": {
             "type": "string",
-            "description": "How a RESOLVED, MITIGATED, or WITHDRAWN defeater was closed (what changed, and where)."
+            "description": "How a RESOLVED, MITIGATED, or WITHDRAWN defeater was closed (what changed, and where).",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "disclosure": {
             "description": "Disclosure classification (PROFILE.md section 13).",
-            "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]
+            "enum": [
+              "PUBLIC",
+              "SUMMARY_ONLY",
+              "RESTRICTED",
+              "EMBARGOED"
+            ]
           },
           "owner": {
             "type": "string",
-            "description": "Named human owner of the defeater."
+            "description": "Named human owner of the defeater.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "review_after": {
             "type": "string",

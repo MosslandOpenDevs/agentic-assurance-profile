@@ -168,6 +168,28 @@ POLICY_ACK_RE = re.compile(r"^Assurance policy change:\s*\S+", re.IGNORECASE | r
 # Report level -> GitHub Actions annotation command.
 GITHUB_ANNOTATION_KINDS = {"error": "error", "warn": "warning"}
 
+# Strength orders used by the register policy diff: earlier = stronger.
+# Moving right in these lists is a weakening; moving left never is.
+SEVERITY_ORDER = ("critical", "high", "medium", "low")
+IMPACT_ORDER = ("critical", "high", "medium", "low", "unknown")
+PROOF_TIER_ORDER = (
+    "INDEPENDENTLY_VERIFIABLE",
+    "OPERATIONALLY_AUDITABLE",
+    "OPERATOR_ATTESTED",
+    "NOT_CLAIMED",
+)
+# Conclusion statuses whose replacement counts as a weakening. CONTRADICTED
+# is deliberately NOT a weakening target: recording a contradiction is an
+# honesty upgrade, never something to gate.
+STATUS_WEAKENINGS = {"VERIFIED": ("INFERRED", "UNKNOWN"), "INFERRED": ("UNKNOWN",)}
+# Intent reclassifications that weaken a recorded human decision.
+INTENT_WEAKENINGS = {"INTENDED": ("UNKNOWN", "ACCIDENTAL")}
+# Evidence-bearing list fields whose shrinkage is a weakening on
+# high/critical invariants.
+INVARIANT_EVIDENCE_LISTS = ("enforcement", "verification", "evidence")
+
+REPO_VISIBILITIES = ("public", "private", "internal")
+
 
 class Report:
     """Collects ERROR/WARN/OK results and renders them."""
@@ -585,6 +607,15 @@ def check_semantics(
                     f"residual {label} is ACCEPTED with impact {impact} "
                     "but acceptance_rationale is empty or missing"
                 )
+            # The schema requires the fields to exist for high/critical
+            # ACCEPTED; a whitespace-only value would still name nobody.
+            for field in ("accepted_by", "accepted_at"):
+                value = entry.get(field)
+                if value is not None and not nonempty_string(str(value)):
+                    report.error(
+                        f"residual {label} is ACCEPTED with impact {impact} "
+                        f"but {field} is empty"
+                    )
         if status == "RESOLVED" and not nonempty_string(entry.get("resolution_note")):
             report.error(
                 f"residual {label} is RESOLVED but resolution_note is empty or missing"
@@ -980,6 +1011,41 @@ def check_required_files(
             )
 
 
+def check_register_obligations(
+    profiles: list[str],
+    registers: dict[str, list | None],
+    report: Report,
+) -> None:
+    """Registers a profile mandates must carry at least one entry.
+
+    File presence alone allows a vacuous pass: a ``version: 1`` file with an
+    empty array satisfies the schema and every per-entry check trivially.
+    PROFILE.md requires project invariants for 'service', public claims for
+    'trust-critical', and an active residual register for every non-archived
+    profile — "active" is not an empty list (a project that believes it has
+    zero residual risk should record that belief as its first residual).
+    A register that is absent or unusable is skipped here: presence and
+    load errors are reported by their own checks.
+    """
+    obligations = []
+    if any(profile != "archived" for profile in profiles):
+        obligations.append(("residuals", "non-archived profiles"))
+    if "service" in profiles:
+        obligations.append(("invariants", "profile 'service'"))
+    if "trust-critical" in profiles:
+        obligations.append(("claims", "profile 'trust-critical'"))
+    for kind, reason in obligations:
+        entries = registers.get(kind)
+        if entries is None:
+            continue  # absent or unusable; reported elsewhere
+        if not [entry for entry in entries if isinstance(entry, dict)]:
+            report.error(
+                f"{kind} register is empty, but {reason} require at least "
+                "one entry — an empty register passes no obligation "
+                "(PROFILE.md; record the honest current state instead)"
+            )
+
+
 def check_adopter_warnings(project_root: Path, profiles: list[str], report: Report) -> None:
     issue_template_dir = project_root / ".github" / "ISSUE_TEMPLATE"
     if issue_template_dir.is_dir() and not (issue_template_dir / "config.yml").is_file():
@@ -1161,6 +1227,7 @@ def check_adoption_stage(
     paths: dict[str, str],
     registers: dict[str, list | None],
     report: Report,
+    repo_visibility: str | None = None,
 ) -> None:
     """Enforce the requirements of the self-declared ``adoption_stage``.
 
@@ -1194,13 +1261,21 @@ def check_adoption_stage(
     PROFILE.md section 17: no critical residual left OPEN (accept it with
     rationale or resolve it), no CONTRADICTED claim, no CONTRADICTED
     critical invariant (non-critical CONTRADICTED invariants suppress the
-    OK verdict without erroring), every VERIFIED critical invariant carries
-    non-empty ``evidence``, and no register entry is classified RESTRICTED
-    or EMBARGOED (the public assurance view must not carry restricted
-    material; the structural checks warn about this at every stage —
-    CONFORMANT turns it into an error). Conditions section 17 states but
-    strings cannot capture (evidence bound to a revision, claim wording not
-    exceeding evidence strength) remain the human review's responsibility.
+    OK verdict without erroring), and every VERIFIED critical invariant
+    carries non-empty ``evidence``.
+
+    RESTRICTED/EMBARGOED entries are visibility-aware at CONFORMANT:
+    section 17 excludes restricted material from *public* artifacts, and
+    ADOPTION.md permits RESTRICTED entries in a private repository (they
+    bind its visibility). With ``repo_visibility`` "private" or "internal"
+    they stay the standing warning; "public" makes them errors; ``None``
+    (visibility unknown — standalone run without --repo-visibility) also
+    errors, conservatively, with a message saying how to declare the
+    visibility. The structural checks warn at every stage regardless.
+
+    Conditions section 17 states but strings cannot capture (evidence bound
+    to a revision, claim wording not exceeding evidence strength) remain
+    the human review's responsibility.
 
     On success (no stage requirement violated) exactly one OK line is
     emitted: ``stage <declared>: requirements satisfied``.
@@ -1359,18 +1434,26 @@ def check_adoption_stage(
                         "list is empty — record the evidence behind the "
                         "verdict (PROFILE.md section 17)"
                     )
-        for kind in REGISTER_KINDS:
-            for entry in registers.get(kind) or []:
-                if not isinstance(entry, dict):
-                    continue
-                disclosure = entry.get("disclosure")
-                if disclosure in ("RESTRICTED", "EMBARGOED"):
-                    report.error(
-                        f"stage CONFORMANT: {kind} entry {entry_label(entry)} "
-                        f"has disclosure {disclosure} — the public assurance "
-                        "view must not carry restricted material; keep it in "
-                        "the restricted record (PROFILE.md sections 12 and 17)"
-                    )
+        if repo_visibility not in ("private", "internal"):
+            hint = (
+                ""
+                if repo_visibility == "public"
+                else " (if this repository is private, declare it with "
+                "--repo-visibility private)"
+            )
+            for kind in REGISTER_KINDS:
+                for entry in registers.get(kind) or []:
+                    if not isinstance(entry, dict):
+                        continue
+                    disclosure = entry.get("disclosure")
+                    if disclosure in ("RESTRICTED", "EMBARGOED"):
+                        report.error(
+                            f"stage CONFORMANT: {kind} entry {entry_label(entry)} "
+                            f"has disclosure {disclosure} — public artifacts "
+                            "must not carry restricted material; keep it in "
+                            "the restricted record (PROFILE.md sections 12 "
+                            f"and 17){hint}"
+                        )
 
         # At least one attributable approval: who approved, where the
         # durable record lives, and when. Shape errors in individual
@@ -1451,15 +1534,23 @@ def run_adopter(args: argparse.Namespace) -> int:
         lite_document, registers = check_lite_file(project_root, schemas, report)
         check_semantics(registers, report, strict_review_dates=strict_review_dates)
         check_lite_required_files(project_root, paths, lite_document, report)
+        check_register_obligations(profiles, registers, report)
     else:
         registers = check_artifacts(project_root, paths, schemas, report)
         check_semantics(registers, report, strict_review_dates=strict_review_dates)
         check_required_files(project_root, paths, profiles, report)
+        check_register_obligations(profiles, registers, report)
     check_component_map(adoption, registers, report)
     check_adopter_warnings(project_root, profiles, report)
     if enforce_stage:
         check_adoption_stage(
-            adoption, adoption_path, project_root, paths, registers, report
+            adoption,
+            adoption_path,
+            project_root,
+            paths,
+            registers,
+            report,
+            repo_visibility=args.repo_visibility,
         )
 
     return report.emit("adopter", args.json)
@@ -1578,6 +1669,43 @@ def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]
                 )
             )
 
+    base_project = base.get("project") if isinstance(base.get("project"), dict) else {}
+    head_project = head.get("project") if isinstance(head.get("project"), dict) else {}
+    if base_project.get("human_owner") != head_project.get("human_owner"):
+        findings.append(
+            (
+                "weakened",
+                f"project.human_owner changed from {base_project.get('human_owner')!r} "
+                f"to {head_project.get('human_owner')!r}",
+            )
+        )
+
+    # A moved artifact path can point the validator at a different (possibly
+    # freshly emptied) file, and a moved public_assurance_root changes what
+    # the disclosure rules bind — both are assurance-significant.
+    base_paths = base.get("paths") if isinstance(base.get("paths"), dict) else {}
+    head_paths = head.get("paths") if isinstance(head.get("paths"), dict) else {}
+    for key in sorted(set(base_paths) | set(head_paths)):
+        if base_paths.get(key) != head_paths.get(key):
+            findings.append(
+                (
+                    "weakened",
+                    f"paths.{key} changed from {base_paths.get(key)!r} "
+                    f"to {head_paths.get(key)!r}",
+                )
+            )
+    base_security = base.get("security") if isinstance(base.get("security"), dict) else {}
+    head_security = head.get("security") if isinstance(head.get("security"), dict) else {}
+    if base_security.get("public_assurance_root") != head_security.get("public_assurance_root"):
+        findings.append(
+            (
+                "weakened",
+                "security.public_assurance_root changed from "
+                f"{base_security.get('public_assurance_root')!r} "
+                f"to {head_security.get('public_assurance_root')!r}",
+            )
+        )
+
     base_components = base.get("components") if isinstance(base.get("components"), dict) else {}
     head_components = head.get("components") if isinstance(head.get("components"), dict) else {}
     for name in sorted(base_components):
@@ -1597,6 +1725,200 @@ def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]
                     ("weakened", f"component '{name}': {noun} removed: {', '.join(removed)}")
                 )
     return findings
+
+
+def order_index(order: tuple, value: object) -> int | None:
+    """Index of a value in a strength order, or None when not a member."""
+    try:
+        return order.index(value)
+    except ValueError:
+        return None
+
+
+def register_policy_regressions(
+    base_registers: dict[str, list | None],
+    head_registers: dict[str, list | None],
+) -> list[tuple[str, str]]:
+    """Weakenings of the head registers versus the base registers.
+
+    Compared by stable ID; additions are never findings. A register absent
+    or unusable on either side is skipped (its own errors are reported
+    elsewhere). Detected weakenings: entry deletion (any register);
+    invariant severity downgrade, conclusion-status weakening
+    (VERIFIED/INFERRED moving toward UNKNOWN — CONTRADICTED is an honesty
+    upgrade, never flagged), INTENDED intent reclassified as
+    UNKNOWN/ACCIDENTAL, and enforcement/verification/evidence items removed
+    from high/critical invariants; claim status weakening and proof-tier
+    downgrade; residual impact downgrade. Claim/statement wording changes
+    are deliberately not compared — that is the human review's terrain.
+    """
+    findings: list[tuple[str, str]] = []
+
+    def by_id(entries: list | None) -> dict[str, dict]:
+        return {
+            entry["id"]: entry
+            for entry in (entries or [])
+            if isinstance(entry, dict) and nonempty_string(entry.get("id"))
+        }
+
+    def weakened(order: tuple, before: object, after: object) -> bool:
+        b, a = order_index(order, before), order_index(order, after)
+        return b is not None and a is not None and a > b
+
+    def reclassified(table: dict, before: object, after: object) -> bool:
+        """True when `before` -> `after` is a listed weakening.
+
+        The registers are loaded without schema validation (either side may
+        predate the stricter schema, or the base may have merged directly to
+        the default branch), so a status/classification value can be any
+        YAML type. Guard the mapping lookup: a non-string ``before`` is never
+        a key, so it can never name a weakening.
+        """
+        return isinstance(before, str) and after in table.get(before, ())
+
+    for kind in REGISTER_KINDS:
+        if kind not in base_registers or base_registers[kind] is None:
+            continue
+        if kind not in head_registers or head_registers[kind] is None:
+            continue
+        base_by_id = by_id(base_registers[kind])
+        head_by_id = by_id(head_registers[kind])
+        for entry_id in sorted(base_by_id):
+            if entry_id not in head_by_id:
+                findings.append(("weakened", f"{kind} entry {entry_id} deleted"))
+                continue
+            base_entry, head_entry = base_by_id[entry_id], head_by_id[entry_id]
+
+            if kind == "invariants":
+                if weakened(
+                    SEVERITY_ORDER, base_entry.get("severity"), head_entry.get("severity")
+                ):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"invariant {entry_id} severity downgraded from "
+                            f"{base_entry.get('severity')} to {head_entry.get('severity')}",
+                        )
+                    )
+                base_intent = base_entry.get("intent") or {}
+                head_intent = head_entry.get("intent") or {}
+                if isinstance(base_intent, dict) and isinstance(head_intent, dict):
+                    before = base_intent.get("classification")
+                    after = head_intent.get("classification")
+                    if reclassified(INTENT_WEAKENINGS, before, after):
+                        findings.append(
+                            (
+                                "weakened",
+                                f"invariant {entry_id} intent reclassified from "
+                                f"{before} to {after}",
+                            )
+                        )
+                if base_entry.get("severity") in ("critical", "high"):
+                    for field in INVARIANT_EVIDENCE_LISTS:
+                        removed = sorted(
+                            {
+                                item
+                                for item in (base_entry.get(field) or [])
+                                if isinstance(item, str)
+                            }
+                            - {
+                                item
+                                for item in (head_entry.get(field) or [])
+                                if isinstance(item, str)
+                            }
+                        )
+                        if removed:
+                            findings.append(
+                                (
+                                    "weakened",
+                                    f"invariant {entry_id} ({base_entry.get('severity')}): "
+                                    f"{field} item(s) removed: {', '.join(removed)}",
+                                )
+                            )
+
+            if kind in ("invariants", "claims"):
+                before, after = base_entry.get("status"), head_entry.get("status")
+                if reclassified(STATUS_WEAKENINGS, before, after):
+                    noun = "invariant" if kind == "invariants" else "claim"
+                    findings.append(
+                        (
+                            "weakened",
+                            f"{noun} {entry_id} status weakened from {before} to {after}",
+                        )
+                    )
+
+            if kind == "claims" and weakened(
+                PROOF_TIER_ORDER, base_entry.get("proof_tier"), head_entry.get("proof_tier")
+            ):
+                findings.append(
+                    (
+                        "weakened",
+                        f"claim {entry_id} proof_tier downgraded from "
+                        f"{base_entry.get('proof_tier')} to {head_entry.get('proof_tier')}",
+                    )
+                )
+
+            if kind == "residuals" and weakened(
+                IMPACT_ORDER, base_entry.get("impact"), head_entry.get("impact")
+            ):
+                findings.append(
+                    (
+                        "weakened",
+                        f"residual {entry_id} impact downgraded from "
+                        f"{base_entry.get('impact')} to {head_entry.get('impact')}",
+                    )
+                )
+    return findings
+
+
+def load_registers_from_root(
+    root: Path, adoption: dict, report: Report, label: str
+) -> dict[str, list | None]:
+    """Load the registers of an adoption declaration from a directory root.
+
+    Used by the policy diff for both sides: the CI caller materializes the
+    base branch's register files under a temporary root, and the head side
+    reads from the adopting repository. Mirrors the head-side loading
+    semantics: absent file = register absent; unreadable = None (reported);
+    lite layout reads the single assurance file's sections.
+
+    The declared ``paths:`` come from a pull-request-controlled adoption
+    file, so they are run through ``check_declared_paths`` first — an
+    absolute or ``..``-traversal value is dropped (and reported) exactly as
+    in adopter mode, so this function never reads a file outside ``root``.
+    """
+    registers: dict[str, list | None] = {}
+    if adoption.get("layout") == "lite":
+        # Fixed constant path, not adopter-controlled — no containment needed.
+        path = root / LITE_ASSURANCE_PATH
+        if not path.is_file():
+            return registers
+        document, error = load_yaml(path)
+        if error is not None:
+            report.error(f"{label}: {error}")
+            return {kind: None for kind in LITE_SECTION_KINDS}
+        if isinstance(document, dict):
+            for kind in LITE_SECTION_KINDS:
+                if kind in document:
+                    registers[kind] = register_entries(
+                        {"version": 1, kind: document[kind]}, kind
+                    )
+        return registers
+    paths = check_declared_paths(root, resolve_paths(adoption), report)
+    for kind in REGISTER_KINDS:
+        relative = paths.get(kind)
+        if relative is None:
+            continue
+        path = root / relative
+        if not path.is_file():
+            continue
+        document, error = load_yaml(path)
+        if error is not None:
+            report.error(f"{label} ({relative}): {error}")
+            registers[kind] = None
+            continue
+        registers[kind] = register_entries(substitute_placeholders(document), kind)
+    return registers
 
 
 def write_drift_step_summary(rows: list[tuple[str, int, str]]) -> None:
@@ -1670,6 +1992,29 @@ def run_drift(args: argparse.Namespace) -> int:
             report.error("base adoption file: top level is not a mapping")
             return report.emit("drift", args.json)
         regressions = adoption_policy_regressions(base_document, document)
+
+        # Register-level weakenings (stable-ID diff) when the caller
+        # materialized the base branch's register files.
+        if args.base_registers_root is not None and args.project_root is not None:
+            base_registers = load_registers_from_root(
+                Path(args.base_registers_root), base_document, report, "base register"
+            )
+            head_registers = load_registers_from_root(
+                Path(args.project_root), document, report, "head register"
+            )
+            regressions.extend(
+                register_policy_regressions(base_registers, head_registers)
+            )
+
+        # Enforcement is proportional to the stage the BASE declaration had
+        # agreed to (the head stage cannot be the yardstick — a downgrade PR
+        # would lower it in the same change). At DRAFT an explicit
+        # acknowledgment turns findings into warnings; from HUMAN_REVIEWED
+        # on, findings stay errors even when acknowledged — the red check is
+        # the honest signal, and merging over it is the human owner's
+        # recorded decision.
+        base_stage = base_document.get("adoption_stage", "DRAFT")
+        binding_stage = base_stage if base_stage in ADOPTION_STAGES else "DRAFT"
         if regressions:
             acknowledged = POLICY_ACK_RE.search(body) is not None
             for kind, finding in regressions:
@@ -1682,10 +2027,18 @@ def run_drift(args: argparse.Namespace) -> int:
                 else:
                     prefix = "assurance policy weakened"
                     rule = "weakening the assurance policy"
-                if acknowledged:
+                if acknowledged and binding_stage == "DRAFT":
                     report.warn(
                         f"{prefix}: {finding} — acknowledged by 'Assurance "
                         "policy change:' in the PR description"
+                    )
+                elif acknowledged:
+                    report.error(
+                        f"{prefix}: {finding} — acknowledged, but the base "
+                        f"declaration is stage {binding_stage}: policy "
+                        "regressions stay errors under a reviewed stage; "
+                        "merging over this red check is the human owner's "
+                        "recorded decision"
                     )
                 else:
                     report.error(
@@ -1867,6 +2220,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="root of the pinned profile checkout; enables the VERSION comparison",
     )
     adopter.add_argument(
+        "--repo-visibility",
+        choices=list(REPO_VISIBILITIES),
+        default=None,
+        help="the repository's visibility; private/internal keeps "
+        "RESTRICTED/EMBARGOED entries a warning at stage CONFORMANT "
+        "(ADOPTION.md permits them in private repositories), public or "
+        "unset makes them errors",
+    )
+    adopter.add_argument(
         "--strict-review-dates",
         action="store_true",
         help="treat passed review_after dates as errors instead of warnings",
@@ -1915,7 +2277,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="the base branch's adoption declaration; enables the policy "
         "regression check (stage downgrade, pin change, component removal "
-        "error unless the PR description acknowledges them)",
+        "error unless the PR description acknowledges them; from stage "
+        "HUMAN_REVIEWED on, errors even when acknowledged)",
+    )
+    drift.add_argument(
+        "--base-registers-root",
+        default=None,
+        help="directory holding the base branch's register files at the "
+        "paths the base declaration names; with --project-root, enables "
+        "the stable-ID register diff (deleted entries, severity/status/"
+        "proof-tier/intent weakenings, evidence removal)",
+    )
+    drift.add_argument(
+        "--project-root",
+        default=None,
+        help="root of the adopting repository (head side of the register diff)",
     )
     drift.add_argument(
         "--strict",

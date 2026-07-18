@@ -4,7 +4,10 @@
   "title": "Agentic Assurance Profile residual register",
   "description": "Schema for a residual register (default location `assurance/RESIDUALS.yaml`). Each entry is a known limitation, unverified assumption, accepted inconsistency, unsupported condition, or remaining doubt (PROFILE.md sections 2 and 12). Critical residuals must have explicit human acceptance; a residual must not be closed solely because no recent incident was observed.",
   "type": "object",
-  "required": ["version", "residuals"],
+  "required": [
+    "version",
+    "residuals"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
@@ -15,20 +18,34 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "summary", "impact", "uncertainty", "status", "disclosure", "owner"],
+        "required": [
+          "id",
+          "summary",
+          "impact",
+          "uncertainty",
+          "status",
+          "disclosure",
+          "owner"
+        ],
         "additionalProperties": true,
         "properties": {
           "id": {
             "type": "string",
             "description": "Stable residual ID, independent of GitHub Issue numbers.",
-            "pattern": "^RES-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            "pattern": "^RES-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "minLength": 1
           },
           "summary": {
             "type": "string",
-            "description": "Safe public summary of the remaining uncertainty."
+            "description": "Safe public summary of the remaining uncertainty.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "private_detail_location": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Non-actionable label for where restricted detail lives, or null when there is none. Never a private URL, token, or sensitive identifier."
           },
           "affected_claims": {
@@ -49,45 +66,82 @@
           },
           "impact": {
             "description": "Impact if the residual materializes.",
-            "enum": ["unknown", "low", "medium", "high", "critical"]
+            "enum": [
+              "unknown",
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
           },
           "uncertainty": {
             "description": "Uncertainty about the residual's assessment.",
-            "enum": ["unknown", "low", "medium", "high", "critical"]
+            "enum": [
+              "unknown",
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
           },
           "mitigation": {
             "type": "array",
             "description": "Mitigations in place or planned.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "status": {
             "description": "Residual status: OPEN (unaccepted and unresolved), ACCEPTED (explicitly accepted by the acceptance authority), RESOLVED (no longer applies, with evidence).",
-            "enum": ["OPEN", "ACCEPTED", "RESOLVED"]
+            "enum": [
+              "OPEN",
+              "ACCEPTED",
+              "RESOLVED"
+            ]
           },
           "disclosure": {
             "description": "Disclosure classification (PROFILE.md section 13).",
-            "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]
+            "enum": [
+              "PUBLIC",
+              "SUMMARY_ONLY",
+              "RESTRICTED",
+              "EMBARGOED"
+            ]
           },
           "owner": {
             "type": "string",
-            "description": "Named human owner of the residual."
+            "description": "Named human owner of the residual.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "accepted_by": {
-            "type": ["string", "null"],
-            "description": "The human acceptance authority, or null when not accepted."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The human acceptance authority, or null when not accepted.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "accepted_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date",
             "description": "Acceptance date (YYYY-MM-DD), or null when not accepted."
           },
           "acceptance_rationale": {
             "type": "string",
-            "description": "The human owner's recorded reason for an ACCEPTED disposition; expected (not required) when status is ACCEPTED."
+            "description": "The human owner's recorded reason for an ACCEPTED disposition; expected (not required) when status is ACCEPTED.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "resolution_note": {
             "type": "string",
-            "description": "How a RESOLVED residual was closed (remediation reference); expected when status is RESOLVED."
+            "description": "How a RESOLVED residual was closed (remediation reference); expected when status is RESOLVED.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "review_after": {
             "type": "string",
@@ -98,17 +152,37 @@
         "allOf": [
           {
             "if": {
-              "required": ["impact", "status"],
+              "required": [
+                "impact",
+                "status"
+              ],
               "properties": {
-                "impact": { "enum": ["critical", "high"] },
-                "status": { "const": "ACCEPTED" }
+                "impact": {
+                  "enum": [
+                    "critical",
+                    "high"
+                  ]
+                },
+                "status": {
+                  "const": "ACCEPTED"
+                }
               }
             },
             "then": {
-              "required": ["accepted_by", "accepted_at"],
+              "required": [
+                "accepted_by",
+                "accepted_at"
+              ],
               "properties": {
-                "accepted_by": { "type": "string" },
-                "accepted_at": { "type": "string", "format": "date" }
+                "accepted_by": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "accepted_at": {
+                  "type": "string",
+                  "format": "date"
+                }
               },
               "$comment": "PROFILE.md section 12: critical residuals must have explicit human acceptance. Accepting a critical or high-impact residual requires a named acceptance authority and an acceptance date."
             }

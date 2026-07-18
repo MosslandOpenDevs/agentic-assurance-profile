@@ -4,7 +4,79 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+### v0.3.0 (in development)
+
+Trust-boundary honesty and register-level policy protection, from an
+external review of v0.2.1. Minor release: the register schemas now reject
+empty/whitespace-only semantic strings and profile-mandated registers must
+be non-empty — theoretically breaking for adopters relying on vacuous
+passes (none known).
+
+#### Adopter impact / upgrade actions
+
+- **Caller must pin a full SHA.** The workflow now rejects callers that
+  reference it by tag or branch (`job.workflow_ref` must end in the
+  workflow's own 40-hex SHA). Existing SHA-pinned callers are unaffected.
+- The reusable workflow targets GitHub.com only (it relies on the
+  `job.workflow_*` contexts, absent on GitHub Enterprise Server).
+- `--repo-visibility` (CI passes it automatically): at `CONFORMANT`,
+  `RESTRICTED`/`EMBARGOED` entries are errors only in public repositories;
+  private repositories keep the standing warning (fixes the v0.2.1
+  conflict with ADOPTION.md's private-repository allowance).
+- Registers mandated by a profile must carry at least one entry
+  (`residuals` for non-archived, `invariants` for `service`, `claims` for
+  `trust-critical`); register schemas reject empty/whitespace-only
+  semantic strings, matching the lite envelope.
+
+#### Security / trust boundary
+
+- **Trusted-checkout-first:** every job first verifies the workflow's own
+  identity (`job.workflow_repository` == canonical, caller pinned by full
+  SHA) and checks out that exact source; the hash-locked dependencies come
+  from it, and the v0.2.1 version-pinned pyyaml bootstrap is gone — no
+  install precedes the trusted checkout. `upstream.commit` must equal the
+  workflow's own SHA, so the trusted checkout IS the pinned profile.
+- **The caller-workflow boundary is now documented honestly** (workflow
+  header + ADOPTION.md §3.4): a pull request can swap the caller's `@`
+  reference or the caller itself — no reusable-workflow content can defend
+  that; CODEOWNERS on `.github/workflows/` (already in the adopter
+  bundle), organization Actions allow-lists, and organization rulesets
+  with required workflows (Team/Enterprise) are the controls, and a green
+  check is an input to human review, not a tamper-proof verdict.
+- `actionlint` (digest-pinned image) added to self-check.
+
+#### Changed
+
+- **Register-level policy regression (stable-ID base/head diff)** in the
+  drift job: deleted entries; invariant severity downgrades,
+  status weakening (`VERIFIED`/`INFERRED` toward `UNKNOWN` —
+  `CONTRADICTED` is an honesty upgrade, never flagged), `INTENDED` intent
+  reclassified, enforcement/verification/evidence removed from
+  high/critical invariants; claim status weakening and proof-tier
+  downgrades; residual impact downgrades. Adoption-level findings gain
+  `project.human_owner`, `paths.*`, and `security.public_assurance_root`
+  changes.
+- **Stage-proportional acknowledgment:** `Assurance policy change:` still
+  downgrades findings to warnings at base-stage `DRAFT`, but from
+  `HUMAN_REVIEWED` on findings stay errors even when acknowledged — the
+  acknowledgment is a self-declaration (an agent can write it), so its
+  force is capped by the stage the base declaration had asserted.
+- The assurance diff is scoped by the `paths:` both declarations actually
+  name — custom artifact locations now count toward per-component
+  satisfaction; a missing base declaration emits a notice instead of
+  silently skipping.
+- `human_review.approvals` remains unverified against the forge API
+  (deferred); GOVERNANCE.md now defines honest review classes
+  (INDEPENDENTLY_REVIEWED / SOLE_OWNER_ATTESTED / AUTOMATION_VERIFIED) and
+  records that releases currently ship as SOLE_OWNER_ATTESTED +
+  AUTOMATION_VERIFIED.
+
+#### Added
+
+- `requirements.in` (lock regeneration input) committed.
+- New tests covering the register diff, stage-proportional acknowledgment,
+  visibility-aware disclosure, empty-register obligations, and the schema
+  hardening.
 
 ## v0.2.1 — 2026-07-18
 
