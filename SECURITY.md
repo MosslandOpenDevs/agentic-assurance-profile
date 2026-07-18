@@ -68,7 +68,8 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.2.1` | Yes — current release (contains a CI security fix; upgrade recommended) |
+| `v0.3.0` | Yes — current release |
+| `v0.2.1` | Yes — previous release; upgrade at convenience (v0.3.0 adds the register policy diff and closes a drift-job file-read; no CI trust-boundary regression) |
 | `v0.2.0`, `v0.1.2`, `v0.1.1`, `v0.1.0` | Superseded by `v0.2.1`: their reusable `adopter-validate.yml` carries the CI trust-boundary issue fixed in v0.2.1 (the validator checkout source was read from the pull-request-mutable adoption file). Documents and schemas remain usable, but re-pin before running the reusable workflow on a repository that accepts external pull requests. |
 | `v0.1.0-rc.1` | Superseded — upgrade to the current release |
 | Draft on default branch | Yes |

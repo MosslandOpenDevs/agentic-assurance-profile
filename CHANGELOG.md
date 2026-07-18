@@ -4,7 +4,9 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-### v0.3.0 (in development)
+Nothing yet.
+
+## v0.3.0 — 2026-07-19
 
 Trust-boundary honesty and register-level policy protection, from an
 external review of v0.2.1. Minor release: the register schemas now reject
