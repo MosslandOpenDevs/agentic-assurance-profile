@@ -4,7 +4,17 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+### Added
+
+- `adopter-validate` workflow: a release-version pin is now verified against the
+  published tag — the job fails when `upstream.commit` is not the commit the tag
+  points to (second-trial lesson: the release PR's branch commit carries the same
+  `VERSION` content and previously validated interchangeably).
+
+### Changed
+
+- Adoption guide §2 and `RELEASING.md` now state that the tag commit is the
+  canonical release pin, with `git rev-list -n1 vX.Y.Z` as the lookup.
 
 ## v0.1.0-rc.1 — 2026-07-18
 
