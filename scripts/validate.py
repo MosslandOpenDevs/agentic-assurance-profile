@@ -64,7 +64,9 @@ PLACEHOLDER_SUBSTITUTIONS = {
 }
 DEFAULT_PLACEHOLDER_SUBSTITUTION = "placeholder"
 DATE_PLACEHOLDER = "YYYY-MM-DD"
-DATE_SUBSTITUTION = "2000-01-01"
+# A far-future date: substituted template dates must not trip the expired
+# review_after semantic check (a template is not an overdue review).
+DATE_SUBSTITUTION = "2999-01-01"
 
 SCHEMA_FILES = (
     "adoption.schema.json",
@@ -93,6 +95,25 @@ DEFAULT_PATHS = {
 }
 
 PROVISIONAL_PROFILES = ("data-curation", "agent-runtime")
+
+# Register order used for deterministic semantic-check output.
+REGISTER_KINDS = ("claims", "invariants", "defeaters", "residuals")
+
+# Cross-reference fields: (source register, field name, target register).
+REFERENCE_FIELDS = (
+    ("claims", "invariants", "invariants"),
+    ("claims", "defeaters", "defeaters"),
+    ("claims", "residuals", "residuals"),
+    ("invariants", "defeaters", "defeaters"),
+    ("invariants", "residuals", "residuals"),
+    ("defeaters", "affected_claims", "claims"),
+    ("defeaters", "affected_invariants", "invariants"),
+    ("residuals", "affected_claims", "claims"),
+    ("residuals", "affected_invariants", "invariants"),
+)
+
+# Defeater statuses whose grounds must be recorded in `resolution`.
+CLOSED_DEFEATER_STATUSES = ("RESOLVED", "MITIGATED", "WITHDRAWN")
 
 
 class Report:
@@ -302,6 +323,205 @@ def read_version_file(path: Path) -> tuple[str | None, str | None]:
         return None, f"cannot read {path}: {exc}"
 
 
+def register_entries(document: object, kind: str) -> list | None:
+    """Extract the entry list of a register document, or None if unusable."""
+    if isinstance(document, dict) and isinstance(document.get(kind), list):
+        return document[kind]
+    return None
+
+
+def nonempty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def coerce_date(value: object) -> datetime.date | None:
+    """Coerce a YAML date value to datetime.date, or None if it is not one.
+
+    The loader normalizes ``datetime.date`` to ISO strings, but raw objects
+    are handled too in case a caller passes an unnormalized document.
+    """
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    if isinstance(value, datetime.date):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.date.fromisoformat(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Semantic checks (shared by self-check and adopter)
+# ---------------------------------------------------------------------------
+
+
+def check_semantics(
+    registers: dict[str, list | None],
+    report: Report,
+    strict_review_dates: bool = False,
+    today: datetime.date | None = None,
+) -> None:
+    """Cross-entry semantic checks over the four registers.
+
+    ``registers`` maps a register kind to its entry list. Three states are
+    encoded: key absent = the register file does not exist; value ``None`` =
+    the file exists but is unusable (a load or structure error was already
+    reported); value list = usable entries (placeholders substituted).
+
+    Checks: unique IDs, cross-reference integrity, VERIFIED critical
+    invariants carry enforcement and verification, INTENDED invariants carry
+    intent.authority, ACCEPTED high/critical residuals carry
+    acceptance_rationale, RESOLVED/closed entries carry their grounds, and
+    passed review_after dates (WARN, or ERROR with ``strict_review_dates``).
+
+    Deliberate design decision: a VERIFIED critical invariant is NOT required
+    to carry intent.authority — conclusion status and intent classification
+    are independent axes (PROFILE.md section 4). Authority is required by the
+    INTENDED classification alone, at any severity.
+    """
+    if today is None:
+        today = datetime.date.today()
+    errors_before = sum(1 for level, _ in report.results if level == "error")
+
+    usable = {
+        kind: entries
+        for kind, entries in registers.items()
+        if entries is not None
+    }
+
+    def entry_label(entry: object) -> str:
+        if isinstance(entry, dict) and nonempty_string(entry.get("id")):
+            return entry["id"]
+        return "<no id>"
+
+    def entries_of(kind: str) -> list[dict]:
+        return [entry for entry in usable.get(kind, []) if isinstance(entry, dict)]
+
+    # 1. Duplicate IDs, within each register and across all registers.
+    # Entry positions in messages are 1-based.
+    first_seen: dict[str, tuple[str, int]] = {}
+    for kind in REGISTER_KINDS:
+        for index, entry in enumerate(usable.get(kind) or [], start=1):
+            if not isinstance(entry, dict):
+                continue
+            entry_id = entry.get("id")
+            if not nonempty_string(entry_id):
+                continue
+            if entry_id in first_seen:
+                seen_kind, seen_index = first_seen[entry_id]
+                if seen_kind == kind:
+                    where = f"{kind} entry {seen_index} and {index}"
+                else:
+                    where = f"{seen_kind} entry {seen_index} and {kind} entry {index}"
+                report.error(f"duplicate id {entry_id} ({where})")
+            else:
+                first_seen[entry_id] = (kind, index)
+
+    # 2. Cross-reference integrity. A dangling reference into an existing
+    # register is an error; a reference into a register whose file does not
+    # exist at all (legitimate under e.g. the core profile) is a warning.
+    ids_by_kind = {
+        kind: {
+            entry["id"]
+            for entry in entries_of(kind)
+            if nonempty_string(entry.get("id"))
+        }
+        for kind in usable
+    }
+    for source_kind, field, target_kind in REFERENCE_FIELDS:
+        for entry in entries_of(source_kind):
+            references = entry.get(field)
+            if not isinstance(references, list):
+                continue
+            for reference in references:
+                if not isinstance(reference, str):
+                    continue
+                if target_kind not in registers:
+                    report.warn(
+                        f"{source_kind} entry {entry_label(entry)}: reference to "
+                        f"{reference} but no {target_kind} register exists"
+                    )
+                elif registers[target_kind] is None:
+                    continue  # target file exists but is unusable; already reported
+                elif reference not in ids_by_kind.get(target_kind, set()):
+                    report.error(
+                        f"{source_kind} entry {entry_label(entry)}: reference to "
+                        f"{reference}, which does not exist in the "
+                        f"{target_kind} register"
+                    )
+
+    # 3 and 4. Invariant checks.
+    for entry in entries_of("invariants"):
+        label = entry_label(entry)
+        # 3. A VERIFIED critical invariant must name the mechanisms behind the
+        # verdict. intent.authority is deliberately not required here (see the
+        # docstring): status and intent are independent axes per PROFILE.md
+        # section 4; authority is check 4's concern, keyed on INTENDED alone.
+        if entry.get("status") == "VERIFIED" and entry.get("severity") == "critical":
+            for list_name in ("enforcement", "verification"):
+                value = entry.get(list_name)
+                if not (isinstance(value, list) and value):
+                    report.error(
+                        f"invariant {label} is VERIFIED with severity critical "
+                        f"but its {list_name} list is empty"
+                    )
+        # 4. INTENDED requires a recorded human authority, at any severity.
+        intent = entry.get("intent")
+        if isinstance(intent, dict) and intent.get("classification") == "INTENDED":
+            if not nonempty_string(intent.get("authority")):
+                report.error(
+                    f"invariant {label} has intent.classification INTENDED "
+                    "but intent.authority is empty or null"
+                )
+
+    # 5 and 6a. Residual dispositions must be grounded.
+    for entry in entries_of("residuals"):
+        label = entry_label(entry)
+        status = entry.get("status")
+        impact = entry.get("impact")
+        if status == "ACCEPTED" and impact in ("high", "critical"):
+            if not nonempty_string(entry.get("acceptance_rationale")):
+                report.error(
+                    f"residual {label} is ACCEPTED with impact {impact} "
+                    "but acceptance_rationale is empty or missing"
+                )
+        if status == "RESOLVED" and not nonempty_string(entry.get("resolution_note")):
+            report.error(
+                f"residual {label} is RESOLVED but resolution_note is empty or missing"
+            )
+
+    # 6b. Closed defeaters must record how they were closed.
+    for entry in entries_of("defeaters"):
+        status = entry.get("status")
+        if status in CLOSED_DEFEATER_STATUSES and not nonempty_string(
+            entry.get("resolution")
+        ):
+            report.error(
+                f"defeater {entry_label(entry)} is {status} "
+                "but resolution is empty or missing"
+            )
+
+    # 7. Passed review_after dates (defeaters and residuals).
+    for kind in ("defeaters", "residuals"):
+        for entry in entries_of(kind):
+            review_after = coerce_date(entry.get("review_after"))
+            if review_after is not None and review_after < today:
+                message = (
+                    f"review_after {review_after.isoformat()} has passed — "
+                    f"re-review {entry_label(entry)}"
+                )
+                if strict_review_dates:
+                    report.error(message)
+                else:
+                    report.warn(message)
+
+    errors_after = sum(1 for level, _ in report.results if level == "error")
+    if errors_after == errors_before:
+        report.ok("semantic checks — ids unique, references resolve, statuses grounded")
+
+
 # ---------------------------------------------------------------------------
 # self-check subcommand (central repository)
 # ---------------------------------------------------------------------------
@@ -346,16 +566,23 @@ def check_schemas_parse(repo_root: Path, report: Report) -> dict[str, dict]:
 
 def check_template(
     repo_root: Path, template: str, schema_name: str, schemas: dict[str, dict], report: Report
-) -> None:
+) -> object:
+    """Validate one template; return the placeholder-substituted document.
+
+    Returns None when the template cannot be loaded or the schema is
+    unusable, so the caller can feed register templates to the semantic
+    checks only when a document is actually available.
+    """
     schema = schemas.get(schema_name)
     if schema is None:
         report.error(f"templates/{template}: cannot validate, schemas/{schema_name} unusable")
-        return
+        return None
     document, error = load_yaml(repo_root / "templates" / template)
     if error is not None:
         report.error(f"templates/{template}: {error}")
-        return
-    errors = schema_errors(substitute_placeholders(document), schema, f"templates/{template}")
+        return None
+    substituted = substitute_placeholders(document)
+    errors = schema_errors(substituted, schema, f"templates/{template}")
     if errors:
         for message in errors:
             report.error(message)
@@ -364,6 +591,7 @@ def check_template(
             f"templates/{template} validates against schemas/{schema_name} "
             "(placeholders substituted)"
         )
+    return substituted
 
 
 def check_forbidden_string(repo_root: Path, report: Report) -> None:
@@ -404,10 +632,21 @@ def run_self_check(args: argparse.Namespace) -> int:
     check_version_file(repo_root, report)
     schemas = check_schemas_parse(repo_root, report)
     check_template(repo_root, "adoption.yaml", "adoption.schema.json", schemas, report)
-    check_template(repo_root, "CLAIMS.yaml", "claims.schema.json", schemas, report)
-    check_template(repo_root, "INVARIANTS.yaml", "invariants.schema.json", schemas, report)
-    check_template(repo_root, "DEFEATERS.yaml", "defeaters.schema.json", schemas, report)
-    check_template(repo_root, "RESIDUALS.yaml", "residuals.schema.json", schemas, report)
+    registers = {
+        kind: register_entries(
+            check_template(repo_root, template, schema_name, schemas, report), kind
+        )
+        for kind, template, schema_name in (
+            ("claims", "CLAIMS.yaml", "claims.schema.json"),
+            ("invariants", "INVARIANTS.yaml", "invariants.schema.json"),
+            ("defeaters", "DEFEATERS.yaml", "defeaters.schema.json"),
+            ("residuals", "RESIDUALS.yaml", "residuals.schema.json"),
+        )
+    }
+    # The register templates ship together, so all four kinds are treated as
+    # existing; template drift is caught by the same semantic checks that
+    # adopter registers face.
+    check_semantics(registers, report)
     check_forbidden_string(repo_root, report)
 
     return report.emit("self-check", args.json)
@@ -484,7 +723,16 @@ def check_pinned_version(adoption: dict, profile_checkout: Path, report: Report)
 
 def check_artifacts(
     project_root: Path, paths: dict[str, str], schemas: dict[str, dict], report: Report
-) -> None:
+) -> dict[str, list | None]:
+    """Schema-validate present registers; return them for the semantic checks.
+
+    The returned mapping holds an entry per register whose file exists:
+    the entry list (placeholders substituted) when the document is usable,
+    else None. Registers whose file is absent are omitted entirely, so the
+    semantic checks can distinguish a dangling reference from a reference
+    into a register the adopter legitimately does not keep.
+    """
+    registers: dict[str, list | None] = {}
     for kind, (schema_name, _default) in ARTIFACT_KINDS.items():
         relative = paths.get(kind)
         if relative is None:
@@ -495,15 +743,18 @@ def check_artifacts(
         document, error = load_yaml(path)
         if error is not None:
             report.error(f"{relative}: {error}")
-            continue
-        schema = schemas.get(schema_name)
-        if schema is None:
-            report.error(f"{relative}: cannot validate, {schema_name} unusable")
+            registers[kind] = None
             continue
         # Template placeholder values are tolerated in artifact registers so
         # that freshly copied templates validate; substitution mirrors
         # self-check. The adoption declaration itself remains strict.
-        errors = schema_errors(substitute_placeholders(document), schema, relative)
+        substituted = substitute_placeholders(document)
+        registers[kind] = register_entries(substituted, kind)
+        schema = schemas.get(schema_name)
+        if schema is None:
+            report.error(f"{relative}: cannot validate, {schema_name} unusable")
+            continue
+        errors = schema_errors(substituted, schema, relative)
         if errors:
             for message in errors:
                 report.error(message)
@@ -515,6 +766,7 @@ def check_artifacts(
                 "public repositories must not contain restricted material — "
                 "verify this file is not public"
             )
+    return registers
 
 
 def check_required_files(
@@ -588,7 +840,8 @@ def run_adopter(args: argparse.Namespace) -> int:
     ]
 
     paths = check_declared_paths(project_root, resolve_paths(adoption), report)
-    check_artifacts(project_root, paths, schemas, report)
+    registers = check_artifacts(project_root, paths, schemas, report)
+    check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
     check_required_files(project_root, paths, profiles, report)
     check_adopter_warnings(project_root, profiles, report)
 
@@ -642,6 +895,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile-checkout",
         default=None,
         help="root of the pinned profile checkout; enables the VERSION comparison",
+    )
+    adopter.add_argument(
+        "--strict-review-dates",
+        action="store_true",
+        help="treat passed review_after dates as errors instead of warnings",
     )
     adopter.add_argument(
         "--json", action="store_true", help="emit a machine-readable JSON summary"

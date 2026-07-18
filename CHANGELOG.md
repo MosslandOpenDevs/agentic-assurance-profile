@@ -6,6 +6,44 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 Nothing yet.
 
+## v0.1.2 — 2026-07-18
+
+Semantic validation: an evidence-free `VERIFIED` no longer passes.
+Closes the external-review finding that the schemas alone accept
+formally-green, semantically-empty registers.
+
+### Adopter impact / upgrade actions
+
+- Optional upgrade; existing pins remain valid. Re-pinning adopters get
+  seven new semantic checks — six ERROR-level (duplicate IDs; dangling
+  cross-references; `VERIFIED` critical invariants without enforcement
+  and verification; `INTENDED` without `intent.authority`; high-impact
+  `ACCEPTED` residuals without `acceptance_rationale`; `RESOLVED`
+  entries without recorded grounds) and one WARN-level (passed
+  `review_after` dates; `--strict-review-dates` escalates). Both current
+  pilot registers pass all seven unchanged.
+- Conclusion status and intent classification remain independent axes:
+  a `VERIFIED` invariant with intent `UNKNOWN` is legitimate; the new
+  checks require mechanism evidence for `VERIFIED` and human authority
+  for `INTENDED`, never one for the other.
+
+### Added
+
+- Semantic checks in `scripts/validate.py` (both subcommands; templates
+  are checked in self-check too): duplicate-ID detection, cross-reference
+  integrity across all nine reference fields (WARN when the referenced
+  register file does not exist at all), grounded-status requirements for
+  `VERIFIED`-critical, `INTENDED`, `ACCEPTED`, and `RESOLVED` entries,
+  and passed-`review_after` warnings with `--strict-review-dates`.
+
+### Changed
+
+- Informative minimum layouts aligned with normative `PROFILE.md` §6.1
+  (owner decision, 2026-07-18): `assurance/INVARIANTS.yaml` is
+  recommended at `core` — it anchors the regression protection, and both
+  pilots keep one — and required from the `service` profile
+  (template §4, adoption guide §3.1, both READMEs).
+
 ## v0.1.1 — 2026-07-18
 
 Post-release hardening from external review: close the gap between

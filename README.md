@@ -242,7 +242,6 @@ AGENTIC_ASSURANCE.md
 └── adoption.yaml
 assurance/
 ├── SYSTEM.md
-├── INVARIANTS.yaml
 └── RESIDUALS.yaml
 ```
 
@@ -250,6 +249,7 @@ Additional artifacts are introduced only when applicable:
 
 ```text
 assurance/
+├── INVARIANTS.yaml   # recommended at core; required from `service`
 ├── CLAIMS.yaml
 ├── DEFEATERS.yaml
 ├── THREAT_MODEL.md
