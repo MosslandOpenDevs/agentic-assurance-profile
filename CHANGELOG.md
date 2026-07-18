@@ -42,6 +42,37 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - Adopter-mode cross-check: every `components[].invariants` ID must
   exist in the loaded invariant register (split and lite layouts alike);
   a dangling component reference is an ERROR.
+- Adoption stages: optional `adoption_stage` field in the adoption
+  declaration (`schemas/adoption.schema.json`; `DRAFT`,
+  `HUMAN_REVIEWED`, or `CONFORMANT`, absent means `DRAFT`). Stages are
+  self-declared and self-binding: the validator enforces the declared
+  stage's requirements as ERRORs, so declaring a stage the repository
+  does not meet fails the build, while an absent or `DRAFT` declaration
+  keeps validator output byte-identical to before. `HUMAN_REVIEWED`
+  requires no unfilled `REPLACE_WITH_` placeholder in the adoption file
+  or any loaded register (split or lite) and a `human_review` block
+  with non-empty `date`, `reviewer`, and `record`; `CONFORMANT`
+  additionally treats passed `review_after` dates as errors (as with
+  `--strict-review-dates`), requires a decided (non-`UNKNOWN`)
+  `intent.classification` on every severity-critical invariant, and
+  requires at least one attributable approval. Documented in adoption
+  guide §3.8, the review guide, the glossary, and the commented
+  `adoption_stage` block in both adopter templates. New `--ignore-stage`
+  flag on the `validate.py adopter` subcommand skips stage enforcement
+  (structure-only validation).
+- Attributable approvals: optional `human_review.approvals` array in the
+  adoption declaration (`schemas/adoption.schema.json`) — entries carry
+  `approver`, `review_url`, and `at`, plus optional `covers` and `rule`;
+  at least one entry with all three non-empty is required at
+  `CONFORMANT`. Deliberately deferred: the workflow does not yet verify
+  the `review_url` via the GitHub API (approved state, author ≠
+  approver); the entry is a human-reviewable claim, and the deferral is
+  documented in adoption guide §3.8.
+- `conformance` job in the reusable `adopter-validate` workflow: runs
+  the full stage-enforcing validator (no `--ignore-stage`), and is
+  skipped while the declared `adoption_stage` is `DRAFT` or absent (the
+  pin-reading step now also outputs the declared stage, defaulting to
+  `DRAFT`). The drift job is untouched.
 
 ### Changed
 
@@ -54,6 +85,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   repository takes external contributions, and `CODEOWNERS` wherever a
   second maintainer exists. Both READMEs and the review guide present
   the lite layout as the `core` minimum.
+- CI check-name split in the reusable `adopter-validate` workflow: the
+  `validate` job is renamed to `structure` (the check appears as
+  "assurance / structure") and now runs the validator with
+  `--ignore-stage` — a `DRAFT`-equivalent, structure-only pass/fail —
+  while the new `conformance` job carries stage enforcement. Adopter
+  impact: re-pinning adopters who made the old check a required status
+  check must update their branch-protection settings from `validate` to
+  `structure`; the split exists so a green structure check cannot be
+  misread as conformance (adoption guide §3.8).
 
 ## v0.1.2 — 2026-07-18
 

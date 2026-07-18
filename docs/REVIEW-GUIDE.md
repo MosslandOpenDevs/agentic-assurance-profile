@@ -92,6 +92,7 @@ If a question is unclear, make the agent rephrase until it is a question about y
 - **Your answers become a durable review record** — not just chat history. The decisions land in the artifacts and in a review record (for example under `assurance/reviews/`), and merging the pull request becomes the durable evidence that the review happened ([ADOPTION.md §4.3](ADOPTION.md)).
 - **Remediations arrive as separate, scoped pull requests** — one concern each, reviewable on its own, referencing the gap it closes ([ADOPTION.md §4.4](ADOPTION.md)). The adoption proposal itself stays a proposal; fixes don't sneak into it.
 - **Accepted residuals come back to you.** Each carries a `review_after` date; when it passes, the question returns — "still true? still acceptable?" — because accepting a risk once is not accepting it forever ([PROFILE.md §12](../PROFILE.md)).
+- **Advancing the adoption stage is your act** ([ADOPTION.md §3.8](ADOPTION.md)). The adoption stays `DRAFT` until you complete this review. It becomes `HUMAN_REVIEWED` when your review is recorded — no placeholders left, your name and the review record in the file. It becomes `CONFORMANT` only when you also stand behind the review dates, have decided the intent of every critical invariant, and an approval that names who approved, where, and when is on record. Declaring a stage is a promise the validator enforces: declare one you don't meet and the build goes red.
 
 ## A worked example
 

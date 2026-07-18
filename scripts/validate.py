@@ -21,6 +21,11 @@ Usage examples:
           --schemas .assurance-profile-pin/schemas \\
           --profile-checkout .assurance-profile-pin
 
+  The optional ``adoption_stage`` declared in the adoption file (absent
+  means DRAFT) is self-binding: the declared stage's requirements are
+  enforced as errors. ``--ignore-stage`` skips only that enforcement
+  (structure-only validation).
+
   On a pull request, routing the change set against the optional
   ``components:`` map of the adoption file (impact routing):
 
@@ -116,6 +121,16 @@ DEFAULT_PATHS = {
 }
 
 PROVISIONAL_PROFILES = ("data-curation", "agent-runtime")
+
+# Adoption stages (adoption.yaml `adoption_stage`), lowest to highest. Stages
+# are self-declared and self-binding: the validator enforces the declared
+# stage's requirements as errors, so declaring a stage the artifacts do not
+# meet fails validation. Absent means DRAFT, which adds no requirements.
+ADOPTION_STAGES = ("DRAFT", "HUMAN_REVIEWED", "CONFORMANT")
+# human_review fields that must be non-empty from stage HUMAN_REVIEWED on.
+HUMAN_REVIEW_REQUIRED_FIELDS = ("date", "reviewer", "record")
+# Fields that make a human_review.approvals entry attributable (CONFORMANT).
+ATTRIBUTABLE_APPROVAL_FIELDS = ("approver", "review_url", "at")
 
 # Register order used for deterministic semantic-check output.
 REGISTER_KINDS = ("claims", "invariants", "defeaters", "residuals")
@@ -1118,6 +1133,173 @@ def check_component_map(
         )
 
 
+def check_adoption_stage(
+    adoption: dict,
+    adoption_path: Path,
+    project_root: Path,
+    paths: dict[str, str],
+    registers: dict[str, list | None],
+    report: Report,
+) -> None:
+    """Enforce the requirements of the self-declared ``adoption_stage``.
+
+    Runs after every structural check. Stage DRAFT (or an absent
+    ``adoption_stage``) adds no requirements and emits nothing, keeping the
+    output identical to a validator without stages. Each higher stage
+    includes every lower stage's requirements; an error line is prefixed
+    with the stage that *introduces* the failed requirement, so a
+    CONFORMANT declaration failing a HUMAN_REVIEWED requirement names the
+    rung of the ladder it actually falls off.
+
+    HUMAN_REVIEWED: no unfilled ``REPLACE_WITH_`` placeholder anywhere in
+    the adoption file or any loaded register (the raw, unsubstituted
+    documents are re-scanned — the split registers that exist, or the lite
+    assurance file), and a ``human_review`` block with non-empty ``date``,
+    ``reviewer``, and ``record``.
+
+    CONFORMANT: additionally, every severity-critical invariant has a
+    decided (non-UNKNOWN) ``intent.classification``, and
+    ``human_review.approvals`` carries at least one attributable entry —
+    ``approver``, ``review_url``, and ``at`` all non-empty. Passed
+    ``review_after`` dates are also errors at this stage; that requirement
+    is enforced inside ``check_semantics`` (as if ``--strict-review-dates``
+    had been passed), so those lines carry no stage prefix — here they only
+    count against the success verdict. Whether
+    ``review_url`` really is an approved review by a non-author is not
+    verified here — that remains a manual step (future tooling may verify
+    it against the forge API).
+
+    On success (no stage requirement violated) exactly one OK line is
+    emitted: ``stage <declared>: requirements satisfied``.
+    """
+    stage = adoption.get("adoption_stage", "DRAFT")
+    if stage == "DRAFT":
+        return  # no requirements beyond the structural checks; stay silent
+    if stage not in ADOPTION_STAGES:
+        # The adoption schema already rejects unknown values; this guard
+        # keeps stage enforcement honest when the schema itself is unusable.
+        listed = ", ".join(ADOPTION_STAGES)
+        report.error(
+            f"adoption_stage {stage!r} is not one of {listed} — "
+            "stage requirements cannot be enforced"
+        )
+        return
+    errors_before = sum(1 for level, _ in report.results if level == "error")
+    expired_review_dates = False
+
+    # HUMAN_REVIEWED (also CONFORMANT): no unfilled placeholders anywhere in
+    # the adoption file or any loaded register. The raw documents are
+    # re-loaded so that the substitution tolerated by the structural checks
+    # cannot mask a leftover token.
+    scan_targets: list[tuple[str, Path]] = [(str(adoption_path), adoption_path)]
+    if adoption.get("layout") == "lite":
+        lite_path = project_root / LITE_ASSURANCE_PATH
+        if lite_path.is_file():
+            scan_targets.append((LITE_ASSURANCE_PATH, lite_path))
+    else:
+        for kind in REGISTER_KINDS:
+            relative = paths.get(kind)
+            if relative is None:
+                continue  # rejected by check_declared_paths; already reported
+            path = project_root / relative
+            if path.is_file():
+                scan_targets.append((relative, path))
+    for label, path in scan_targets:
+        document, error = load_yaml(path)
+        if error is not None:
+            # The structural checks already reported the load failure; this
+            # line keeps the stage verdict honest instead of claiming OK.
+            report.error(
+                f"stage HUMAN_REVIEWED: cannot scan {label} for placeholders — {error}"
+            )
+            continue
+        for json_path, value in find_placeholder_strings(document):
+            report.error(
+                f"stage HUMAN_REVIEWED: unfilled placeholder {value!r} "
+                f"in {label} at {json_path}"
+            )
+
+    # HUMAN_REVIEWED (also CONFORMANT): a completed human review on record.
+    human_review = adoption.get("human_review")
+    if not isinstance(human_review, dict):
+        needed = ", ".join(HUMAN_REVIEW_REQUIRED_FIELDS)
+        report.error(
+            f"stage HUMAN_REVIEWED: human_review block is missing — record "
+            f"the completed review ({needed})"
+        )
+    else:
+        for field in HUMAN_REVIEW_REQUIRED_FIELDS:
+            if not nonempty_string(human_review.get(field)):
+                report.error(
+                    f"stage HUMAN_REVIEWED: human_review.{field} is empty or missing"
+                )
+
+    if stage == "CONFORMANT":
+        # Passed review_after dates. The error lines themselves were already
+        # emitted by check_semantics — stage CONFORMANT elevates them to
+        # errors, as if --strict-review-dates had been passed — so they are
+        # only counted against the stage verdict here, not re-reported.
+        today = datetime.date.today()
+        for kind in ("defeaters", "residuals"):
+            for entry in registers.get(kind) or []:
+                if not isinstance(entry, dict):
+                    continue
+                review_after = coerce_date(entry.get("review_after"))
+                if review_after is not None and review_after < today:
+                    expired_review_dates = True
+
+        # Every severity-critical invariant must have a decided intent.
+        # Any classification other than UNKNOWN (including ACCIDENTAL and
+        # DEPRECATED) counts as decided; conclusion status stays a separate
+        # axis (PROFILE.md section 4).
+        for entry in registers.get("invariants") or []:
+            if not isinstance(entry, dict) or entry.get("severity") != "critical":
+                continue
+            label = entry["id"] if nonempty_string(entry.get("id")) else "<no id>"
+            intent = entry.get("intent")
+            classification = (
+                intent.get("classification") if isinstance(intent, dict) else None
+            )
+            if classification == "UNKNOWN":
+                report.error(
+                    f"stage CONFORMANT: critical invariant {label} intent is "
+                    "UNKNOWN — decide it before declaring conformance"
+                )
+            elif not nonempty_string(classification):
+                report.error(
+                    f"stage CONFORMANT: critical invariant {label} "
+                    "intent.classification is missing — decide it before "
+                    "declaring conformance"
+                )
+
+        # At least one attributable approval: who approved, where the
+        # durable record lives, and when. Shape errors in individual
+        # entries are the adoption schema's concern; this check asks only
+        # whether any fully attributable entry exists.
+        approvals = (
+            human_review.get("approvals") if isinstance(human_review, dict) else None
+        )
+        attributable = [
+            entry
+            for entry in (approvals if isinstance(approvals, list) else [])
+            if isinstance(entry, dict)
+            and all(
+                nonempty_string(entry.get(field))
+                for field in ATTRIBUTABLE_APPROVAL_FIELDS
+            )
+        ]
+        if not attributable:
+            fields = ", ".join(ATTRIBUTABLE_APPROVAL_FIELDS)
+            report.error(
+                f"stage CONFORMANT: human_review.approvals needs at least "
+                f"one attributable entry ({fields})"
+            )
+
+    errors_after = sum(1 for level, _ in report.results if level == "error")
+    if errors_after == errors_before and not expired_review_dates:
+        report.ok(f"stage {stage}: requirements satisfied")
+
+
 def run_adopter(args: argparse.Namespace) -> int:
     report = Report()
     adoption_path = Path(args.adoption)
@@ -1139,6 +1321,15 @@ def run_adopter(args: argparse.Namespace) -> int:
         if isinstance(profile, str)
     ]
 
+    # Stage enforcement (unless --ignore-stage). Stage CONFORMANT turns
+    # passed review_after dates into errors, as if --strict-review-dates had
+    # been passed; the remaining stage requirements run as a dedicated block
+    # after the structural checks.
+    enforce_stage = not args.ignore_stage
+    strict_review_dates = args.strict_review_dates or (
+        enforce_stage and adoption.get("adoption_stage") == "CONFORMANT"
+    )
+
     paths = check_declared_paths(project_root, resolve_paths(adoption), report)
     if adoption.get("layout") == "lite":
         # Lite layout: one consolidated assurance file replaces the split
@@ -1146,14 +1337,18 @@ def run_adopter(args: argparse.Namespace) -> int:
         # semantic checks; only the file layout differs.
         check_lite_profiles(profiles, report)
         lite_document, registers = check_lite_file(project_root, schemas, report)
-        check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
+        check_semantics(registers, report, strict_review_dates=strict_review_dates)
         check_lite_required_files(project_root, paths, lite_document, report)
     else:
         registers = check_artifacts(project_root, paths, schemas, report)
-        check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
+        check_semantics(registers, report, strict_review_dates=strict_review_dates)
         check_required_files(project_root, paths, profiles, report)
     check_component_map(adoption, registers, report)
     check_adopter_warnings(project_root, profiles, report)
+    if enforce_stage:
+        check_adoption_stage(
+            adoption, adoption_path, project_root, paths, registers, report
+        )
 
     return report.emit("adopter", args.json)
 
@@ -1357,6 +1552,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict-review-dates",
         action="store_true",
         help="treat passed review_after dates as errors instead of warnings",
+    )
+    adopter.add_argument(
+        "--ignore-stage",
+        action="store_true",
+        help="skip enforcement of the declared adoption_stage "
+        "(structure-only validation; everything else is unchanged)",
     )
     adopter.add_argument(
         "--json", action="store_true", help="emit a machine-readable JSON summary"

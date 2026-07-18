@@ -17,6 +17,15 @@
 #       with:
 #         adoption-file: path/to/adoption.yaml
 #
+# Two validation jobs run on every event. `structure` (check name
+# "assurance / structure" with the caller above) is the structural
+# validation: everything except adoption-stage enforcement, i.e. a
+# DRAFT-equivalent pass/fail. `conformance` enforces the requirements of the
+# `adoption_stage` declared in the adoption file; it is skipped entirely
+# when the declared stage is DRAFT or absent. Adopters re-pinning across
+# the rename: the required check formerly named "assurance / validate" is
+# now "assurance / structure" — update branch protection accordingly.
+#
 # On pull_request events an additional `drift` job routes the change set
 # against the optional `components:` map in the adoption file (impact
 # routing): it warns when a mapped component changes without an assurance
@@ -44,7 +53,163 @@ on:
         default: false
 
 jobs:
-  validate:
+  # Structural validation (formerly job id `validate`; the required check is
+  # now "assurance / structure"): the full adopter validation minus
+  # adoption-stage enforcement (--ignore-stage), so this check's pass/fail
+  # is stage-independent (a DRAFT-equivalent verdict).
+  structure:
+    runs-on: ubuntu-latest
+    outputs:
+      adoption_stage: ${{ steps.pin.outputs.adoption_stage }}
+    steps:
+      - name: Check out adopting repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator dependencies
+        run: pip install pyyaml jsonschema
+
+      - name: Read upstream pin from adoption file
+        id: pin
+        env:
+          ADOPTION_FILE: ${{ inputs.adoption-file }}
+        run: |
+          python - "$ADOPTION_FILE" <<'EOF'
+          import os
+          import sys
+
+          import yaml
+
+          path = sys.argv[1]
+          with open(path, encoding="utf-8") as f:
+              adoption = yaml.safe_load(f)
+
+          if not isinstance(adoption, dict):
+              raise SystemExit(f"{path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
+          upstream = adoption.get("upstream")
+          if not isinstance(upstream, dict):
+              raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
+          missing = [key for key in ("repository", "commit", "version") if key not in upstream]
+          if missing:
+              raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
+
+          stage = adoption.get("adoption_stage", "DRAFT")
+          if not isinstance(stage, str) or not stage.strip() or "\n" in stage or "\r" in stage:
+              raise SystemExit(f"{path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"repository={upstream['repository']}\n")
+              out.write(f"commit={upstream['commit']}\n")
+              out.write(f"version={upstream['version']}\n")
+              out.write(f"adoption_stage={stage}\n")
+          EOF
+
+      - name: Check out pinned profile
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pin.outputs.repository }}
+          ref: ${{ steps.pin.outputs.commit }}
+          path: .assurance-profile-pin
+
+      # A release identifier can appear in more than one commit's VERSION file
+      # (the release PR's branch commit and the merge commit the tag points to).
+      # Only the tag commit is the canonical pin; enforce that mechanically.
+      - name: Verify release pin matches its tag
+        if: ${{ steps.pin.outputs.version != 'unreleased' }}
+        env:
+          PINNED_VERSION: ${{ steps.pin.outputs.version }}
+          PINNED_COMMIT: ${{ steps.pin.outputs.commit }}
+        run: |
+          set -e
+          if ! git -C .assurance-profile-pin fetch --quiet --depth 1 origin "refs/tags/${PINNED_VERSION}:refs/tags/${PINNED_VERSION}"; then
+            echo "::error::Release tag $PINNED_VERSION does not exist upstream — a release version pin must reference a published tag."
+            exit 1
+          fi
+          TAG_SHA=$(git -C .assurance-profile-pin rev-list -n1 "refs/tags/${PINNED_VERSION}")
+          if [ "$TAG_SHA" != "$PINNED_COMMIT" ]; then
+            echo "::error::upstream.commit ($PINNED_COMMIT) is not the commit tag $PINNED_VERSION points to ($TAG_SHA). Pin the tag commit: git rev-list -n1 $PINNED_VERSION."
+            exit 1
+          fi
+          echo "pin matches tag $PINNED_VERSION ($TAG_SHA)"
+
+      - name: Validate against the pinned profile
+        env:
+          ADOPTION_FILE: ${{ inputs.adoption-file }}
+        run: >
+          python .assurance-profile-pin/scripts/validate.py adopter
+          --adoption "$ADOPTION_FILE"
+          --project-root .
+          --schemas .assurance-profile-pin/schemas
+          --profile-checkout .assurance-profile-pin
+          --ignore-stage
+
+      - name: Check pin staleness (non-blocking)
+        continue-on-error: true
+        env:
+          UPSTREAM_REPOSITORY: ${{ steps.pin.outputs.repository }}
+          PINNED_VERSION: ${{ steps.pin.outputs.version }}
+        run: |
+          python - <<'EOF'
+          import json
+          import os
+          import re
+          import urllib.request
+
+          def order_key(tag):
+              """Total order over pin strings: 'unreleased' sorts before every
+              release, and a -rc.N pre-release sorts before its base release."""
+              if tag == "unreleased":
+                  return (0, 0, 0, 0, 0, 0)
+              match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?", tag)
+              if match is None:
+                  raise ValueError(f"unrecognized version string {tag!r}")
+              major, minor, patch, rc = match.groups()
+              if rc is None:
+                  return (1, int(major), int(minor), int(patch), 1, 0)
+              return (1, int(major), int(minor), int(patch), 0, int(rc))
+
+          repository = os.environ["UPSTREAM_REPOSITORY"]
+          pinned = os.environ["PINNED_VERSION"]
+          url = f"https://api.github.com/repos/{repository}/releases/latest"
+          try:
+              with urllib.request.urlopen(url, timeout=10) as response:
+                  latest = json.load(response).get("tag_name", "")
+          except Exception as exc:
+              print(f"Staleness check skipped: could not query {url} ({exc}).")
+              raise SystemExit(0)
+          if not latest:
+              raise SystemExit(0)
+          try:
+              trailing = order_key(pinned) < order_key(latest)
+          except ValueError as exc:
+              print(f"Staleness check skipped: {exc}.")
+              raise SystemExit(0)
+          if trailing:
+              print(
+                  f"::notice::Pinned profile version {pinned} trails the latest "
+                  f"release {latest}. Upgrade through explicit project change "
+                  "review (PROFILE.md section 16)."
+              )
+          EOF
+
+  # Stage conformance: the full stage-enforcing validation (no
+  # --ignore-stage). The job-level `if` gates on the adoption_stage output
+  # of the structure job's pin step (default DRAFT when absent), so DRAFT
+  # adopters skip this job entirely and the "assurance / conformance" check
+  # reports skipped rather than passed. A job-level `if` over `needs` was
+  # chosen over step-level guards for exactly that visible skip, and it is
+  # race-free: both jobs check out the same commit, so the gating value
+  # cannot diverge from the adoption file this job re-reads. The implicit
+  # success() in the `if` also skips conformance when structure failed.
+  # The job is otherwise self-contained (like drift): it re-reads the pin
+  # and checks out the pinned profile itself, since jobs share no files.
+  conformance:
+    needs: structure
+    if: needs.structure.outputs.adoption_stage != 'DRAFT'
     runs-on: ubuntu-latest
     steps:
       - name: Check out adopting repository
@@ -95,28 +260,7 @@ jobs:
           ref: ${{ steps.pin.outputs.commit }}
           path: .assurance-profile-pin
 
-      # A release identifier can appear in more than one commit's VERSION file
-      # (the release PR's branch commit and the merge commit the tag points to).
-      # Only the tag commit is the canonical pin; enforce that mechanically.
-      - name: Verify release pin matches its tag
-        if: ${{ steps.pin.outputs.version != 'unreleased' }}
-        env:
-          PINNED_VERSION: ${{ steps.pin.outputs.version }}
-          PINNED_COMMIT: ${{ steps.pin.outputs.commit }}
-        run: |
-          set -e
-          if ! git -C .assurance-profile-pin fetch --quiet --depth 1 origin "refs/tags/${PINNED_VERSION}:refs/tags/${PINNED_VERSION}"; then
-            echo "::error::Release tag $PINNED_VERSION does not exist upstream — a release version pin must reference a published tag."
-            exit 1
-          fi
-          TAG_SHA=$(git -C .assurance-profile-pin rev-list -n1 "refs/tags/${PINNED_VERSION}")
-          if [ "$TAG_SHA" != "$PINNED_COMMIT" ]; then
-            echo "::error::upstream.commit ($PINNED_COMMIT) is not the commit tag $PINNED_VERSION points to ($TAG_SHA). Pin the tag commit: git rev-list -n1 $PINNED_VERSION."
-            exit 1
-          fi
-          echo "pin matches tag $PINNED_VERSION ($TAG_SHA)"
-
-      - name: Validate against the pinned profile
+      - name: Enforce the declared adoption stage
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
         run: >
@@ -125,55 +269,6 @@ jobs:
           --project-root .
           --schemas .assurance-profile-pin/schemas
           --profile-checkout .assurance-profile-pin
-
-      - name: Check pin staleness (non-blocking)
-        continue-on-error: true
-        env:
-          UPSTREAM_REPOSITORY: ${{ steps.pin.outputs.repository }}
-          PINNED_VERSION: ${{ steps.pin.outputs.version }}
-        run: |
-          python - <<'EOF'
-          import json
-          import os
-          import re
-          import urllib.request
-
-          def order_key(tag):
-              """Total order over pin strings: 'unreleased' sorts before every
-              release, and a -rc.N pre-release sorts before its base release."""
-              if tag == "unreleased":
-                  return (0, 0, 0, 0, 0, 0)
-              match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?", tag)
-              if match is None:
-                  raise ValueError(f"unrecognized version string {tag!r}")
-              major, minor, patch, rc = match.groups()
-              if rc is None:
-                  return (1, int(major), int(minor), int(patch), 1, 0)
-              return (1, int(major), int(minor), int(patch), 0, int(rc))
-
-          repository = os.environ["UPSTREAM_REPOSITORY"]
-          pinned = os.environ["PINNED_VERSION"]
-          url = f"https://api.github.com/repos/{repository}/releases/latest"
-          try:
-              with urllib.request.urlopen(url, timeout=10) as response:
-                  latest = json.load(response).get("tag_name", "")
-          except Exception as exc:
-              print(f"Staleness check skipped: could not query {url} ({exc}).")
-              raise SystemExit(0)
-          if not latest:
-              raise SystemExit(0)
-          try:
-              trailing = order_key(pinned) < order_key(latest)
-          except ValueError as exc:
-              print(f"Staleness check skipped: {exc}.")
-              raise SystemExit(0)
-          if trailing:
-              print(
-                  f"::notice::Pinned profile version {pinned} trails the latest "
-                  f"release {latest}. Upgrade through explicit project change "
-                  "review (PROFILE.md section 16)."
-              )
-          EOF
 
   # Impact routing (pull requests only): route the PR's changed files against
   # the optional `components:` map in the adoption file, using the pinned

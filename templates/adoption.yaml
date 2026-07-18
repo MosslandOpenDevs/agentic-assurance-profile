@@ -31,6 +31,13 @@ profiles:
 #  protect. On pull requests, the drift check warns when a component's paths
 #  change without its invariants being addressed; see docs/ADOPTION.md §3.7.)
 
+# adoption_stage: DRAFT
+# (optional self-declared stage, enforced as declared: DRAFT (placeholders
+#  allowed) → HUMAN_REVIEWED (no placeholders, review recorded) → CONFORMANT
+#  (fresh review dates, decided critical intents, attributable approval).
+#  Absent means DRAFT; declaring a stage you do not meet fails validation;
+#  see docs/ADOPTION.md §3.8.)
+
 specification_workflow:
   system: existing
   # openspec | spec-kit | adr-rfc | existing | minimal
@@ -63,3 +70,9 @@ issue_integration:
 #   reviewer: REPLACE_WITH_REVIEWER
 #   record: REPLACE_WITH_PATH_TO_DURABLE_REVIEW_RECORD
 #   notes: REPLACE_WITH_REVIEW_OUTCOME_SUMMARY
+#   approvals:                  # at least one entry is required at CONFORMANT (docs/ADOPTION.md §3.8)
+#     - approver: REPLACE_WITH_APPROVER
+#       review_url: REPLACE_WITH_APPROVED_REVIEW_URL
+#       at: YYYY-MM-DD
+#       covers: [ REPLACE_WITH_COVERED_IDS ]   # optional: what the approval covers
+#       rule: REPLACE_WITH_LOCAL_REVIEW_RULE   # optional: the local review rule it satisfies

@@ -59,6 +59,10 @@
         "enum": ["core", "service", "trust-critical", "data-curation", "agent-runtime", "archived"]
       }
     },
+    "adoption_stage": {
+      "description": "Self-declared adoption stage; absent means DRAFT. Stages are self-binding: the validator enforces the declared stage's requirements as errors, so declaring a stage the artifacts do not meet fails validation. DRAFT adds no requirements (placeholders and UNKNOWN classifications are allowed). HUMAN_REVIEWED requires no unfilled REPLACE_WITH_ placeholder anywhere in the adoption file or any loaded register, and a `human_review` block with non-empty `date`, `reviewer`, and `record`. CONFORMANT additionally requires that passed `review_after` dates are treated as errors, that every severity-critical invariant has a decided (non-UNKNOWN) `intent.classification`, and that `human_review.approvals` carries at least one attributable entry (`approver`, `review_url`, `at`).",
+      "enum": ["DRAFT", "HUMAN_REVIEWED", "CONFORMANT"]
+    },
     "layout": {
       "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core (and archived) profiles. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
       "enum": ["split", "lite"]
@@ -84,6 +88,42 @@
         "notes": {
           "type": "string",
           "description": "Short summary of the review outcome."
+        },
+        "approvals": {
+          "type": "array",
+          "description": "Attributable approvals backing the review; at least one is required at stage CONFORMANT. Each entry names the approver, a durable review URL (for example an approved pull-request review), and when the approval was given. The validator checks shape and non-emptiness only; verifying that the URL really is an approved review by a non-author remains a manual step until future tooling verifies it against the forge API.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["approver", "review_url", "at"],
+            "additionalProperties": true,
+            "properties": {
+              "approver": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The approving human, for example a forge handle."
+              },
+              "review_url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "URL of the durable approval record (for example an approved pull-request review). Not dereferenced or verified by the validator."
+              },
+              "at": {
+                "type": "string",
+                "minLength": 1,
+                "description": "When the approval was given (ISO 8601 date or timestamp)."
+              },
+              "covers": {
+                "type": "array",
+                "description": "Optional list of artifact paths or stable IDs the approval covers.",
+                "items": { "type": "string" }
+              },
+              "rule": {
+                "type": "string",
+                "description": "Optional local review rule or policy this approval satisfies."
+              }
+            }
+          }
         }
       }
     },

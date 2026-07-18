@@ -68,6 +68,13 @@ profiles:
 #  protect. On pull requests, the drift check warns when a component's paths
 #  change without its invariants being addressed; see docs/ADOPTION.md §3.7.)
 
+# adoption_stage: DRAFT
+# (optional self-declared stage, enforced as declared: DRAFT (placeholders
+#  allowed) → HUMAN_REVIEWED (no placeholders, review recorded) → CONFORMANT
+#  (fresh review dates, decided critical intents, attributable approval).
+#  Absent means DRAFT; declaring a stage you do not meet fails validation;
+#  see docs/ADOPTION.md §3.8.)
+
 specification_workflow:
   system: existing
   # Examples: openspec, spec-kit, adr-rfc, existing, minimal
