@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 import re
 import subprocess
 import sys
@@ -159,6 +160,13 @@ ASSURANCE_ARTIFACT_PREFIXES = ("assurance/", ".agentic-assurance/")
 # a mandatory reason line, anywhere in the same body, in either order.
 NO_IMPACT_RE = re.compile(r"^Assurance impact:\s*none", re.IGNORECASE | re.MULTILINE)
 NO_IMPACT_REASON_RE = re.compile(r"^Reason:\s*\S+", re.IGNORECASE | re.MULTILINE)
+# Explicit acknowledgment that a PR deliberately weakens the assurance policy
+# (stage downgrade, component removal, pin change, ...). The text after the
+# colon is the reason and must be non-empty.
+POLICY_ACK_RE = re.compile(r"^Assurance policy change:\s*\S+", re.IGNORECASE | re.MULTILINE)
+
+# Report level -> GitHub Actions annotation command.
+GITHUB_ANNOTATION_KINDS = {"error": "error", "warn": "warning"}
 
 
 class Report:
@@ -202,8 +210,21 @@ class Report:
                 )
             )
         else:
+            # Inside GitHub Actions, errors and warnings are additionally
+            # emitted as workflow annotations so they surface in the PR
+            # checks UI instead of only in the raw log (warn-first drift
+            # findings were otherwise easy to miss).
+            in_actions = bool(os.environ.get("GITHUB_ACTIONS"))
             for level, message in self.results:
                 print(f"{level.upper()}: {message}")
+                kind = GITHUB_ANNOTATION_KINDS.get(level)
+                if in_actions and kind is not None:
+                    escaped = (
+                        message.replace("%", "%25")
+                        .replace("\r", "%0D")
+                        .replace("\n", "%0A")
+                    )
+                    print(f"::{kind}::{escaped}")
         return exit_code
 
 
@@ -1169,6 +1190,18 @@ def check_adoption_stage(
     verified here — that remains a manual step (future tooling may verify
     it against the forge API).
 
+    CONFORMANT also enforces the mechanically checkable subset of
+    PROFILE.md section 17: no critical residual left OPEN (accept it with
+    rationale or resolve it), no CONTRADICTED claim, no CONTRADICTED
+    critical invariant (non-critical CONTRADICTED invariants suppress the
+    OK verdict without erroring), every VERIFIED critical invariant carries
+    non-empty ``evidence``, and no register entry is classified RESTRICTED
+    or EMBARGOED (the public assurance view must not carry restricted
+    material; the structural checks warn about this at every stage —
+    CONFORMANT turns it into an error). Conditions section 17 states but
+    strings cannot capture (evidence bound to a revision, claim wording not
+    exceeding evidence strength) remain the human review's responsibility.
+
     On success (no stage requirement violated) exactly one OK line is
     emitted: ``stage <declared>: requirements satisfied``.
     """
@@ -1185,7 +1218,13 @@ def check_adoption_stage(
         )
         return
     errors_before = sum(1 for level, _ in report.results if level == "error")
-    expired_review_dates = False
+    # Findings that must suppress the "requirements satisfied" verdict
+    # without being errors themselves (expired review dates re-counted from
+    # check_semantics; non-critical CONTRADICTED invariants).
+    nonfatal_findings = False
+
+    def entry_label(entry: dict) -> str:
+        return entry["id"] if nonempty_string(entry.get("id")) else "<no id>"
 
     # HUMAN_REVIEWED (also CONFORMANT): no unfilled placeholders anywhere in
     # the adoption file or any loaded register. The raw documents are
@@ -1246,7 +1285,7 @@ def check_adoption_stage(
                     continue
                 review_after = coerce_date(entry.get("review_after"))
                 if review_after is not None and review_after < today:
-                    expired_review_dates = True
+                    nonfatal_findings = True
 
         # Every severity-critical invariant must have a decided intent.
         # Any classification other than UNKNOWN (including ACCIDENTAL and
@@ -1272,6 +1311,67 @@ def check_adoption_stage(
                     "declaring conformance"
                 )
 
+        # Mechanically checkable subset of PROFILE.md section 17 (see the
+        # docstring): un-accepted critical exposure, contradicted trust
+        # statements, evidence-free verified-critical verdicts, and
+        # restricted material in the public assurance view.
+        for entry in registers.get("residuals") or []:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("impact") == "critical" and entry.get("status") == "OPEN":
+                report.error(
+                    f"stage CONFORMANT: residual {entry_label(entry)} is OPEN "
+                    "with impact critical — accept it explicitly (with "
+                    "rationale) or resolve it before declaring conformance "
+                    "(PROFILE.md section 17)"
+                )
+        for entry in registers.get("claims") or []:
+            if isinstance(entry, dict) and entry.get("status") == "CONTRADICTED":
+                report.error(
+                    f"stage CONFORMANT: claim {entry_label(entry)} is "
+                    "CONTRADICTED — withdraw or remediate the claim before "
+                    "declaring conformance (PROFILE.md section 17)"
+                )
+        for entry in registers.get("invariants") or []:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("status") == "CONTRADICTED":
+                if entry.get("severity") == "critical":
+                    report.error(
+                        f"stage CONFORMANT: critical invariant "
+                        f"{entry_label(entry)} is CONTRADICTED — remediate or "
+                        "record the accepted exposure before declaring "
+                        "conformance (PROFILE.md section 17)"
+                    )
+                else:
+                    nonfatal_findings = True
+                    report.warn(
+                        f"stage CONFORMANT: invariant {entry_label(entry)} is "
+                        "CONTRADICTED — resolve it or route the exposure to a "
+                        "residual"
+                    )
+            if entry.get("status") == "VERIFIED" and entry.get("severity") == "critical":
+                evidence = entry.get("evidence")
+                if not (isinstance(evidence, list) and evidence):
+                    report.error(
+                        f"stage CONFORMANT: critical invariant "
+                        f"{entry_label(entry)} is VERIFIED but its evidence "
+                        "list is empty — record the evidence behind the "
+                        "verdict (PROFILE.md section 17)"
+                    )
+        for kind in REGISTER_KINDS:
+            for entry in registers.get(kind) or []:
+                if not isinstance(entry, dict):
+                    continue
+                disclosure = entry.get("disclosure")
+                if disclosure in ("RESTRICTED", "EMBARGOED"):
+                    report.error(
+                        f"stage CONFORMANT: {kind} entry {entry_label(entry)} "
+                        f"has disclosure {disclosure} — the public assurance "
+                        "view must not carry restricted material; keep it in "
+                        "the restricted record (PROFILE.md sections 12 and 17)"
+                    )
+
         # At least one attributable approval: who approved, where the
         # durable record lives, and when. Shape errors in individual
         # entries are the adoption schema's concern; this check asks only
@@ -1296,7 +1396,7 @@ def check_adoption_stage(
             )
 
     errors_after = sum(1 for level, _ in report.results if level == "error")
-    if errors_after == errors_before and not expired_review_dates:
+    if errors_after == errors_before and not nonfatal_findings:
         report.ok(f"stage {stage}: requirements satisfied")
 
 
@@ -1336,6 +1436,18 @@ def run_adopter(args: argparse.Namespace) -> int:
         # registers. Sections face the same register schemas and the same
         # semantic checks; only the file layout differs.
         check_lite_profiles(profiles, report)
+        # The default public_assurance_root ('assurance') points at the split
+        # layout's directory; the lite assurance file lives elsewhere.
+        security = adoption.get("security")
+        if (
+            isinstance(security, dict)
+            and security.get("public_assurance_root") == "assurance"
+        ):
+            report.warn(
+                "layout 'lite': security.public_assurance_root is 'assurance' "
+                f"but the lite assurance file lives at {LITE_ASSURANCE_PATH} — "
+                "point public_assurance_root at .agentic-assurance"
+            )
         lite_document, registers = check_lite_file(project_root, schemas, report)
         check_semantics(registers, report, strict_review_dates=strict_review_dates)
         check_lite_required_files(project_root, paths, lite_document, report)
@@ -1383,17 +1495,124 @@ def read_pr_body(path: Path) -> str:
         return ""
 
 
+def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]:
+    """Assurance-significant changes of the head declaration vs the base one.
+
+    Returns ``(kind, finding)`` pairs. Kind ``"weakened"``: stage downgrade,
+    profile removal, layout change, component removal, and removal of a
+    component's path globs or invariant IDs (editing a glob counts — the old
+    glob disappears). Kind ``"pin"``: any change to the upstream pin — not a
+    weakening per se (upgrades move it forward), but PROFILE.md section 16
+    requires a pin move to be an explicit, dedicated change, so it demands
+    the same acknowledgment. Additions are not findings.
+    """
+    findings: list[tuple[str, str]] = []
+
+    base_stage = base.get("adoption_stage", "DRAFT")
+    head_stage = head.get("adoption_stage", "DRAFT")
+    if (
+        base_stage in ADOPTION_STAGES
+        and head_stage in ADOPTION_STAGES
+        and ADOPTION_STAGES.index(head_stage) < ADOPTION_STAGES.index(base_stage)
+    ):
+        findings.append(("weakened", f"adoption_stage downgraded from {base_stage} to {head_stage}"))
+
+    def string_set(value: object) -> set[str]:
+        if not isinstance(value, list):
+            return set()
+        return {item for item in value if isinstance(item, str)}
+
+    removed_profiles = sorted(string_set(base.get("profiles")) - string_set(head.get("profiles")))
+    if removed_profiles:
+        findings.append(("weakened", f"profile(s) removed: {', '.join(removed_profiles)}"))
+
+    # An absent layout means the split layout; making the default explicit
+    # (or dropping the explicit default) is not a change.
+    base_layout = base.get("layout") or "split"
+    head_layout = head.get("layout") or "split"
+    if base_layout != head_layout:
+        findings.append(
+            ("weakened", f"layout changed from {base_layout} to {head_layout}")
+        )
+
+    base_upstream = base.get("upstream") if isinstance(base.get("upstream"), dict) else {}
+    head_upstream = head.get("upstream") if isinstance(head.get("upstream"), dict) else {}
+    for key in ("repository", "version", "commit"):
+        if base_upstream.get(key) != head_upstream.get(key):
+            findings.append(
+                (
+                    "pin",
+                    f"upstream.{key} changed from {base_upstream.get(key)!r} "
+                    f"to {head_upstream.get(key)!r}",
+                )
+            )
+
+    base_components = base.get("components") if isinstance(base.get("components"), dict) else {}
+    head_components = head.get("components") if isinstance(head.get("components"), dict) else {}
+    for name in sorted(base_components):
+        base_component = base_components[name]
+        if not isinstance(base_component, dict):
+            continue
+        head_component = head_components.get(name)
+        if not isinstance(head_component, dict):
+            findings.append(("weakened", f"component '{name}' removed"))
+            continue
+        for field, noun in (("paths", "path glob(s)"), ("invariants", "invariant(s)")):
+            removed = sorted(
+                string_set(base_component.get(field)) - string_set(head_component.get(field))
+            )
+            if removed:
+                findings.append(
+                    ("weakened", f"component '{name}': {noun} removed: {', '.join(removed)}")
+                )
+    return findings
+
+
+def write_drift_step_summary(rows: list[tuple[str, int, str]]) -> None:
+    """Append an impact-routing table to the GitHub job summary, if in CI."""
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+    try:
+        with open(summary_path, "a", encoding="utf-8") as handle:
+            handle.write("### Assurance impact routing\n\n")
+            if not rows:
+                handle.write("No mapped component is touched by this change.\n\n")
+                return
+            handle.write("| Component | Changed files | Result |\n|---|---|---|\n")
+            for name, count, verdict in rows:
+                safe_name = name.replace("|", "\\|")
+                handle.write(f"| `{safe_name}` | {count} | {verdict} |\n")
+            handle.write("\n")
+    except OSError:
+        pass  # the summary is best-effort; the log and annotations remain
+
+
 def run_drift(args: argparse.Namespace) -> int:
     """Route a pull request's change set against the adoption component map.
 
     A component is *touched* when any of its path globs matches a changed
-    file. A touched component is satisfied when the change set also touches
-    assurance artifacts, when the PR description mentions every invariant ID
-    mapped to the component, or when the description carries an explicit
-    no-impact statement (``Assurance impact: none`` plus a mandatory
-    ``Reason:`` line). Unsatisfied components warn by default and fail with
-    ``--strict``. The invariant IDs come from the map itself; whether they
-    exist in the register is the adopter subcommand's cross-check.
+    file (the CI caller lists rename/copy sources as well as destinations,
+    so moving code out of a mapped path still counts). A touched component
+    is satisfied when the diff of the assurance artifacts references at
+    least one of the component's invariant IDs (``--assurance-diff``; when
+    the flag is absent — standalone use — any change under the assurance
+    prefixes is accepted as the coarse fallback signal), when the PR
+    description mentions every invariant ID mapped to the component, or
+    when the description carries an explicit no-impact statement
+    (``Assurance impact: none`` plus a mandatory ``Reason:`` line).
+    Unsatisfied components warn by default and fail with ``--strict``. The
+    invariant IDs come from the map itself; whether they exist in the
+    register is the adopter subcommand's cross-check.
+
+    With ``--base-adoption`` (the base branch's adoption declaration), the
+    head declaration is additionally screened for policy weakenings —
+    stage downgrade, profile removal, layout change, upstream pin change,
+    component removal or narrowing. Each is an error unless the PR
+    description carries an explicit ``Assurance policy change: <why>``
+    line, which turns them into warnings. This runs before, and
+    independently of, the component map (a repository with no components
+    still gets its pin and stage protected).
     """
     report = Report()
     adoption_path = Path(args.adoption)
@@ -1407,6 +1626,43 @@ def run_drift(args: argparse.Namespace) -> int:
     if not isinstance(document, dict):
         report.error(f"adoption file {adoption_path}: top level is not a mapping")
         return report.emit("drift", args.json)
+
+    body = read_pr_body(Path(args.pr_body))
+
+    if args.base_adoption is not None:
+        base_document, error = load_yaml(Path(args.base_adoption))
+        if error is not None:
+            report.error(f"base adoption file: {error}")
+            return report.emit("drift", args.json)
+        if not isinstance(base_document, dict):
+            report.error("base adoption file: top level is not a mapping")
+            return report.emit("drift", args.json)
+        regressions = adoption_policy_regressions(base_document, document)
+        if regressions:
+            acknowledged = POLICY_ACK_RE.search(body) is not None
+            for kind, finding in regressions:
+                if kind == "pin":
+                    prefix = "upstream pin changed"
+                    rule = (
+                        "a pin move must be an explicit, dedicated change "
+                        "(PROFILE.md section 16) and"
+                    )
+                else:
+                    prefix = "assurance policy weakened"
+                    rule = "weakening the assurance policy"
+                if acknowledged:
+                    report.warn(
+                        f"{prefix}: {finding} — acknowledged by 'Assurance "
+                        "policy change:' in the PR description"
+                    )
+                else:
+                    report.error(
+                        f"{prefix}: {finding} — {rule} requires an explicit "
+                        "'Assurance policy change: <why>' line in the PR "
+                        "description"
+                    )
+        else:
+            report.ok("no assurance policy regression against the base declaration")
 
     components = document.get("components")
     if components is None:
@@ -1423,15 +1679,27 @@ def run_drift(args: argparse.Namespace) -> int:
     if error is not None:
         report.error(f"changed-files list: {error}")
         return report.emit("drift", args.json)
-    body = read_pr_body(Path(args.pr_body))
 
+    assurance_diff_text: str | None = None
+    if args.assurance_diff is not None:
+        try:
+            assurance_diff_text = Path(args.assurance_diff).read_text(encoding="utf-8")
+        except OSError as exc:
+            report.error(f"assurance diff: cannot read {args.assurance_diff}: {exc}")
+            return report.emit("drift", args.json)
+
+    # Coarse fallback signal, used only when no assurance diff was provided
+    # (standalone runs): any change under the assurance prefixes satisfies
+    # every touched component. In CI the caller always provides the diff,
+    # and satisfaction is per component — an unrelated assurance edit no
+    # longer satisfies an unrelated component.
     assurance_touched = any(
         path.startswith(ASSURANCE_ARTIFACT_PREFIXES) for path in changed
     )
     no_impact_declared = NO_IMPACT_RE.search(body) is not None
     no_impact_ok = no_impact_declared and NO_IMPACT_REASON_RE.search(body) is not None
 
-    touched_any = False
+    summary_rows: list[tuple[str, int, str]] = []
     for name, component in components.items():
         # Light structural checks so drift stays usable standalone; the full
         # shape validation lives in the adoption schema (adopter subcommand).
@@ -1461,24 +1729,38 @@ def run_drift(args: argparse.Namespace) -> int:
         ]
         if not matched:
             continue
-        touched_any = True
         count = len(matched)
         touched = f"component '{name}' touched ({count} changed file{'s' if count != 1 else ''})"
         ids = ", ".join(invariant_ids)
-        if assurance_touched:
-            report.ok(f"{touched} — assurance artifacts updated in the same change")
+        diff_mentioned = (
+            [
+                invariant_id
+                for invariant_id in invariant_ids
+                if invariant_id in assurance_diff_text
+            ]
+            if assurance_diff_text is not None
+            else []
+        )
+        if diff_mentioned:
+            verdict = f"assurance update references {', '.join(diff_mentioned)}"
+            report.ok(f"{touched} — {verdict}")
+        elif assurance_diff_text is None and assurance_touched:
+            verdict = "assurance artifacts updated in the same change"
+            report.ok(f"{touched} — {verdict}")
         elif all(invariant_id in body for invariant_id in invariant_ids):
-            report.ok(f"{touched} — PR description mentions {ids}")
+            verdict = f"PR description mentions {ids}"
+            report.ok(f"{touched} — {verdict}")
         elif no_impact_ok:
-            report.ok(
-                f"{touched} — PR description declares 'Assurance impact: none' "
-                "with a reason"
-            )
+            verdict = "PR description declares 'Assurance impact: none' with a reason"
+            report.ok(f"{touched} — {verdict}")
         else:
+            verdict = "UNROUTED"
             message = (
-                f"{touched} without assurance update, invariant mention, or a "
-                f"no-impact statement — address {ids} or add "
-                "'Assurance impact: none' + 'Reason: ...' to the PR description"
+                f"{touched} without an assurance update referencing its "
+                f"invariants, an invariant mention, or a no-impact statement "
+                f"— address {ids} in the assurance artifacts or the PR "
+                "description, or add 'Assurance impact: none' + 'Reason: ...' "
+                "to the PR description"
             )
             if no_impact_declared:
                 message += (
@@ -1489,13 +1771,15 @@ def run_drift(args: argparse.Namespace) -> int:
                 report.error(message)
             else:
                 report.warn(message)
+        summary_rows.append((name, count, verdict))
 
-    if not touched_any:
+    if not summary_rows:
         count = len(changed)
         report.ok(
             f"no mapped component is touched by this change "
             f"({count} changed file{'s' if count != 1 else ''})"
         )
+    write_drift_step_summary(summary_rows)
 
     return report.emit("drift", args.json)
 
@@ -1583,6 +1867,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--pr-body",
         required=True,
         help="file holding the PR description text (missing file = empty body)",
+    )
+    drift.add_argument(
+        "--assurance-diff",
+        default=None,
+        help="file holding the diff of the assurance artifacts; a touched "
+        "component is satisfied only when this diff references one of its "
+        "invariant IDs (absent: any assurance change satisfies, the coarse "
+        "standalone fallback)",
+    )
+    drift.add_argument(
+        "--base-adoption",
+        default=None,
+        help="the base branch's adoption declaration; enables the policy "
+        "regression check (stage downgrade, pin change, component removal "
+        "error unless the PR description acknowledges them)",
     )
     drift.add_argument(
         "--strict",

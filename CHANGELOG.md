@@ -8,44 +8,108 @@ Nothing yet.
 
 ## v0.2.1 — 2026-07-18
 
-Security hardening of the reusable adopter CI, plus consistency fixes, from
-an external review of v0.2.0.
+Security hardening of the reusable adopter CI plus honest-signal fixes,
+from an external review of v0.2.0. No adoption-schema changes; both pilot
+registers validate identically. All behavior changes land in surface area
+no current adopter occupies (no adopter declares HUMAN_REVIEWED/CONFORMANT
+or ships a component map yet), which is why this is a patch release.
 
 ### Adopter impact / upgrade actions
 
 - **Recommended upgrade.** Re-pin to `v0.2.1` (`upstream.version`,
   `upstream.commit`, and the workflow `@` reference) to pick up the CI
-  trust-boundary fix. Adoption-file schemas and obligations are unchanged;
-  registers validate identically.
-- The reusable workflow now validates only against the canonical upstream
-  `MosslandOpenDevs/agentic-assurance-profile`. If your `upstream.repository`
-  names anything else (including a fork), the workflow errors — run your own
-  copy with the `CANONICAL` constant changed.
+  trust-boundary fix.
+- **Check rename:** `assurance / conformance` is now
+  `assurance / declared-stage` — update branch protection if you made it a
+  required check. Rationale: the check is green whenever the *declared*
+  stage is met (HUMAN_REVIEWED included), so the old name could be misread
+  as a conformance statement.
+- **Caller `on:` update recommended** (docs/ADOPTION.md §3.4): add
+  `pull_request` types `[opened, synchronize, reopened, edited,
+  ready_for_review]` — the drift check reads the PR description, and
+  without `edited` a later description edit leaves a stale verdict.
+- The reusable workflow now requires the caller's `@` reference to equal
+  `upstream.commit` (this was already the documented rule; it is now
+  enforced) and validates only against the canonical upstream
+  `MosslandOpenDevs/agentic-assurance-profile` — fork adopters run their
+  own copy with the `CANONICAL` constant changed.
 
 ### Security
 
 - `adopter-validate.yml` no longer checks out the validator from a
   repository named in the pull-request-mutable adoption file. The validator
-  is always checked out from the canonical upstream; the declared repository
-  is validated as data (must equal the canonical upstream, else error), and
-  only the pinned commit — always a maintainer-reviewed commit of the
-  canonical repo — is taken from the adoption file. This closes a
-  code-execution vector where a pull request could point CI at attacker
-  code.
+  is always checked out from the canonical upstream; the declared
+  repository is validated as data (must equal the canonical upstream, else
+  error), the commit must be a full 40-hex SHA (checked before any
+  checkout), and the caller's pinned workflow SHA must match it. This
+  closes a code-execution vector where a pull request could point CI at
+  attacker-controlled validator code.
 - Both workflows now set `permissions: contents: read`, use
-  `persist-credentials: false` on every checkout, pin every action to a full
-  commit SHA, and install dependencies from a hash-pinned lock
-  (`requirements-ci.txt`, `pip install --require-hashes`).
+  `persist-credentials: false` on every checkout, pin every action to a
+  full commit SHA, and install dependencies from a universal hash-pinned
+  lock (`requirements-ci.txt`, `pip install --require-hashes`).
+
+### Changed
+
+- **Stage self-downgrade protection.** The pull-request drift job now
+  compares the adoption declaration against the base branch: a stage
+  downgrade, profile removal, layout change, upstream pin change, component
+  removal, or removal of a component's path globs / invariant IDs fails the
+  job unless the PR description carries an explicit
+  `Assurance policy change: <why>` line (which downgrades the findings to
+  warnings). A PR flipping `CONFORMANT` back to `DRAFT` no longer slips
+  through as a skipped check.
+- **CONFORMANT now enforces the mechanically checkable subset of PROFILE
+  §17:** no `critical` residual left `OPEN`, no `CONTRADICTED` claim, no
+  `CONTRADICTED` critical invariant, every `VERIFIED` critical invariant
+  carries non-empty `evidence`, and `RESTRICTED`/`EMBARGOED` entries are
+  errors (still warnings at lower stages). ADOPTION.md §3.8 states the
+  honest boundary: revision-bound evidence and claim-vs-evidence wording
+  remain the human review's responsibility.
+- **Per-component drift satisfaction.** Touching some assurance file no
+  longer satisfies every touched component: in CI, the assurance diff must
+  reference at least one of the component's invariant IDs (PR-body mention
+  and the no-impact statement are unchanged). Standalone runs without
+  `--assurance-diff` keep the coarse fallback.
+- **Rename-safe change detection.** Changed files are computed with
+  `--name-status -z`; a rename or copy counts both source and destination,
+  so code cannot move out of a mapped path unseen.
+- Validator findings are now emitted as GitHub annotations
+  (`::error::`/`::warning::`) inside Actions, and the drift job writes an
+  impact-routing table to the job summary — warn-first findings were
+  previously easy to miss in raw logs.
+- Lite envelope schema tightened: unknown top-level keys are rejected (a
+  typo like `invarients` fails loudly; adopter-specific keys go under the
+  new `extensions` namespace), and `purpose`/`non_goals`/`system` reject
+  empty or whitespace-only strings.
+- New warning under `layout: lite` when `security.public_assurance_root`
+  still points at the split layout's `assurance` directory.
+
+### Added
+
+- `tests/test_validate.py`: a fixture-based regression suite for the
+  validator (stage ladder, §17 conformance checks, drift routing and
+  policy regression, lite tightening), run by `self-check` on a Python
+  3.10/3.12/3.13 matrix.
+- `requirements-ci.txt`: universal hash-pinned dependency lock.
 
 ### Fixed
 
-- `GOVERNANCE.md` referenced `@MosslandOpenDevs/assurance-maintainers` while
-  `.github/CODEOWNERS` uses `@MosslandOpenDevs/maintainers`; both now name the
-  real team.
+- `GOVERNANCE.md` referenced `@MosslandOpenDevs/assurance-maintainers`
+  while `.github/CODEOWNERS` uses `@MosslandOpenDevs/maintainers`; both now
+  name the real team.
 - `templates/AGENTIC_ASSURANCE.md` §2 now instructs adopters to keep the
-  concrete pin values only in `adoption.yaml`, since a pin duplicated into
-  prose is not checked by the structure validator and silently goes stale
-  (observed in a v0.2.0 pilot).
+  concrete pin values only in `adoption.yaml` (a pin duplicated into prose
+  is not validator-checked and silently goes stale — observed in a v0.2.0
+  pilot).
+- ADOPTION.md §3.8 no longer overstates DRAFT ("placeholders allowed
+  everywhere"): the adoption declaration itself must be complete at every
+  stage; the allowance covers the local registers.
+- `templates/AGENTS.md` reading order is now lite-aware (non-goals and the
+  system description live in `.agentic-assurance/assurance.yaml` under
+  `layout: lite`, not `assurance/SYSTEM.md`).
+- `templates/adoption.yaml` lite comment now notes that
+  `security.public_assurance_root` should point at `.agentic-assurance`.
 
 ## v0.2.0 — 2026-07-18
 

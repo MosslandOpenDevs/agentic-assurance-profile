@@ -20,7 +20,9 @@ profiles:
 # layout: lite
 # (single-file core layout — put purpose/non-goals/invariants/residuals in
 #  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
-#  profiles beyond core requires the default split layout.)
+#  profiles beyond core requires the default split layout. Under lite, also
+#  set security.public_assurance_root below to .agentic-assurance — the
+#  default 'assurance' names the split layout's directory.)
 
 # components:
 #   authentication:

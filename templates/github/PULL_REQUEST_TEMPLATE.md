@@ -17,7 +17,11 @@
      add this two-line no-impact statement to the description — both lines at
      the start of a line, and the reason is mandatory:
        Assurance impact: none
-       Reason: <why the mapped invariants are unaffected> -->
+       Reason: <why the mapped invariants are unaffected>
+     If this pull request deliberately weakens the adoption declaration
+     (stage downgrade, pin change, component removal or narrowing), the
+     drift check requires an explicit acknowledgment line:
+       Assurance policy change: <why this weakening is intended and who decided it> -->
 
 - 
 
