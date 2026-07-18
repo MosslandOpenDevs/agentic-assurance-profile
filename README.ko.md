@@ -345,6 +345,7 @@ assurance/
     ├── THREAT_MODEL.md
     ├── adoption.yaml
     └── github/
+        ├── CODEOWNERS
         ├── ISSUE_TEMPLATE/
         │   ├── bug.yml
         │   ├── config.yml

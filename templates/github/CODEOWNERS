@@ -1,0 +1,22 @@
+# Code owners for the assurance layer.
+#
+# Copy this file to .github/CODEOWNERS in the adopting repository (merge the
+# entries into an existing CODEOWNERS if one exists) and replace the
+# placeholder with the human owner's @handle or @org/team.
+#
+# Purpose: changes to the assurance artifacts must pass the human owner, so
+# an agent cannot silently weaken an invariant, close a residual, or move
+# the upstream pin (PROFILE.md sections 3 and 15). File ownership alone
+# enforces nothing: enable branch protection with required reviews and
+# "Require review from Code Owners" on the default branch. In a
+# single-maintainer repository GitHub does not allow self-approval, so the
+# binding becomes fully effective only once a second maintainer exists —
+# until then it is a declared intention, and the review record remains the
+# effective control.
+
+AGENTS.md                         @REPLACE_WITH_OWNER_OR_TEAM
+AGENTIC_ASSURANCE.md              @REPLACE_WITH_OWNER_OR_TEAM
+/.agentic-assurance/              @REPLACE_WITH_OWNER_OR_TEAM
+/assurance/                       @REPLACE_WITH_OWNER_OR_TEAM
+/.github/workflows/assurance.yml  @REPLACE_WITH_OWNER_OR_TEAM
+/.github/CODEOWNERS               @REPLACE_WITH_OWNER_OR_TEAM

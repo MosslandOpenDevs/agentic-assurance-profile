@@ -44,6 +44,8 @@ The archaeology finds behaviors: the code limits login attempts, expires session
 
 **Documents in the repository do not count as your approval.** In an agent-built repository the comments, READMEs, and design notes were mostly written by agents too — an agent citing "the docs say this is intentional" may be citing another agent. Your agent is expected to check who authored such prose before treating it as intent — and a document *without* agent markers is not necessarily human-written either, since many agents leave no trace. Either way, it is your answer in this review — not any committed text — that turns `UNKNOWN` into `INTENDED`.
 
+**Fewer is stronger.** A healthy register holds roughly 5–15 invariants — the things that must never break. If your agent brings you thirty, ask it to rank them and keep the top tier; every entry you confirm is something you will re-examine whenever a change touches it.
+
 **With your answer,** the agent updates the intent classification in the invariants file, citing you as the authority.
 
 ### 3. Residual disposition

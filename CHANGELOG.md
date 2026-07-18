@@ -6,6 +6,33 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 Nothing yet.
 
+## v0.1.1 — 2026-07-18
+
+Post-release hardening from external review: close the gap between
+creating assurance documents and binding them.
+
+### Adopter impact / upgrade actions
+
+- Optional upgrade — no obligations changed and no re-pin is required.
+  Adopters who want the new CODEOWNERS binding copy
+  `templates/github/CODEOWNERS` and follow adoption guide §3.5; existing
+  pins remain valid.
+
+### Added
+
+- Adopter `CODEOWNERS` template (`templates/github/CODEOWNERS`) covering
+  the assurance layer (`AGENTS.md`, `AGENTIC_ASSURANCE.md`,
+  `.agentic-assurance/`, `assurance/`, the CI caller workflow), with the
+  honest single-maintainer caveat; adoption guide §3.5 documents the
+  binding steps (branch protection + code-owner review) and names the
+  documents-without-binding failure mode.
+
+### Changed
+
+- Adoption guide §4.1 and the review guide now recommend keeping the
+  invariant register at roughly 5–15 entries per repository — the things
+  that must never break, not the full specification.
+
 ## v0.1.0 — 2026-07-18
 
 First stable release of the v0.1 line. Two completed pilot adoptions
