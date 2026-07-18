@@ -68,9 +68,10 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.1.0-rc.1` | Yes — current release candidate |
+| `v0.1.0` | Yes — current release |
+| `v0.1.0-rc.1` | Superseded — upgrade to `v0.1.0` |
 | Draft on default branch | Yes |
-| Earlier unreleased draft commits | Pilot pins only; upgrade to the current release candidate |
+| Earlier unreleased draft commits | No — upgrade to the current release |
 | Unreleased local forks | No |
 
 ## Disclosure principle
