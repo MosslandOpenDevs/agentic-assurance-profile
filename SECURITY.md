@@ -64,11 +64,13 @@ They must not include, before authorized disclosure:
 
 ## Supported versions
 
-Until the first tagged release, only the current draft on the default branch is maintained. After releases begin, this section should list supported profile and validator versions explicitly.
+Releases are listed here as they are published. Between releases, the draft on the default branch is also maintained.
 
 | Version | Supported |
 |---|---|
-| Draft on default branch | Yes, until `v0.1.0` |
+| `v0.1.0-rc.1` | Yes — current release candidate |
+| Draft on default branch | Yes |
+| Earlier unreleased draft commits | Pilot pins only; upgrade to the current release candidate |
 | Unreleased local forks | No |
 
 ## Disclosure principle

@@ -4,6 +4,28 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.1.0-rc.1 — 2026-07-18
+
+First tagged release candidate of the v0.1 line, after one complete
+brownfield pilot adoption (archaeology → §4.3 human review → recorded
+outcomes → scoped remediations).
+
+### Adopter impact / upgrade actions
+
+- Adopters pinned to `unreleased` commits from the pilot phase upgrade in
+  one reviewed change (ADOPTION.md §2.1): set `upstream.version` to
+  `v0.1.0-rc.1`, `upstream.commit` to the release commit SHA, and the CI
+  caller workflow `@` reference to that same SHA.
+- All schema changes are backward-compatible additions; artifacts that
+  validated under earlier draft commits remain valid.
+- Templates copied earlier keep working as copied; re-copying is optional.
+  The branch-until-reviewed and handoff-format rules apply to future
+  adoption runs.
+- Pinning `version: unreleased` remains valid only for commits whose
+  `VERSION` file reads `unreleased` (PROFILE.md §16).
+
 ### Added
 
 - Initial draft profile (`PROFILE.md`).
