@@ -1,0 +1,9 @@
+# actionlint's static type model for the `job` context lags GitHub:
+# job.workflow_repository / job.workflow_ref / job.workflow_sha are
+# documented context properties (docs.github.com "Contexts reference",
+# job context) and are exercised in production by adopter-validate.yml —
+# suppress only that specific false positive.
+paths:
+  .github/workflows/adopter-validate.yml:
+    ignore:
+      - 'property "workflow_(repository|ref|sha)" is not defined in object type'

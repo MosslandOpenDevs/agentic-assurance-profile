@@ -23,6 +23,17 @@ Coverage map (numbers refer to the suite's required-coverage list):
  9. TestLiteLayout
 10. TestDriftRouting.test_rename_source_path_triggers_component
 11. TestGithubAnnotations
+
+v0.3.0 additions:
+12. TestDriftPolicyRegression stage-proportional acknowledgment (DRAFT base
+    downgrades findings to warnings; HUMAN_REVIEWED/CONFORMANT base keeps
+    them errors even when acknowledged) and the adoption-level findings
+    (project.human_owner, paths.*, security.public_assurance_root)
+13. TestDriftRegisterPolicyDiff (--base-registers-root/--project-root
+    stable-ID register diff, mutations a-h)
+14. TestConformantRepoVisibility (--repo-visibility and RESTRICTED entries)
+15. TestRegisterObligations (empty mandated registers)
+16. TestSchemaHardening (non-empty string enforcement in the registers)
 """
 
 import copy
@@ -298,6 +309,8 @@ class ValidatorTestCase(unittest.TestCase):
         body=None,
         assurance_diff=None,
         base_adoption=None,
+        base_registers=None,
+        head_registers=None,
         strict=False,
     ):
         root = self.make_tmp()
@@ -325,6 +338,20 @@ class ValidatorTestCase(unittest.TestCase):
         if base_adoption is not None:
             write_yaml(root / "base-adoption.yaml", base_adoption)
             args += ["--base-adoption", str(root / "base-adoption.yaml")]
+        # The register policy diff needs both roots: the base registers are
+        # materialized under --base-registers-root at the BASE declaration's
+        # paths, the head registers under --project-root at the HEAD ones
+        # (both fixtures use the default assurance/ layout).
+        if base_registers is not None:
+            base_root = root / "base-root"
+            for kind, document in base_registers.items():
+                write_yaml(base_root / REGISTER_FILES[kind], document)
+            args += ["--base-registers-root", str(base_root)]
+        if head_registers is not None:
+            head_root = root / "head-root"
+            for kind, document in head_registers.items():
+                write_yaml(head_root / REGISTER_FILES[kind], document)
+            args += ["--project-root", str(head_root)]
         if strict:
             args.append("--strict")
         return run_validator(args)
@@ -518,6 +545,155 @@ class TestConformantStage(ValidatorTestCase):
         code, out = self.run_mutated(mutate, "--ignore-stage")
         self.assertEqual(code, 0, out)
         self.assertNotIn("stage CONFORMANT", out)
+
+
+# ---------------------------------------------------------------------------
+# 14. --repo-visibility at stage CONFORMANT (RESTRICTED entries)
+# ---------------------------------------------------------------------------
+
+
+class TestConformantRepoVisibility(ValidatorTestCase):
+    """The CONFORMANT disclosure rule is visibility-aware: RESTRICTED
+    entries are permitted (warning only) in a declared private repository,
+    errors when public, and conservatively errors when the visibility is
+    undeclared — with a hint naming the flag."""
+
+    def run_restricted(self, *extra):
+        adoption, registers = conformant_fixture()
+        registers["defeaters"]["defeaters"][0]["disclosure"] = "RESTRICTED"
+        return self.run_split(adoption, registers, *extra)
+
+    def test_private_visibility_keeps_restricted_entry_a_warning(self):
+        code, out = self.run_restricted("--repo-visibility", "private")
+        self.assertEqual(code, 0, out)
+        # No stage CONFORMANT disclosure error; the stage verdict holds.
+        self.assertNotIn("stage CONFORMANT: defeaters entry", out)
+        self.assertIn("stage CONFORMANT: requirements satisfied", out)
+        # The standing structural warning remains at every stage.
+        self.assertIn("WARN:", out)
+        self.assertIn("verify this file is not public", out)
+
+    def test_public_visibility_makes_restricted_entry_an_error(self):
+        code, out = self.run_restricted("--repo-visibility", "public")
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "stage CONFORMANT: defeaters entry DEF-CORE-001 has disclosure "
+            "RESTRICTED",
+            out,
+        )
+        # A declared public repository gets no "declare it private" hint.
+        self.assertNotIn("--repo-visibility private", out)
+
+    def test_unknown_visibility_errors_and_names_the_flag(self):
+        code, out = self.run_restricted()
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "stage CONFORMANT: defeaters entry DEF-CORE-001 has disclosure "
+            "RESTRICTED",
+            out,
+        )
+        self.assertIn("--repo-visibility private", out)
+
+
+# ---------------------------------------------------------------------------
+# 15. empty-register obligations
+# ---------------------------------------------------------------------------
+
+
+class TestRegisterObligations(ValidatorTestCase):
+    """A register a profile mandates must carry at least one entry: a
+    present-but-empty file is a vacuous pass and fails validation."""
+
+    def test_empty_residuals_register_core_profile_fails(self):
+        registers = {"residuals": {"version": 1, "residuals": []}}
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("register is empty", out)
+        self.assertIn("residuals register is empty", out)
+
+    def test_empty_invariants_register_service_profile_fails(self):
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["service"]
+        registers = baseline_registers()
+        registers["invariants"] = {"version": 1, "invariants": []}
+        root = self.make_tmp()
+        adoption_path = build_split_project(root, adoption, registers)
+        # Profile 'service' also requires a threat model file.
+        (root / "assurance" / "THREAT_MODEL.md").write_text(
+            "# Threat model\n", encoding="utf-8"
+        )
+        code, out = self.run_adopter(root, adoption_path)
+        self.assertEqual(code, 1, out)
+        self.assertIn("register is empty", out)
+        self.assertIn("invariants register is empty", out)
+
+    def test_empty_claims_register_trust_critical_profile_fails(self):
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["trust-critical"]
+        registers = baseline_registers()
+        registers["claims"] = {"version": 1, "claims": []}
+        code, out = self.run_split(adoption, registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("register is empty", out)
+        self.assertIn("claims register is empty", out)
+
+
+# ---------------------------------------------------------------------------
+# 16. schema hardening (non-empty strings in the registers)
+# ---------------------------------------------------------------------------
+
+
+def hardening_invariant():
+    """A schema-valid, semantically quiet invariant entry to mutate."""
+    return {
+        "id": "INV-CORE-001",
+        "title": "Example invariant",
+        "statement": "The example property always holds",
+        "severity": "medium",
+        "scope": "example scope",
+        "status": "INFERRED",
+        "disclosure": "PUBLIC",
+        "owner": "Alice Example",
+    }
+
+
+class TestSchemaHardening(ValidatorTestCase):
+    def run_invariant(self, entry):
+        registers = baseline_registers()
+        registers["invariants"] = {"version": 1, "invariants": [entry]}
+        return self.run_split(baseline_adoption(), registers)
+
+    def test_empty_owner_string_fails_schema(self):
+        entry = hardening_invariant()
+        entry["owner"] = ""
+        code, out = self.run_invariant(entry)
+        self.assertEqual(code, 1, out)
+        self.assertIn("$.invariants[0].owner", out)
+
+    def test_empty_enforcement_item_fails_schema(self):
+        entry = hardening_invariant()
+        entry["enforcement"] = [""]
+        code, out = self.run_invariant(entry)
+        self.assertEqual(code, 1, out)
+        self.assertIn("$.invariants[0].enforcement[0]", out)
+
+    def test_whitespace_accepted_by_on_accepted_critical_residual_fails(self):
+        residual = {
+            "id": "RES-CORE-001",
+            "summary": "Accepted critical residual",
+            "impact": "critical",
+            "uncertainty": "low",
+            "status": "ACCEPTED",
+            "disclosure": "PUBLIC",
+            "owner": "Alice Example",
+            "acceptance_rationale": "Cost of mitigation exceeds exposure",
+            "accepted_by": "   ",
+            "accepted_at": "2026-01-01",
+        }
+        registers = {"residuals": {"version": 1, "residuals": [residual]}}
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("accepted_by", out)
 
 
 # ---------------------------------------------------------------------------
@@ -768,21 +944,285 @@ class TestDriftPolicyRegression(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("invariant(s) removed: INV-CORE-002", out)
 
-    def test_acknowledged_policy_change_passes_with_warning(self):
+    def test_acknowledged_policy_change_draft_base_passes_with_warning(self):
+        # Stage-proportional acknowledgment: when the BASE declaration is
+        # stage DRAFT (absent here), 'Assurance policy change:' downgrades
+        # findings to warnings.
+        base = baseline_adoption()
+        base["components"] = {
+            "api": {
+                "paths": ["src/api/**", "src/legacy/**"],
+                "invariants": ["INV-CORE-001"],
+            }
+        }
+        head = copy.deepcopy(base)
+        head["components"]["api"]["paths"] = ["src/api/**"]
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            body="Assurance policy change: deliberate narrowing during restructure\n",
+            base_adoption=base,
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("WARN:", out)
+        self.assertIn("acknowledged by 'Assurance policy change:'", out)
+        self.assertNotIn("ERROR:", out)
+
+    def test_acknowledged_policy_change_conformant_base_still_fails(self):
+        # From stage HUMAN_REVIEWED on, findings stay errors even when
+        # acknowledged: the red check is the honest signal, and merging over
+        # it is the human owner's recorded decision.
         def mutate(head):
             head["adoption_stage"] = "DRAFT"
 
         code, out = self.run_regression(
             mutate, body="Assurance policy change: deliberate reset during restructure\n"
         )
-        self.assertEqual(code, 0, out)
-        self.assertIn("WARN:", out)
-        self.assertIn("acknowledged", out)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "acknowledged, but the base declaration is stage CONFORMANT", out
+        )
 
     def test_no_changes_reports_no_regression(self):
         code, out = self.run_regression(lambda head: None)
         self.assertEqual(code, 0, out)
         self.assertIn("no assurance policy regression", out)
+
+    def test_human_owner_change_fails(self):
+        def mutate(head):
+            head["project"]["human_owner"] = "Bob Example"
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn(
+            "project.human_owner changed from 'Alice Example' to 'Bob Example'", out
+        )
+
+    def test_paths_invariants_change_fails(self):
+        def mutate(head):
+            head["paths"] = {"invariants": "assurance/OTHER.yaml"}
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("paths.invariants changed", out)
+
+    def test_public_assurance_root_change_fails(self):
+        def mutate(head):
+            head["security"] = {"public_assurance_root": "elsewhere"}
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("security.public_assurance_root changed", out)
+
+
+# ---------------------------------------------------------------------------
+# 13. drift register policy diff (--base-registers-root / --project-root)
+# ---------------------------------------------------------------------------
+
+
+def drift_register_fixture():
+    """Base-side registers for the stable-ID policy diff.
+
+    One critical VERIFIED invariant (INTENDED, with enforcement), one
+    low-severity invariant with enforcement (whose shrinkage must NOT be
+    flagged), one INDEPENDENTLY_VERIFIABLE claim, one critical residual.
+    The drift register diff loads these without schema validation, but the
+    entries are kept schema-valid anyway.
+    """
+    return {
+        "claims": {
+            "version": 1,
+            "claims": [
+                {
+                    "id": "CLAIM-CORE-001",
+                    "text": "Example claim",
+                    "scope": "example scope",
+                    "proof_tier": "INDEPENDENTLY_VERIFIABLE",
+                    "status": "VERIFIED",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                }
+            ],
+        },
+        "invariants": {
+            "version": 1,
+            "invariants": [
+                {
+                    "id": "INV-CORE-001",
+                    "title": "Critical invariant",
+                    "statement": "The critical property always holds",
+                    "severity": "critical",
+                    "scope": "example scope",
+                    "status": "VERIFIED",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                    "intent": {
+                        "classification": "INTENDED",
+                        "authority": "docs/adr/001.md",
+                    },
+                    "enforcement": ["ci guard"],
+                    "verification": ["tests/test_example.py"],
+                    "evidence": ["evidence/run-1.txt"],
+                },
+                {
+                    "id": "INV-CORE-002",
+                    "title": "Low invariant",
+                    "statement": "The low-severity property holds",
+                    "severity": "low",
+                    "scope": "example scope",
+                    "status": "INFERRED",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                    "enforcement": ["low guard"],
+                },
+            ],
+        },
+        "residuals": {
+            "version": 1,
+            "residuals": [
+                {
+                    "id": "RES-CORE-001",
+                    "summary": "Example critical residual",
+                    "impact": "critical",
+                    "uncertainty": "low",
+                    "status": "OPEN",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                }
+            ],
+        },
+    }
+
+
+class TestDriftRegisterPolicyDiff(ValidatorTestCase):
+    """Stable-ID register diff: each test applies one mutation between the
+    base and head register files. The base adoption is stage DRAFT (absent)
+    and no acknowledgment is given, so findings are errors — except in the
+    acknowledgment test, where the DRAFT base downgrades them to warnings."""
+
+    def run_register_diff(self, mutate_head, body=None):
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        base_registers = drift_register_fixture()
+        head_registers = copy.deepcopy(base_registers)
+        mutate_head(head_registers)
+        return self.run_drift(
+            head,
+            changed=(),
+            body=body,
+            base_adoption=base,
+            base_registers=base_registers,
+            head_registers=head_registers,
+        )
+
+    def test_unchanged_registers_report_no_regression(self):
+        code, out = self.run_register_diff(lambda head: None)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_entry_deleted_fails(self):
+        def mutate(head):
+            head["residuals"]["residuals"] = []
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("residuals entry RES-CORE-001 deleted", out)
+
+    def test_invariant_severity_downgrade_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["severity"] = "low"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("severity downgraded from critical to low", out)
+
+    def test_invariant_status_verified_to_unknown_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["status"] = "UNKNOWN"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("status weakened from VERIFIED to UNKNOWN", out)
+
+    def test_invariant_status_verified_to_contradicted_not_flagged(self):
+        # Recording a contradiction is an honesty upgrade, never gated.
+        def mutate(head):
+            head["invariants"]["invariants"][0]["status"] = "CONTRADICTED"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("assurance policy weakened", out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_invariant_intent_reclassified_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["intent"]["classification"] = "UNKNOWN"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("intent reclassified from INTENDED to UNKNOWN", out)
+
+    def test_enforcement_removed_from_critical_invariant_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["enforcement"] = []
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("enforcement item(s) removed: ci guard", out)
+
+    def test_enforcement_removed_from_low_invariant_not_flagged(self):
+        def mutate(head):
+            head["invariants"]["invariants"][1]["enforcement"] = []
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("assurance policy weakened", out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_claim_proof_tier_downgrade_fails(self):
+        def mutate(head):
+            head["claims"]["claims"][0]["proof_tier"] = "OPERATOR_ATTESTED"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn(
+            "proof_tier downgraded from INDEPENDENTLY_VERIFIABLE to "
+            "OPERATOR_ATTESTED",
+            out,
+        )
+
+    def test_residual_impact_downgrade_fails(self):
+        def mutate(head):
+            head["residuals"]["residuals"][0]["impact"] = "low"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("impact downgraded from critical to low", out)
+
+    def test_acknowledged_register_weakening_draft_base_warns(self):
+        # DRAFT base + 'Assurance policy change:' line: the same finding is
+        # a warning and the run passes.
+        def mutate(head):
+            head["residuals"]["residuals"] = []
+
+        code, out = self.run_register_diff(
+            mutate, body="Assurance policy change: register cleanup after triage\n"
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("WARN:", out)
+        self.assertIn("residuals entry RES-CORE-001 deleted", out)
+        self.assertIn("acknowledged by 'Assurance policy change:'", out)
+        self.assertNotIn("ERROR:", out)
 
 
 # ---------------------------------------------------------------------------

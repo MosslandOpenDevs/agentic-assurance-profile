@@ -4,7 +4,10 @@
   "title": "Agentic Assurance Profile claim register",
   "description": "Schema for a claim register (default location `assurance/CLAIMS.yaml`). Each entry is a proposition asserted to a user, operator, integrator, auditor, or the public, with a proof tier, status, disclosure classification, and links to related invariants, defeaters, and residuals (PROFILE.md section 8). Claim wording must not exceed the support of its evidence tier.",
   "type": "object",
-  "required": ["version", "claims"],
+  "required": [
+    "version",
+    "claims"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
@@ -15,25 +18,43 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "text", "scope", "proof_tier", "status", "disclosure", "owner"],
+        "required": [
+          "id",
+          "text",
+          "scope",
+          "proof_tier",
+          "status",
+          "disclosure",
+          "owner"
+        ],
         "additionalProperties": true,
         "properties": {
           "id": {
             "type": "string",
             "description": "Stable claim ID, independent of GitHub Issue numbers.",
-            "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "minLength": 1
           },
           "text": {
             "type": "string",
-            "description": "The exact user-facing or operator-facing claim."
+            "description": "The exact user-facing or operator-facing claim.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "scope": {
             "type": "string",
-            "description": "Bounded system and version scope of the claim."
+            "description": "Bounded system and version scope of the claim.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "proof_tier": {
             "description": "Evidence-strength classification (PROFILE.md section 8): INDEPENDENTLY_VERIFIABLE (a third party can reproduce the result without privileged access), OPERATIONALLY_AUDITABLE (evidence exists but requires controlled access), OPERATOR_ATTESTED (the claim currently depends on operator process or statement), NOT_CLAIMED (the project explicitly declines to assert the property).",
-            "enum": ["INDEPENDENTLY_VERIFIABLE", "OPERATIONALLY_AUDITABLE", "OPERATOR_ATTESTED", "NOT_CLAIMED"]
+            "enum": [
+              "INDEPENDENTLY_VERIFIABLE",
+              "OPERATIONALLY_AUDITABLE",
+              "OPERATOR_ATTESTED",
+              "NOT_CLAIMED"
+            ]
           },
           "invariants": {
             "type": "array",
@@ -46,12 +67,20 @@
           "evidence": {
             "type": "array",
             "description": "Evidence references bound to a revision, release, artifact, or deployment.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "limitations": {
             "type": "array",
             "description": "Explicit limitations of the claim.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
           },
           "defeaters": {
             "type": "array",
@@ -71,15 +100,27 @@
           },
           "status": {
             "description": "Conclusion classification (PROFILE.md section 4).",
-            "enum": ["VERIFIED", "INFERRED", "UNKNOWN", "CONTRADICTED"]
+            "enum": [
+              "VERIFIED",
+              "INFERRED",
+              "UNKNOWN",
+              "CONTRADICTED"
+            ]
           },
           "disclosure": {
             "description": "Disclosure classification (PROFILE.md section 13).",
-            "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]
+            "enum": [
+              "PUBLIC",
+              "SUMMARY_ONLY",
+              "RESTRICTED",
+              "EMBARGOED"
+            ]
           },
           "owner": {
             "type": "string",
-            "description": "Named human owner of the claim."
+            "description": "Named human owner of the claim.",
+            "minLength": 1,
+            "pattern": "\\S"
           }
         }
       }

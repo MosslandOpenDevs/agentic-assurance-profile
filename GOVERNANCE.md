@@ -24,6 +24,16 @@ For this repository, the governing body retains authority over:
 - Documentation-only and tooling-only changes follow the ordinary pull-request process; branch protection still requires at least one approving human review.
 - Every change states its semver classification per PROFILE.md §16 in the pull request (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
+### Review classes — what a shipped change actually received
+
+Every release states, honestly, which of these classes its changes received; the class is a fact about the record, not an aspiration:
+
+- **INDEPENDENTLY_REVIEWED** — an approving review by a human maintainer who did not author the change, durably recorded on the pull request.
+- **SOLE_OWNER_ATTESTED** — reviewed and merged on the sole maintainer's own authority, with no independent human review on record. This is the honest current default: the maintainers team has one active member, GitHub does not allow self-approval, and a merge performed by a second account is not an approving review.
+- **AUTOMATION_VERIFIED** — the mechanical evidence that accompanied the change: self-check, the validator regression suite, workflow lint, and any external review text folded into the change.
+
+The decision rules above state the intended bar (independent review for normative text, schemas, and templates). Until a second active maintainer exists, releases ship as SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED, and any external technical reviews are cited in the release pull request rather than counted as approvals. Assuming an independent review that did not happen would violate the profile's own prose-provenance principle; recording the true class is the conformant behavior. The reusable workflow's trust assumption should be read accordingly: "maintainer-reviewed canonical commit" means reviewed under whichever class the release records.
+
 ## 3. Role of agents
 
 AI agents may draft any change in this repository: profile text, schemas, templates, documentation, and tooling. Agents never approve. An approving review must come from a human maintainer, and the agent prohibitions of PROFILE.md §15 apply to work on this repository exactly as they apply to adopting projects.
