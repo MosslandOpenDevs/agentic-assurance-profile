@@ -81,6 +81,14 @@
             "format": "date",
             "description": "Acceptance date (YYYY-MM-DD), or null when not accepted."
           },
+          "acceptance_rationale": {
+            "type": "string",
+            "description": "The human owner's recorded reason for an ACCEPTED disposition; expected (not required) when status is ACCEPTED."
+          },
+          "resolution_note": {
+            "type": "string",
+            "description": "How a RESOLVED residual was closed (remediation reference); expected when status is RESOLVED."
+          },
           "review_after": {
             "type": "string",
             "format": "date",

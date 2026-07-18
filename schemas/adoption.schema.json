@@ -59,6 +59,30 @@
         "enum": ["core", "service", "trust-critical", "data-curation", "agent-runtime", "archived"]
       }
     },
+    "human_review": {
+      "type": "object",
+      "description": "Pointer to the most recent completed human review (PROFILE.md section 4.3) and its durable record. Additional keys are permitted for local review conventions.",
+      "additionalProperties": true,
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date (YYYY-MM-DD) of the completed human review."
+        },
+        "reviewer": {
+          "type": "string",
+          "description": "The human reviewer or reviewing body."
+        },
+        "record": {
+          "type": "string",
+          "description": "Repository-relative path to the durable review record."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Short summary of the review outcome."
+        }
+      }
+    },
     "specification_workflow": {
       "type": "object",
       "description": "The existing specification or change workflow reused for material changes (PROFILE.md section 9).",

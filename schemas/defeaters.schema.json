@@ -52,6 +52,10 @@
             "description": "Defeater status. The v0.1 status set is: OPEN (the defeater stands and is unaddressed), MITIGATED (controls reduce but do not eliminate the defeater), RESOLVED (evidence shows the defeater no longer applies), WITHDRAWN (the defeater was recorded in error or is out of scope).",
             "enum": ["OPEN", "MITIGATED", "RESOLVED", "WITHDRAWN"]
           },
+          "resolution": {
+            "type": "string",
+            "description": "How a RESOLVED, MITIGATED, or WITHDRAWN defeater was closed (what changed, and where)."
+          },
           "disclosure": {
             "description": "Disclosure classification (PROFILE.md section 13).",
             "enum": ["PUBLIC", "SUMMARY_ONLY", "RESTRICTED", "EMBARGOED"]

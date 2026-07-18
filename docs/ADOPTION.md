@@ -18,6 +18,9 @@ This is an existing repository, so follow the brownfield sequence in §4:
 3. Finish with a written proposal listing everything that requires
    human review under §4.3. Do not declare adoption complete;
    approval decisions belong to the human owner.
+4. Keep all changes on a branch and open a draft pull request;
+   do not merge to the default branch — merging is the human
+   owner's act after the §4.3 review.
 ```
 
 The agent drafts; the human owner approves (§4.3, §6). The expected shape of the proposal is defined in [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) §12.
@@ -123,6 +126,14 @@ The workflow also emits a non-blocking notice when the pinned version trails the
 
 **Shadowing warning.** GitHub treats any file in a repository's `.github/ISSUE_TEMPLATE/` directory as a complete replacement for the organization's default template set — including `config.yml`. An incomplete copy (for example, only `conformance-gap.yml`) silently discards the organization's `config.yml`, re-enables blank issues, and drops the contact link that routes vulnerability reports to private security reporting. Copy the whole bundle, `config.yml` included, and replace the `REPLACE_WITH_OWNER_AND_REPOSITORY` placeholder in `config.yml` with your repository slug.
 
+**Labels must exist before the forms can apply them.** The issue forms reference labels — `assurance/gap`, `assurance/evidence`, `assurance/residual`, `needs-human-approval`, and the common `bug`, `enhancement`, `question`, and `documentation` — and GitHub silently drops any label a form references that does not already exist in the repository: the issue is still created, just unlabeled. Create the missing ones once, for example:
+
+```bash
+for L in "assurance/gap" "assurance/evidence" "assurance/residual" "needs-human-approval"; do gh label create "$L" --repo OWNER/REPO --color 5319e7 2>/dev/null || true; done
+```
+
+Adjust the list and colors to your conventions; the common labels (`bug`, `enhancement`, `question`, `documentation`) exist by default in most repositories but are worth verifying.
+
 Which form to use for which purpose is defined in [DISCLOSURE-AND-ISSUES.md §4](DISCLOSURE-AND-ISSUES.md).
 
 ### 3.6 Validate locally
@@ -150,6 +161,8 @@ The validator strict-checks the adoption file against the pinned adoption schema
 | `trust-critical` | additionally the `claims` artifact |
 
 It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); and selection of the provisional `data-curation` or `agent-runtime` profiles.
+
+Entries classified `RESTRICTED` may be committed to a private repository, but they bind its visibility: the repository must not be made public while `RESTRICTED` material is present. Before any publication, sanitize `RESTRICTED` entries to `SUMMARY_ONLY` or `PUBLIC`, or move them to the restricted record ([DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md)). The validator's `RESTRICTED` warnings exist to keep this constraint visible on every run.
 
 ## 4. Brownfield adoption
 
@@ -190,6 +203,8 @@ Before broad remediation, the human owner reviews:
 - critical residuals and public claim limitations.
 
 An agent may draft all of this; it may approve none of it.
+
+The adoption draft should arrive as an open pull request and stay unmerged until this review completes; merging the pull request is then the natural durable record that the owner reviewed and accepted the draft as the §4.3 baseline. If the draft was merged early, nothing is lost — corrections and the review record land as follow-up pull requests, as the first pilot did — but branch-until-reviewed is the intended flow.
 
 ### 4.4 Staged remediation
 

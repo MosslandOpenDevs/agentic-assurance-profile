@@ -19,6 +19,10 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - Adopter template bundle: `templates/github/` issue forms and pull request template, `templates/AGENTS.md`, `templates/SYSTEM.md`, `templates/THREAT_MODEL.md`.
 - Adoption guide (`docs/ADOPTION.md`) and convention-mapping guide (`docs/MAPPINGS.md`).
 - Root `VERSION` file recording the repository's release state.
+- Optional `acceptance_rationale` and `resolution_note` fields on residual entries (`schemas/residuals.schema.json`), standardized from first-pilot usage.
+- Optional `resolution` field on defeater entries (`schemas/defeaters.schema.json`), standardized from first-pilot usage.
+- Optional `human_review` block in the adoption declaration (`schemas/adoption.schema.json`) recording the §4.3 intent review, standardized from first-pilot usage.
+- Adoption guide §3.5: note that GitHub silently drops issue-form labels that do not exist in the repository, with an example `gh label create` loop.
 
 ### Changed
 
@@ -26,3 +30,5 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - Marked the `data-curation` and `agent-runtime` profiles as provisional; while provisional, changes to their obligations are classified as minor.
 - Clarified normativity: `PROFILE.md` is the normative text; README files and translations are informative.
 - `SECURITY.md` scope now names templates alongside example configurations.
+- Adoption guide §0 kick-off prompt and §4.3 now direct agents to keep the adoption draft on a branch as an open pull request; merging to the default branch is the human owner's act after the §4.3 review (first-pilot lesson).
+- Adoption guide §3.6 now states that `RESTRICTED` entries bind repository visibility: the repository must not be made public until they are sanitized to `SUMMARY_ONLY`/`PUBLIC` or moved to the restricted record.
