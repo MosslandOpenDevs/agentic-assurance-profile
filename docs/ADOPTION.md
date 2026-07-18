@@ -21,9 +21,15 @@ This is an existing repository, so follow the brownfield sequence in §4:
 4. Keep all changes on a branch and open a draft pull request;
    do not merge to the default branch — merging is the human
    owner's act after the §4.3 review.
+5. End with a handoff summary addressed to the human owner,
+   written in the owner's working language: state first that
+   nothing is decided yet and the pull request must not be merged
+   until the owner has answered; then list each decision the
+   owner must make, in plain language (see docs/REVIEW-GUIDE.md).
+   Never describe the draft as 'settled', 'complete', or 'done'.
 ```
 
-The agent drafts; the human owner approves (§4.3, §6). The expected shape of the proposal is defined in [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) §12.
+The agent drafts; the human owner approves (§4.3, §6). The expected shape of the proposal is defined in [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) §12. If you are the human owner receiving the result, start with the review guide, [REVIEW-GUIDE.md](REVIEW-GUIDE.md); unfamiliar terminology is defined in [GLOSSARY.md](GLOSSARY.md).
 
 ## 1. Prerequisites
 
@@ -204,7 +210,7 @@ Before broad remediation, the human owner reviews:
 
 An agent may draft all of this; it may approve none of it.
 
-The adoption draft should arrive as an open pull request and stay unmerged until this review completes; merging the pull request is then the natural durable record that the owner reviewed and accepted the draft as the §4.3 baseline. If the draft was merged early, nothing is lost — corrections and the review record land as follow-up pull requests, as the first pilot did — but branch-until-reviewed is the intended flow.
+The adoption draft should arrive as an open pull request and stay unmerged until this review completes; merging the pull request is then the natural durable record that the owner reviewed and accepted the draft as the §4.3 baseline. If the draft was merged early, nothing is lost — corrections and the review record land as follow-up pull requests, as the first pilot did — but branch-until-reviewed is the intended flow. [REVIEW-GUIDE.md](REVIEW-GUIDE.md) is the owner-side companion for making these decisions, walking through each of them in plain language.
 
 ### 4.4 Staged remediation
 
@@ -242,6 +248,8 @@ A green validator run checks structure, presence, and pin consistency — not th
 - [PROFILE.md](../PROFILE.md) — the normative profile text
 - [MAPPINGS.md](MAPPINGS.md) — reusing existing conventions via `paths:`
 - [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md) — issue routing and disclosure rules
+- [GLOSSARY.md](GLOSSARY.md) — plain-language definitions of the profile's terminology
+- [REVIEW-GUIDE.md](REVIEW-GUIDE.md) — the human owner's guide to reviewing an adoption draft
 - [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) — the adopter-side entry document
 - [templates/adoption.yaml](../templates/adoption.yaml) — the adoption file template
 - [RELEASING.md](../RELEASING.md) — release ritual and the `VERSION` file lifecycle

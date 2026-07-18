@@ -285,7 +285,7 @@ For an existing repository:
 
 Creating the files alone is not adoption.
 
-See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile".
+See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
 ---
 
@@ -322,7 +322,9 @@ Layout of this central repository:
 ├── docs/
 │   ├── ADOPTION.md
 │   ├── DISCLOSURE-AND-ISSUES.md
-│   └── MAPPINGS.md
+│   ├── GLOSSARY.md
+│   ├── MAPPINGS.md
+│   └── REVIEW-GUIDE.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── claims.schema.json

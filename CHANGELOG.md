@@ -23,6 +23,8 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - Optional `resolution` field on defeater entries (`schemas/defeaters.schema.json`), standardized from first-pilot usage.
 - Optional `human_review` block in the adoption declaration (`schemas/adoption.schema.json`) recording the §4.3 intent review, standardized from first-pilot usage.
 - Adoption guide §3.5: note that GitHub silently drops issue-form labels that do not exist in the repository, with an example `gh label create` loop.
+- Glossary (`docs/GLOSSARY.md`): plain-language definitions of the profile's terminology, as an owner-side entry point (first-pilot lesson).
+- Owner review guide (`docs/REVIEW-GUIDE.md`): the human owner's entry point for reviewing an adoption draft and making the §4.3 decisions (first-pilot lesson).
 
 ### Changed
 
@@ -32,3 +34,4 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - `SECURITY.md` scope now names templates alongside example configurations.
 - Adoption guide §0 kick-off prompt and §4.3 now direct agents to keep the adoption draft on a branch as an open pull request; merging to the default branch is the human owner's act after the §4.3 review (first-pilot lesson).
 - Adoption guide §3.6 now states that `RESTRICTED` entries bind repository visibility: the repository must not be made public until they are sanitized to `SUMMARY_ONLY`/`PUBLIC` or moved to the restricted record.
+- Prescribed the agent→owner handoff format (adoption guide §0 kick-off prompt item 5; template `AGENTIC_ASSURANCE.md` §12): the drafting agent ends with a handoff summary in the owner's working language that states nothing is decided, lists each pending decision in plain language, and instructs that the pull request must not be merged until those decisions are made; the agent must not describe its result as "settled" or "complete" — completion language is reserved for the owner's acceptance (first-pilot lesson).
