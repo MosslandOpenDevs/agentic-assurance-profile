@@ -35,14 +35,17 @@
           },
           "statement": {
             "type": "string",
-            "description": "Concrete reason the affected claim or argument may be false or incomplete."
+            "description": "Concrete reason the affected claim or argument may be false or incomplete.",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "affected_claims": {
             "type": "array",
             "description": "IDs of claims this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "minLength": 1
             }
           },
           "affected_invariants": {
@@ -50,14 +53,17 @@
             "description": "IDs of invariants this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "minLength": 1
             }
           },
           "evidence": {
             "type": "array",
             "description": "Evidence references supporting or bounding the defeater.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
             }
           },
           "status": {

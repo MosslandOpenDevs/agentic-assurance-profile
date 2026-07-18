@@ -677,6 +677,26 @@ class TestSchemaHardening(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("$.invariants[0].enforcement[0]", out)
 
+    def test_empty_defeater_statement_fails_schema(self):
+        # ADOPTION.md section 3.6 names `statement` among the hardened
+        # semantic fields; the defeaters schema must enforce it too.
+        registers = baseline_registers()
+        registers["defeaters"] = {
+            "version": 1,
+            "defeaters": [
+                {
+                    "id": "DEF-CORE-001",
+                    "statement": "   ",
+                    "status": "OPEN",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                }
+            ],
+        }
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("$.defeaters[0].statement", out)
+
     def test_whitespace_accepted_by_on_accepted_critical_residual_fails(self):
         residual = {
             "id": "RES-CORE-001",
@@ -1223,6 +1243,73 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
         self.assertIn("residuals entry RES-CORE-001 deleted", out)
         self.assertIn("acknowledged by 'Assurance policy change:'", out)
         self.assertNotIn("ERROR:", out)
+
+    def test_unhashable_status_does_not_crash(self):
+        # The register files are loaded without schema validation (a base
+        # merged before the stricter schema, or added directly to the
+        # default branch, can hold any YAML type). A list-valued status must
+        # not crash the diff with an unhashable-key TypeError.
+        def mutate(head):
+            head["invariants"]["invariants"][0]["status"] = "UNKNOWN"
+
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        base_registers = drift_register_fixture()
+        base_registers["invariants"]["invariants"][0]["status"] = ["VERIFIED"]
+        head_registers = copy.deepcopy(drift_register_fixture())
+        mutate(head_registers)
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            base_adoption=base,
+            base_registers=base_registers,
+            head_registers=head_registers,
+        )
+        self.assertNotIn("Traceback", out)
+        # A non-string base status is not a recognized weakening source, so
+        # the status change is simply not flagged (it does not crash).
+        self.assertNotIn("status weakened", out)
+
+
+class TestDriftPathTraversal(ValidatorTestCase):
+    """The register diff must not read files outside the roots it is given,
+    even though the `paths:` map comes from a pull-request-controlled
+    adoption file (the same containment adopter mode applies)."""
+
+    def test_absolute_head_register_path_is_contained(self):
+        secret = self.make_tmp() / "outside" / "secret.txt"
+        secret.parent.mkdir(parents=True)
+        secret.write_text("TOPSECRET-CONTENT\n", encoding="utf-8")
+
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        head.setdefault("paths", {})["invariants"] = str(secret)
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            base_adoption=base,
+            base_registers={},
+            head_registers={},
+        )
+        # The traversal path is dropped and reported; the file is never read.
+        self.assertIn("resolves outside the project root", out)
+        self.assertNotIn("TOPSECRET-CONTENT", out)
+        self.assertNotIn("cannot parse", out)
+
+    def test_dotdot_head_register_path_is_contained(self):
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        head.setdefault("paths", {})["invariants"] = "../../../../etc/hostname"
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            base_adoption=base,
+            base_registers={},
+            head_registers={},
+        )
+        # A .. traversal is dropped and reported, never read/parsed.
+        self.assertIn("resolves outside the project root", out)
+        self.assertNotIn("cannot parse", out)
 
 
 # ---------------------------------------------------------------------------

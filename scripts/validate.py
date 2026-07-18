@@ -1765,6 +1765,17 @@ def register_policy_regressions(
         b, a = order_index(order, before), order_index(order, after)
         return b is not None and a is not None and a > b
 
+    def reclassified(table: dict, before: object, after: object) -> bool:
+        """True when `before` -> `after` is a listed weakening.
+
+        The registers are loaded without schema validation (either side may
+        predate the stricter schema, or the base may have merged directly to
+        the default branch), so a status/classification value can be any
+        YAML type. Guard the mapping lookup: a non-string ``before`` is never
+        a key, so it can never name a weakening.
+        """
+        return isinstance(before, str) and after in table.get(before, ())
+
     for kind in REGISTER_KINDS:
         if kind not in base_registers or base_registers[kind] is None:
             continue
@@ -1794,7 +1805,7 @@ def register_policy_regressions(
                 if isinstance(base_intent, dict) and isinstance(head_intent, dict):
                     before = base_intent.get("classification")
                     after = head_intent.get("classification")
-                    if after in INTENT_WEAKENINGS.get(before, ()):
+                    if reclassified(INTENT_WEAKENINGS, before, after):
                         findings.append(
                             (
                                 "weakened",
@@ -1827,7 +1838,7 @@ def register_policy_regressions(
 
             if kind in ("invariants", "claims"):
                 before, after = base_entry.get("status"), head_entry.get("status")
-                if after in STATUS_WEAKENINGS.get(before, ()):
+                if reclassified(STATUS_WEAKENINGS, before, after):
                     noun = "invariant" if kind == "invariants" else "claim"
                     findings.append(
                         (
@@ -1865,14 +1876,20 @@ def load_registers_from_root(
 ) -> dict[str, list | None]:
     """Load the registers of an adoption declaration from a directory root.
 
-    Used for the base side of the policy diff: the CI caller materializes
-    the base branch's register files (at the paths the BASE declaration
-    names) under a temporary root. Mirrors the head-side loading semantics:
-    absent file = register absent; unreadable = None (reported); lite
-    layout reads the single assurance file's sections.
+    Used by the policy diff for both sides: the CI caller materializes the
+    base branch's register files under a temporary root, and the head side
+    reads from the adopting repository. Mirrors the head-side loading
+    semantics: absent file = register absent; unreadable = None (reported);
+    lite layout reads the single assurance file's sections.
+
+    The declared ``paths:`` come from a pull-request-controlled adoption
+    file, so they are run through ``check_declared_paths`` first — an
+    absolute or ``..``-traversal value is dropped (and reported) exactly as
+    in adopter mode, so this function never reads a file outside ``root``.
     """
     registers: dict[str, list | None] = {}
     if adoption.get("layout") == "lite":
+        # Fixed constant path, not adopter-controlled — no containment needed.
         path = root / LITE_ASSURANCE_PATH
         if not path.is_file():
             return registers
@@ -1887,7 +1904,7 @@ def load_registers_from_root(
                         {"version": 1, kind: document[kind]}, kind
                     )
         return registers
-    paths = resolve_paths(adoption)
+    paths = check_declared_paths(root, resolve_paths(adoption), report)
     for kind in REGISTER_KINDS:
         relative = paths.get(kind)
         if relative is None:
