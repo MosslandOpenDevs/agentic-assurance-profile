@@ -122,7 +122,7 @@ Use the smallest applicable set.
 | `agent-runtime` | Model-driven agents or workflows operating in production |
 | `archived` | Reference-only repositories without active operation or feature development |
 
-The `data-curation` and `agent-runtime` profiles are provisional until exercised by a real adopter. While marked provisional, changes to their obligations are classified as minor.
+The `agent-runtime` profile is provisional until exercised by a real adopter; while marked provisional, changes to its obligations are classified as minor. The `data-curation` profile was promoted from provisional in v0.2.0 after a public adopter exercised every §6.4 obligation and dispositioned the resulting gaps.
 
 A project MAY define local extensions. Local extensions MUST NOT silently weaken the pinned upstream profile.
 
@@ -407,5 +407,7 @@ A project MAY describe a bounded revision or release as conforming only when:
 - claim language does not exceed evidence strength;
 - critical residuals are explicitly accepted;
 - public artifacts exclude restricted and embargoed material.
+
+A project MAY declare an adoption stage (`DRAFT`, `HUMAN_REVIEWED`, `CONFORMANT`) in its adoption declaration. A declared stage binds: conformance checking MUST fail when the declared stage's requirements are not met, and advancing the stage is a human-owner act.
 
 Conformance means that the project's contracts, controls, evidence, counterarguments, and remaining uncertainty are represented according to this profile. It does not mean the project is universally secure or bug-free.

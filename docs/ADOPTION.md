@@ -195,7 +195,7 @@ The validator strict-checks the adoption file against the pinned adoption schema
 
 Under `layout: lite` (§3.0) the same command applies, with two differences. `.agentic-assurance/assurance.yaml` is validated — the envelope against the lite schema, each present section against the corresponding register schema, and the combined content through the same semantic checks. And the split per-profile file checks are replaced by the lite rules: the file itself must exist, `residuals` must be present, either a `system` section or a file at `paths.system` must exist, and any profile beyond `core`/`archived` is an error pointing to the graduation path of §3.0.
 
-It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); and selection of the provisional `data-curation` or `agent-runtime` profiles.
+It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); and selection of the provisional `agent-runtime` profile.
 
 Entries classified `RESTRICTED` may be committed to a private repository, but they bind its visibility: the repository must not be made public while `RESTRICTED` material is present. Before any publication, sanitize `RESTRICTED` entries to `SUMMARY_ONLY` or `PUBLIC`, or move them to the restricted record ([DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md)). The validator's `RESTRICTED` warnings exist to keep this constraint visible on every run.
 
@@ -350,7 +350,7 @@ For the initial pilot adoptions of this profile (Passport-class projects):
 - select `core` only at first;
 - run the full §4 brownfield sequence before extending the profile set;
 - add `service` once the assessment confirms the repository operates a deployed service, and `trust-critical` only after the assessment establishes which security, identity, or public-verifiability claims the project actually makes — claims drive obligations, not the other way around;
-- treat `data-curation` and `agent-runtime` as provisional profiles: their obligations may change in a minor release, and the validator warns on their selection.
+- treat `agent-runtime` as a provisional profile: its obligations may change in a minor release, and the validator warns on its selection. (`data-curation` was promoted from provisional in v0.2.0 after the second pilot exercised it.)
 
 ## 6. What adoption is not
 

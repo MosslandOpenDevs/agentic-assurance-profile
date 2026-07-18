@@ -120,7 +120,7 @@ DEFAULT_PATHS = {
     "evidence": "assurance/evidence",
 }
 
-PROVISIONAL_PROFILES = ("data-curation", "agent-runtime")
+PROVISIONAL_PROFILES = ("agent-runtime",)  # data-curation promoted in v0.2.0
 
 # Adoption stages (adoption.yaml `adoption_stage`), lowest to highest. Stages
 # are self-declared and self-binding: the validator enforces the declared

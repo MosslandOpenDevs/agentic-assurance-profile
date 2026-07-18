@@ -4,6 +4,28 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.2.0 — 2026-07-18
+
+The register becomes a regression gate, the safest usage becomes the
+easiest usage, and a green check can no longer be misread. All three
+features come from the two pilot adoptions and two external reviews of
+the v0.1 line.
+
+### Adopter impact / upgrade actions
+
+- Re-pin is optional; existing v0.1.x pins remain valid. Upgrading
+  adopters update `upstream.version`, `upstream.commit` (the v0.2.0 tag
+  commit), and the workflow `@` reference in one reviewed change.
+- **Required-check rename:** the reusable workflow's `validate` job is
+  now `structure`, and a `conformance` check appears (skipped while the
+  declared stage is DRAFT). Update branch-protection required checks
+  when re-pinning.
+- All new fields are optional; adoptions without `layout`, `components`,
+  or `adoption_stage` behave byte-identically.
+- `data-curation` is no longer provisional; `agent-runtime` remains so.
+
 ### Added
 
 - Lite adoption layout for `core`: all assurance content in a single
@@ -94,6 +116,14 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   check must update their branch-protection settings from `validate` to
   `structure`; the split exists so a green structure check cannot be
   misread as conformance (adoption guide §3.8).
+
+### Changed (release)
+
+- `PROFILE.md` §5: `data-curation` promoted from provisional (exercised
+  end-to-end by the second pilot; both §6.4 gaps dispositioned).
+  `agent-runtime` remains provisional.
+- `PROFILE.md` §17: a declared adoption stage binds — conformance
+  checking MUST fail when the declared stage's requirements are not met.
 
 ## v0.1.2 — 2026-07-18
 
