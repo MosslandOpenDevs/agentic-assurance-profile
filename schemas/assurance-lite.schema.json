@@ -2,10 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MosslandOpenDevs/agentic-assurance-profile/main/schemas/assurance-lite.schema.json",
   "title": "Agentic Assurance Profile lite assurance file",
-  "description": "Schema for `.agentic-assurance/assurance.yaml`, the single assurance file of the lite layout (`layout: lite` in adoption.yaml; core profile only). This is a thin envelope: it types the prose fields and names the register sections, but deliberately does not duplicate the register entry shapes. Items in the `invariants`, `defeaters`, and `residuals` sections follow the entry shapes of invariants.schema.json, defeaters.schema.json, and residuals.schema.json respectively; the validator extracts each present section and validates it against the corresponding register schema, so every entry shape is defined in exactly one place. Graduating to the split layout preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop `layout: lite`.",
+  "description": "Schema for `.agentic-assurance/assurance.yaml`, the single assurance file of the lite layout (`layout: lite` in adoption.yaml; core profile only). This is a thin envelope: it types the prose fields and names the register sections, but deliberately does not duplicate the register entry shapes. Items in the `invariants`, `defeaters`, and `residuals` sections follow the entry shapes of invariants.schema.json, defeaters.schema.json, and residuals.schema.json respectively; the validator extracts each present section and validates it against the corresponding register schema, so every entry shape is defined in exactly one place. Graduating to the split layout preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop `layout: lite`. Unknown top-level keys are rejected (a typo like 'invarients' must fail loudly, not pass silently); adopter-specific keys belong under the explicit `extensions` namespace.",
   "type": "object",
-  "required": ["version", "purpose", "non_goals", "residuals"],
-  "additionalProperties": true,
+  "required": [
+    "version",
+    "purpose",
+    "non_goals",
+    "residuals"
+  ],
+  "additionalProperties": false,
   "properties": {
     "version": {
       "const": 1,
@@ -13,17 +18,25 @@
     },
     "purpose": {
       "type": "string",
-      "description": "What the system is for (PROFILE.md section 6.1)."
+      "description": "What the system is for (PROFILE.md section 6.1).",
+      "minLength": 1,
+      "pattern": "\\S"
     },
     "non_goals": {
       "type": "array",
       "description": "Explicit non-goals — what the system deliberately does not do (PROFILE.md section 6.1 requires non-goals).",
       "minItems": 1,
-      "items": { "type": "string" }
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
     },
     "system": {
       "type": "string",
-      "description": "Short as-built system description, satisfying PROFILE.md section 6.1's system description obligation for small adopters. When absent, keep a separate system file mapped via adoption.yaml `paths.system` (default `assurance/SYSTEM.md`); the validator requires one of the two."
+      "description": "Short as-built system description, satisfying PROFILE.md section 6.1's system description obligation for small adopters. When absent, keep a separate system file mapped via adoption.yaml `paths.system` (default `assurance/SYSTEM.md`); the validator requires one of the two.",
+      "minLength": 1,
+      "pattern": "\\S"
     },
     "invariants": {
       "type": "array",
@@ -36,6 +49,10 @@
     "residuals": {
       "type": "array",
       "description": "Residual register section. Items follow the entry shape of residuals.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Free-form local extension namespace — the only place for adopter-specific keys. Top-level unknown keys are rejected so that typos in section names fail loudly."
     }
   }
 }

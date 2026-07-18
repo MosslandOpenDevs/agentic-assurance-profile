@@ -32,7 +32,7 @@ upstream pin. Report conflicts and unresolved uncertainty explicitly.
 
 REPLACE_WITH_ONE_PARAGRAPH_DESCRIPTION_OF_PURPOSE_USERS_AND_SCOPE
 
-Non-goals and the as-built system description live in `assurance/SYSTEM.md`, or at the path recorded under `paths.system` in `.agentic-assurance/adoption.yaml`.
+Non-goals and the as-built system description live in `assurance/SYSTEM.md` or at the path recorded under `paths.system` in `.agentic-assurance/adoption.yaml` — except under `layout: lite`, where they are the `non_goals` and `system` fields of `.agentic-assurance/assurance.yaml`.
 
 ## Build and test commands
 

@@ -134,13 +134,20 @@ Add a caller workflow at `.github/workflows/assurance.yml` in the adopting repos
 ```yaml
 # .github/workflows/assurance.yml
 name: assurance
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
 jobs:
   assurance:
     uses: MosslandOpenDevs/agentic-assurance-profile/.github/workflows/adopter-validate.yml@REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA
 ```
 
+The explicit `pull_request` types matter: the drift check (§3.7) reads invariant mentions and no-impact statements from the pull-request description, and the default types do not include `edited` — without it, editing the description after the fact would leave a stale verdict standing.
+
 The `@` reference must be the same full commit SHA you declared as `upstream.commit`. The reusable workflow is pinned exactly like the profile itself; a floating reference such as `@main` reintroduces the un-pinned dependency that the profile prohibits. When upgrading the pin, update `upstream.version`, `upstream.commit`, and this `@` reference in the same change.
+
+For safety the reusable workflow runs the validator only from the canonical upstream, `MosslandOpenDevs/agentic-assurance-profile`: your `upstream.repository` is validated as data (it must equal the canonical upstream, or the workflow errors), and only the pinned commit — always a maintainer-reviewed commit of the canonical repository — is taken from your adoption file, so a pull request cannot point CI at other code. The workflow runs with `contents: read`, does not persist checkout credentials, pins its actions to full commit SHAs, and installs hash-locked dependencies. If you adopt from a fork of the profile, run your own copy of `adopter-validate.yml` with its `CANONICAL` constant changed to your fork.
 
 The called workflow reads `upstream.repository` and `upstream.commit` from your adoption file, checks out the profile at that pinned commit, and runs the validator against the pinned schemas — never against the latest ones. If your adoption file is not at the default location, pass it explicitly:
 
@@ -176,7 +183,7 @@ Check out the profile at the pinned commit and run the adopter validator from th
 ```bash
 git clone https://github.com/MosslandOpenDevs/agentic-assurance-profile .assurance-profile-pin
 git -C .assurance-profile-pin checkout REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA
-pip install pyyaml jsonschema
+pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt  # or: pip install pyyaml jsonschema
 python .assurance-profile-pin/scripts/validate.py adopter \
   --adoption .agentic-assurance/adoption.yaml \
   --project-root . \
@@ -213,9 +220,9 @@ components:
 
 Each component names the repository paths it covers — gitwildmatch-style globs, where `**` crosses directory boundaries and `*`/`?` stay within one path segment — and the invariant IDs those paths protect. `tests` is recorded but not checked in this release.
 
-When the map is present, the reusable workflow (§3.4) runs a drift check on every pull request, against the pinned validator like everything else; push-event runs are unaffected. For each component whose `paths` match at least one changed file, the pull request satisfies that component if any of the following holds:
+When the map is present, the reusable workflow (§3.4) runs a drift check on every pull request, against the pinned validator like everything else; push-event runs are unaffected. Changed files are computed rename-safely: a rename or copy counts both its source and its destination path, so moving code out of a mapped path cannot escape the component's globs. For each component whose `paths` match at least one changed file, the pull request satisfies that component if any of the following holds:
 
-1. the change also touches assurance artifacts — any path under `assurance/` or `.agentic-assurance/`;
+1. the **added lines** of the assurance-artifact diff (paths under `assurance/` or `.agentic-assurance/`) reference at least one of the component's invariant IDs, matched with token boundaries — merely touching some assurance file is not enough (an unrelated register edit does not satisfy an unrelated component), unchanged context lines around an edit do not count, deleting an entry does not count as an update, and a longer ID such as `INV-CORE-001-EXT-002` does not satisfy `INV-CORE-001`;
 2. the pull-request description mentions every invariant ID listed for the component (a plain substring match; listing them under "Affected assurance IDs" in the pull-request template is sufficient);
 3. the description carries an explicit no-impact statement — both lines at the start of a line, and the reason is mandatory (`Assurance impact: none` alone does not satisfy):
 
@@ -224,28 +231,40 @@ Assurance impact: none
 Reason: <why this change cannot affect the mapped invariants>
 ```
 
-An unsatisfied component produces a warning naming the component, the number of matched files, and the invariant IDs to address; the job still passes. To escalate the warnings into a failing check, pass the `strict-drift` input to the reusable workflow:
+An unsatisfied component produces a warning — surfaced as a GitHub annotation in the checks UI, with a routing table in the job summary — naming the component, the number of matched files, and the invariant IDs to address; the job still passes. To escalate the warnings into a failing check, pass the `strict-drift` input to the reusable workflow:
 
 ```yaml
     with:
       strict-drift: true
 ```
 
-Without a `components` map the check reports that impact routing is not configured and passes.
+Without a `components` map the component routing reports that impact routing is not configured and passes.
+
+**Policy regression check.** On the same pull-request run, the adoption declaration itself is compared against the base branch's version. A change that *weakens* the assurance policy — an `adoption_stage` downgrade, a removed profile, a `layout` change, a removed component, or removed path globs / invariant IDs inside a component — fails the drift job (regardless of `strict-drift`) unless the pull-request description acknowledges it with an explicit line. A changed `upstream` pin is flagged the same way with neutral wording: an upgrade is not a weakening, but [PROFILE.md §16](../PROFILE.md) requires every pin move to be an explicit, dedicated change, so it demands the same acknowledgment:
+
+```text
+Assurance policy change: <why this weakening is intended and who decided it>
+```
+
+With the acknowledgment the findings downgrade to visible warnings. This closes the self-downgrade loophole — a pull request that flips `adoption_stage: CONFORMANT` back to `DRAFT` would otherwise skip the `declared-stage` check silently, and a shrunken component map would evade routing with policy the base branch never agreed to drop. Additions (new components, added invariants, a stage raise) are never findings.
 
 The map itself is validated in the ordinary adopter run (§3.6): each component requires non-empty `paths` and `invariants`, and every listed invariant ID must exist in the invariant register — split or lite layout alike — so a dangling component reference is a validation error, not a silently dead route.
 
 The drift check is a plain validator subcommand, runnable locally against the pinned checkout:
 
 ```bash
-git diff --name-only BASE_SHA HEAD_SHA > changed-files.txt
+git diff --name-only BASE_SHA...HEAD_SHA > changed-files.txt
+git diff BASE_SHA...HEAD_SHA -- assurance .agentic-assurance > assurance-diff.txt
+git show BASE_SHA:.agentic-assurance/adoption.yaml > base-adoption.yaml
 python .assurance-profile-pin/scripts/validate.py drift \
   --adoption .agentic-assurance/adoption.yaml \
   --changed-files changed-files.txt \
-  --pr-body pr-body.txt
+  --pr-body pr-body.txt \
+  --assurance-diff assurance-diff.txt \
+  --base-adoption base-adoption.yaml
 ```
 
-`--changed-files` takes newline-separated repository-relative paths; `--pr-body` takes the pull-request description as a file, where a missing or empty file means an empty description. Add `--strict` to reproduce the escalated mode and `--json` for machine-readable output.
+`--changed-files` takes newline-separated repository-relative paths; `--pr-body` takes the pull-request description as a file, where a missing or empty file means an empty description. `--assurance-diff` and `--base-adoption` are optional: without the former, any assurance change satisfies every touched component (the coarse standalone fallback — CI always passes the diff); without the latter, the policy regression check is skipped. Add `--strict` to reproduce the escalated mode and `--json` for machine-readable output. (`--name-only` is fine for a quick local run; the CI computation additionally lists rename sources.)
 
 On noise: start with two to four components covering the paths of your critical invariants, and expand the map only as it proves quiet — a map that warns on every routine pull request teaches reviewers to ignore the warnings.
 
@@ -257,9 +276,11 @@ Each stage includes every requirement of the stages below it:
 
 | Stage | Adds on top of the previous stage | Who advances it |
 |---|---|---|
-| `DRAFT` | Nothing — the ordinary validation of §3.6; unfilled placeholders and `UNKNOWN` are allowed everywhere. | Nobody needs to; it is the default. |
-| `HUMAN_REVIEWED` | No unfilled `REPLACE_WITH_` placeholder anywhere in the adoption file or any loaded register (split sections or the lite file alike); a `human_review` block with non-empty `date`, `reviewer`, and `record`. | The human owner, after completing the §4.3 review. |
-| `CONFORMANT` | Passed `review_after` dates are errors (as with `--strict-review-dates`); every severity-`critical` invariant has a decided `intent.classification` — anything but `UNKNOWN`, so `ACCIDENTAL` or `DEPRECATED` counts as decided; at least one attributable entry in `human_review.approvals`. | The human owner, when standing behind the conformance statement of [PROFILE.md §17](../PROFILE.md). |
+| `DRAFT` | Nothing — the ordinary validation of §3.6; unfilled placeholders and `UNKNOWN` are allowed in the local assurance registers. The adoption declaration itself (upstream pin, project identity, paths) must be complete at every stage: §3.6 always errors on an unfilled placeholder in `adoption.yaml`. | Nobody needs to; it is the default. |
+| `HUMAN_REVIEWED` | No unfilled `REPLACE_WITH_` placeholder in any loaded register (split sections or the lite file alike); a `human_review` block with non-empty `date`, `reviewer`, and `record`. | The human owner, after completing the §4.3 review. |
+| `CONFORMANT` | Passed `review_after` dates are errors (as with `--strict-review-dates`); every severity-`critical` invariant has a decided `intent.classification` — anything but `UNKNOWN`, so `ACCIDENTAL` or `DEPRECATED` counts as decided; at least one attributable entry in `human_review.approvals`. Additionally, the mechanically checkable subset of [PROFILE.md §17](../PROFILE.md): no `critical` residual left `OPEN` (accept it with rationale or resolve it), no `CONTRADICTED` claim, no `CONTRADICTED` critical invariant, every `VERIFIED` critical invariant carries non-empty `evidence`, and no register entry classified `RESTRICTED` or `EMBARGOED` (an error here; a warning at lower stages). | The human owner, when standing behind the conformance statement of [PROFILE.md §17](../PROFILE.md). |
+
+Honest boundary: even at `CONFORMANT`, the validator checks what strings can carry. Whether evidence is bound to the revision it claims to cover, and whether claim wording stays within evidence strength, remain the §4.3 human review's responsibility — a green `declared-stage` check at `CONFORMANT` asserts the mechanical subset, not the whole of §17.
 
 Advancing the stage is an owner act, recorded like a §4.3 outcome: the change that raises `adoption_stage` should carry, or point at, the review record that justifies it. An agent may propose the raise; it may not perform it on its own authority.
 
@@ -283,9 +304,9 @@ human_review:
 **The CI check split.** The reusable workflow (§3.4) reports two checks so a stage cannot be misread:
 
 - `assurance / structure` always runs: the ordinary adopter validation of §3.6 with stage requirements skipped (the validator's `--ignore-stage` flag) — a `DRAFT`-equivalent pass/fail.
-- `assurance / conformance` runs the full stage-enforcing validation, and is skipped entirely while the declared stage is `DRAFT` or absent.
+- `assurance / declared-stage` runs the full stage-enforcing validation, and is skipped entirely while the declared stage is `DRAFT` or absent.
 
-The `structure` check was previously named `validate`: adopters who made it a required status check must update the branch-protection setting from `validate` to `structure` when re-pinning. The split exists so a green check cannot be misread: a green `assurance / structure` means the artifacts are structurally valid — it never means the adoption is conformant. Conformance is asserted only by the declared stage, and only the `conformance` check holds the repository to that assertion.
+Check renames across releases (update branch protection when re-pinning): `assurance / validate` (pre-v0.2.0) became `assurance / structure`; `assurance / conformance` (v0.2.0) became `assurance / declared-stage` in v0.2.1. The second rename is deliberate: the check is green whenever the *declared* stage's requirements are met — at `HUMAN_REVIEWED` as well as `CONFORMANT` — so a check named "conformance" would show green on repositories that assert no conformance at all. The split and the name exist so a green check cannot be misread: green `structure` means structurally valid, green `declared-stage` means the declared stage is honestly met; only a `CONFORMANT` declaration behind a green `declared-stage` asserts conformance.
 
 Locally, the §3.6 command enforces the declared stage by default and reports one summary line on success (`stage <X>: requirements satisfied`); add `--ignore-stage` to reproduce the `structure` check.
 

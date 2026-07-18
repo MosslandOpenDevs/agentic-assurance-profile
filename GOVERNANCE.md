@@ -6,7 +6,7 @@ This document defines who holds decision authority over the OpenDevs Agentic Ass
 
 ## 1. Governing body
 
-The governing body of this repository is the **MosslandOpenDevs maintainers**, represented on GitHub by the `@MosslandOpenDevs/assurance-maintainers` team named in [.github/CODEOWNERS](.github/CODEOWNERS). Until that team is populated with real maintainer handles, the CODEOWNERS entry is a placeholder, and the pre-first-release checklist in [RELEASING.md](RELEASING.md) blocks the first release.
+The governing body of this repository is the **MosslandOpenDevs maintainers**, represented on GitHub by the `@MosslandOpenDevs/maintainers` team named in [.github/CODEOWNERS](.github/CODEOWNERS). Until that team is populated with real maintainer handles, the CODEOWNERS entry is a placeholder, and the pre-first-release checklist in [RELEASING.md](RELEASING.md) blocks the first release.
 
 For this repository, the governing body retains authority over:
 

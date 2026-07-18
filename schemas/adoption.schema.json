@@ -4,13 +4,21 @@
   "title": "Agentic Assurance Profile adoption declaration",
   "description": "Schema for `.agentic-assurance/adoption.yaml` in an adopting repository. Declares the pinned upstream profile (version and full commit SHA), the adopting project, the selected adoption profiles, and optional mappings from profile artifacts to existing repository conventions. Additional top-level keys are permitted for local extensions; local extensions must not silently weaken the pinned upstream profile (PROFILE.md section 5).",
   "type": "object",
-  "required": ["upstream", "project", "profiles"],
+  "required": [
+    "upstream",
+    "project",
+    "profiles"
+  ],
   "additionalProperties": true,
   "properties": {
     "upstream": {
       "type": "object",
       "description": "The pinned upstream profile. A floating branch must not be the sole normative reference (PROFILE.md section 16).",
-      "required": ["repository", "version", "commit"],
+      "required": [
+        "repository",
+        "version",
+        "commit"
+      ],
       "additionalProperties": false,
       "properties": {
         "repository": {
@@ -33,7 +41,11 @@
     "project": {
       "type": "object",
       "description": "The adopting project.",
-      "required": ["name", "repository", "human_owner"],
+      "required": [
+        "name",
+        "repository",
+        "human_owner"
+      ],
       "additionalProperties": false,
       "properties": {
         "name": {
@@ -56,16 +68,30 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": {
-        "enum": ["core", "service", "trust-critical", "data-curation", "agent-runtime", "archived"]
+        "enum": [
+          "core",
+          "service",
+          "trust-critical",
+          "data-curation",
+          "agent-runtime",
+          "archived"
+        ]
       }
     },
     "adoption_stage": {
       "description": "Self-declared adoption stage; absent means DRAFT. Stages are self-binding: the validator enforces the declared stage's requirements as errors, so declaring a stage the artifacts do not meet fails validation. DRAFT adds no requirements (placeholders and UNKNOWN classifications are allowed). HUMAN_REVIEWED requires no unfilled REPLACE_WITH_ placeholder anywhere in the adoption file or any loaded register, and a `human_review` block with non-empty `date`, `reviewer`, and `record`. CONFORMANT additionally requires that passed `review_after` dates are treated as errors, that every severity-critical invariant has a decided (non-UNKNOWN) `intent.classification`, and that `human_review.approvals` carries at least one attributable entry (`approver`, `review_url`, `at`).",
-      "enum": ["DRAFT", "HUMAN_REVIEWED", "CONFORMANT"]
+      "enum": [
+        "DRAFT",
+        "HUMAN_REVIEWED",
+        "CONFORMANT"
+      ]
     },
     "layout": {
       "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core (and archived) profiles. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
-      "enum": ["split", "lite"]
+      "enum": [
+        "split",
+        "lite"
+      ]
     },
     "human_review": {
       "type": "object",
@@ -95,7 +121,11 @@
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["approver", "review_url", "at"],
+            "required": [
+              "approver",
+              "review_url",
+              "at"
+            ],
             "additionalProperties": true,
             "properties": {
               "approver": {
@@ -116,7 +146,9 @@
               "covers": {
                 "type": "array",
                 "description": "Optional list of artifact paths or stable IDs the approval covers.",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
               "rule": {
                 "type": "string",
@@ -134,7 +166,13 @@
       "properties": {
         "system": {
           "description": "Workflow system in use.",
-          "enum": ["openspec", "spec-kit", "adr-rfc", "existing", "minimal"]
+          "enum": [
+            "openspec",
+            "spec-kit",
+            "adr-rfc",
+            "existing",
+            "minimal"
+          ]
         },
         "root": {
           "type": "string",
@@ -146,30 +184,52 @@
       "type": "object",
       "description": "Mappings from profile artifacts to repository-relative paths. Omitted keys use the default `assurance/` layout. Additional mappings are permitted (see docs/MAPPINGS.md).",
       "properties": {
-        "system": { "type": "string" },
-        "invariants": { "type": "string" },
-        "claims": { "type": "string" },
-        "defeaters": { "type": "string" },
-        "residuals": { "type": "string" },
-        "threat_model": { "type": "string" },
-        "evidence": { "type": "string" }
+        "system": {
+          "type": "string"
+        },
+        "invariants": {
+          "type": "string"
+        },
+        "claims": {
+          "type": "string"
+        },
+        "defeaters": {
+          "type": "string"
+        },
+        "residuals": {
+          "type": "string"
+        },
+        "threat_model": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        }
       },
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "components": {
       "type": "object",
-      "description": "Optional component map for impact routing. Each key names a repository component; the value lists the gitwildmatch-style path globs that define it and the invariant IDs it carries. On pull requests, `validate.py drift` flags a change that touches a component's paths without also touching assurance artifacts, mentioning every mapped invariant ID in the PR description, or declaring an explicit no-impact statement (a line `Assurance impact: none` plus a mandatory `Reason: ...` line). Every listed invariant ID must exist in the invariant register; the adopter validation rejects dangling references.",
+      "description": "Optional impact-routing map: named components binding repository path globs to the invariant IDs they protect. The pull-request drift check flags a change that touches a component's paths unless the added lines of the assurance-artifact diff reference one of the component's invariant IDs, the pull-request description mentions all of them, or the description carries an explicit no-impact statement (docs/ADOPTION.md section 3.7).",
       "minProperties": 1,
       "additionalProperties": {
         "type": "object",
-        "required": ["paths", "invariants"],
+        "required": [
+          "paths",
+          "invariants"
+        ],
         "additionalProperties": false,
         "properties": {
           "paths": {
             "type": "array",
             "description": "Gitwildmatch-style globs (`**/`, `**`, `*`, `?`) matched against repository-relative changed-file paths.",
             "minItems": 1,
-            "items": { "type": "string", "minLength": 1 }
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "invariants": {
             "type": "array",
@@ -183,7 +243,9 @@
           "tests": {
             "type": "array",
             "description": "Test path globs for the component. Informational in this release; not yet checked by the validator.",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
