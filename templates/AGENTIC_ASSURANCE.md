@@ -92,6 +92,8 @@ paths:
 
 The full commit SHA is the normative pin. A branch such as `main` MUST NOT be the sole reference.
 
+Record the concrete pin values (version and commit) **only** in `.agentic-assurance/adoption.yaml`. Do not copy them into the prose of this file or elsewhere: a duplicated pin is not checked by the structure validator and silently goes stale on the next upgrade (a v0.2.0 pilot left a superseded version and commit in its `AGENTIC_ASSURANCE.md` this way). Refer to the pin by pointing at `adoption.yaml`, not by restating its values.
+
 Agents MUST NOT update the pin silently. An upstream upgrade requires a dedicated change with impact analysis.
 
 ---

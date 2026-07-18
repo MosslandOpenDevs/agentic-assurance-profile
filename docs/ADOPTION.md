@@ -142,6 +142,8 @@ jobs:
 
 The `@` reference must be the same full commit SHA you declared as `upstream.commit`. The reusable workflow is pinned exactly like the profile itself; a floating reference such as `@main` reintroduces the un-pinned dependency that the profile prohibits. When upgrading the pin, update `upstream.version`, `upstream.commit`, and this `@` reference in the same change.
 
+For safety the reusable workflow runs the validator only from the canonical upstream, `MosslandOpenDevs/agentic-assurance-profile`: your `upstream.repository` is validated as data (it must equal the canonical upstream, or the workflow errors), and only the pinned commit — always a maintainer-reviewed commit of the canonical repository — is taken from your adoption file, so a pull request cannot point CI at other code. The workflow runs with `contents: read`, does not persist checkout credentials, pins its actions to full commit SHAs, and installs hash-locked dependencies. If you adopt from a fork of the profile, run your own copy of `adopter-validate.yml` with its `CANONICAL` constant changed to your fork.
+
 The called workflow reads `upstream.repository` and `upstream.commit` from your adoption file, checks out the profile at that pinned commit, and runs the validator against the pinned schemas — never against the latest ones. If your adoption file is not at the default location, pass it explicitly:
 
 ```yaml

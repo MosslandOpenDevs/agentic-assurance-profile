@@ -17,6 +17,17 @@
 #       with:
 #         adoption-file: path/to/adoption.yaml
 #
+# TRUST BOUNDARY (why this workflow is safe to run on pull requests):
+# the validator code executed on the runner is ALWAYS checked out from the
+# canonical upstream (CANONICAL below), never from a repository named in the
+# adoption file — that field is only ever validated as data. A pull request
+# can change which COMMIT of the canonical upstream is used, but every commit
+# there is maintainer-reviewed, so it cannot introduce attacker code. The
+# workflow runs with contents:read only, does not persist checkout
+# credentials, pins every action to a full commit SHA, and installs
+# hash-locked dependencies. An adopter who forks the profile must run their
+# own copy of this workflow with CANONICAL changed to their fork.
+#
 # Two validation jobs run on every event. `structure` (check name
 # "assurance / structure" with the caller above) is the structural
 # validation: everything except adoption-stage enforcement, i.e. a
@@ -52,6 +63,11 @@ on:
         required: false
         default: false
 
+# Least privilege: the validator only reads the adopter's tree and queries a
+# public API for staleness. It never needs write access to anything.
+permissions:
+  contents: read
+
 jobs:
   # Structural validation (formerly job id `validate`; the required check is
   # now "assurance / structure"): the full adopter validation minus
@@ -63,15 +79,20 @@ jobs:
       adoption_stage: ${{ steps.pin.outputs.adoption_stage }}
     steps:
       - name: Check out adopting repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Install validator dependencies
-        run: pip install pyyaml jsonschema
+      # Minimal, exact-version bootstrap so the pin-read step can parse the
+      # adopter's own YAML file. The validator itself runs later with the
+      # hash-locked dependency set from the canonical checkout.
+      - name: Bootstrap pin reader
+        run: pip install "pyyaml==6.0.3" --no-deps
 
       - name: Read upstream pin from adoption file
         id: pin
@@ -83,6 +104,11 @@ jobs:
           import sys
 
           import yaml
+
+          # The validator is only ever run from this canonical upstream. The
+          # repository declared in the adoption file is validated as data,
+          # never used to choose the code that executes on the runner.
+          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
           path = sys.argv[1]
           with open(path, encoding="utf-8") as f:
@@ -97,23 +123,38 @@ jobs:
           if missing:
               raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
 
+          if upstream["repository"] != CANONICAL:
+              raise SystemExit(
+                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
+                  f"workflow only validates against the canonical upstream {CANONICAL!r}. If you "
+                  "pin a fork of the profile, run your own copy of adopter-validate.yml with "
+                  "CANONICAL changed to your fork."
+              )
+
+          commit = str(upstream["commit"])
+          if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
+              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
+
           stage = adoption.get("adoption_stage", "DRAFT")
           if not isinstance(stage, str) or not stage.strip() or "\n" in stage or "\r" in stage:
               raise SystemExit(f"{path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"repository={upstream['repository']}\n")
-              out.write(f"commit={upstream['commit']}\n")
+              out.write(f"commit={commit}\n")
               out.write(f"version={upstream['version']}\n")
               out.write(f"adoption_stage={stage}\n")
           EOF
 
-      - name: Check out pinned profile
-        uses: actions/checkout@v4
+      - name: Check out pinned profile (canonical upstream)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          repository: ${{ steps.pin.outputs.repository }}
+          repository: MosslandOpenDevs/agentic-assurance-profile
           ref: ${{ steps.pin.outputs.commit }}
           path: .assurance-profile-pin
+          persist-credentials: false
+
+      - name: Install hash-locked validator dependencies
+        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
       # A release identifier can appear in more than one commit's VERSION file
       # (the release PR's branch commit and the merge commit the tag points to).
@@ -150,7 +191,6 @@ jobs:
       - name: Check pin staleness (non-blocking)
         continue-on-error: true
         env:
-          UPSTREAM_REPOSITORY: ${{ steps.pin.outputs.repository }}
           PINNED_VERSION: ${{ steps.pin.outputs.version }}
         run: |
           python - <<'EOF'
@@ -158,6 +198,9 @@ jobs:
           import os
           import re
           import urllib.request
+
+          # Fixed to the canonical upstream — never a value from the adoption file.
+          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
           def order_key(tag):
               """Total order over pin strings: 'unreleased' sorts before every
@@ -172,9 +215,8 @@ jobs:
                   return (1, int(major), int(minor), int(patch), 1, 0)
               return (1, int(major), int(minor), int(patch), 0, int(rc))
 
-          repository = os.environ["UPSTREAM_REPOSITORY"]
           pinned = os.environ["PINNED_VERSION"]
-          url = f"https://api.github.com/repos/{repository}/releases/latest"
+          url = f"https://api.github.com/repos/{CANONICAL}/releases/latest"
           try:
               with urllib.request.urlopen(url, timeout=10) as response:
                   latest = json.load(response).get("tag_name", "")
@@ -213,15 +255,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out adopting repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Install validator dependencies
-        run: pip install pyyaml jsonschema
+      - name: Bootstrap pin reader
+        run: pip install "pyyaml==6.0.3" --no-deps
 
       - name: Read upstream pin from adoption file
         id: pin
@@ -233,6 +277,8 @@ jobs:
           import sys
 
           import yaml
+
+          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
           path = sys.argv[1]
           with open(path, encoding="utf-8") as f:
@@ -246,19 +292,29 @@ jobs:
           missing = [key for key in ("repository", "commit", "version") if key not in upstream]
           if missing:
               raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
+          if upstream["repository"] != CANONICAL:
+              raise SystemExit(
+                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
+                  f"workflow only validates against the canonical upstream {CANONICAL!r}."
+              )
+          commit = str(upstream["commit"])
+          if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
+              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"repository={upstream['repository']}\n")
-              out.write(f"commit={upstream['commit']}\n")
-              out.write(f"version={upstream['version']}\n")
+              out.write(f"commit={commit}\n")
           EOF
 
-      - name: Check out pinned profile
-        uses: actions/checkout@v4
+      - name: Check out pinned profile (canonical upstream)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          repository: ${{ steps.pin.outputs.repository }}
+          repository: MosslandOpenDevs/agentic-assurance-profile
           ref: ${{ steps.pin.outputs.commit }}
           path: .assurance-profile-pin
+          persist-credentials: false
+
+      - name: Install hash-locked validator dependencies
+        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
       - name: Enforce the declared adoption stage
         env:
@@ -279,17 +335,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out adopting repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
-      - name: Install validator dependencies
-        run: pip install pyyaml jsonschema
+      - name: Bootstrap pin reader
+        run: pip install "pyyaml==6.0.3" --no-deps
 
       - name: Read upstream pin from adoption file
         id: pin
@@ -301,6 +358,8 @@ jobs:
           import sys
 
           import yaml
+
+          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
           path = sys.argv[1]
           with open(path, encoding="utf-8") as f:
@@ -314,19 +373,29 @@ jobs:
           missing = [key for key in ("repository", "commit", "version") if key not in upstream]
           if missing:
               raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
+          if upstream["repository"] != CANONICAL:
+              raise SystemExit(
+                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
+                  f"workflow only validates against the canonical upstream {CANONICAL!r}."
+              )
+          commit = str(upstream["commit"])
+          if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
+              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"repository={upstream['repository']}\n")
-              out.write(f"commit={upstream['commit']}\n")
-              out.write(f"version={upstream['version']}\n")
+              out.write(f"commit={commit}\n")
           EOF
 
-      - name: Check out pinned profile
-        uses: actions/checkout@v4
+      - name: Check out pinned profile (canonical upstream)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          repository: ${{ steps.pin.outputs.repository }}
+          repository: MosslandOpenDevs/agentic-assurance-profile
           ref: ${{ steps.pin.outputs.commit }}
           path: .assurance-profile-pin
+          persist-credentials: false
+
+      - name: Install hash-locked validator dependencies
+        run: pip install --require-hashes -r .assurance-profile-pin/requirements-ci.txt
 
       # Three-dot diff: the files this PR changes relative to the merge base,
       # unaffected by unrelated commits that landed on the base branch since

@@ -68,7 +68,8 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.2.0` | Yes — current release |
+| `v0.2.1` | Yes — current release (contains a CI security fix; upgrade recommended) |
+| `v0.2.0` | Superseded by `v0.2.1` (reusable-CI trust-boundary fix) |
 | `v0.1.2`, `v0.1.1`, `v0.1.0` | Yes — previous releases; upgrade at convenience |
 | `v0.1.0-rc.1` | Superseded — upgrade to the current release |
 | Draft on default branch | Yes |

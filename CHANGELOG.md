@@ -6,6 +6,47 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 Nothing yet.
 
+## v0.2.1 — 2026-07-18
+
+Security hardening of the reusable adopter CI, plus consistency fixes, from
+an external review of v0.2.0.
+
+### Adopter impact / upgrade actions
+
+- **Recommended upgrade.** Re-pin to `v0.2.1` (`upstream.version`,
+  `upstream.commit`, and the workflow `@` reference) to pick up the CI
+  trust-boundary fix. Adoption-file schemas and obligations are unchanged;
+  registers validate identically.
+- The reusable workflow now validates only against the canonical upstream
+  `MosslandOpenDevs/agentic-assurance-profile`. If your `upstream.repository`
+  names anything else (including a fork), the workflow errors — run your own
+  copy with the `CANONICAL` constant changed.
+
+### Security
+
+- `adopter-validate.yml` no longer checks out the validator from a
+  repository named in the pull-request-mutable adoption file. The validator
+  is always checked out from the canonical upstream; the declared repository
+  is validated as data (must equal the canonical upstream, else error), and
+  only the pinned commit — always a maintainer-reviewed commit of the
+  canonical repo — is taken from the adoption file. This closes a
+  code-execution vector where a pull request could point CI at attacker
+  code.
+- Both workflows now set `permissions: contents: read`, use
+  `persist-credentials: false` on every checkout, pin every action to a full
+  commit SHA, and install dependencies from a hash-pinned lock
+  (`requirements-ci.txt`, `pip install --require-hashes`).
+
+### Fixed
+
+- `GOVERNANCE.md` referenced `@MosslandOpenDevs/assurance-maintainers` while
+  `.github/CODEOWNERS` uses `@MosslandOpenDevs/maintainers`; both now name the
+  real team.
+- `templates/AGENTIC_ASSURANCE.md` §2 now instructs adopters to keep the
+  concrete pin values only in `adoption.yaml`, since a pin duplicated into
+  prose is not checked by the structure validator and silently goes stale
+  (observed in a v0.2.0 pilot).
+
 ## v0.2.0 — 2026-07-18
 
 The register becomes a regression gate, the safest usage becomes the
