@@ -21,7 +21,8 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   agent-assisted authorship remains an agent narrative, that provenance
   SHOULD be checked against commit authorship, and that intent authority
   comes from a human act (a reviewed merge or recorded review outcome),
-  not from who typed the text; operationalized in the adoption guide §4.1
+  not from who typed the text; the marker check is one-directional (an
+  agent trailer disqualifies, its absence proves nothing); operationalized in the adoption guide §4.1
   (`git blame` / `Co-Authored-By` check), the `AGENTIC_ASSURANCE.md`
   template §6.2, the review guide, and a new glossary entry.
 
