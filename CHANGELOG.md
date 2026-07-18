@@ -4,6 +4,29 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.1.0 — 2026-07-18
+
+First stable release of the v0.1 line. Two completed pilot adoptions
+validated the full cycle end to end: a private brownfield service
+(archaeology → human intent review → recorded outcomes → scoped
+remediations → pin upgrade) and a public repository adopted from a bare
+kick-off prompt, whose review surfaced the tag-pin and prose-provenance
+rules below.
+
+### Adopter impact / upgrade actions
+
+- Upgrade from a `v0.1.0-rc.1` or `unreleased` pin in one reviewed change
+  (ADOPTION.md §2.1): set `upstream.version` to `v0.1.0`, `upstream.commit`
+  to the commit the `v0.1.0` tag points to (`git rev-list -n1 v0.1.0`),
+  and the CI caller workflow `@` reference to that same SHA.
+- From this release the `adopter-validate` workflow rejects a release pin
+  whose commit is not the tag commit.
+- The prose-provenance rule is a SHOULD-level normative addition to
+  archaeology practice; existing artifacts need no changes.
+- Schemas are unchanged since `v0.1.0-rc.1`.
+
 ### Added
 
 - `adopter-validate` workflow: a release-version pin is now verified against the
