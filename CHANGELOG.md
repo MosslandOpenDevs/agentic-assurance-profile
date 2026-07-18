@@ -21,6 +21,27 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   graduation to the split layout preserves every ID. Starter template
   at `templates/assurance.yaml`. The 25-file/1,867-line first-adoption
   cost observed in the pilots drops to four files for `core`.
+- Impact routing: optional `components` map in the adoption declaration
+  (`schemas/adoption.schema.json`), wiring repository paths
+  (gitwildmatch-style globs) to the invariant IDs they protect, with an
+  informational `tests` list. Documented in adoption guide §3.7 and the
+  commented example block in both adopter templates; the adopter
+  pull-request template documents the two-line no-impact statement
+  convention (`Assurance impact: none` plus a mandatory `Reason:`).
+- `drift` subcommand in `scripts/validate.py`: given a changed-file list
+  and the pull-request description, checks every mapped component the
+  change touches — satisfied when the change also touches assurance
+  artifacts, when the description mentions every listed invariant ID, or
+  when it carries the explicit no-impact statement — and reports
+  unsatisfied components as WARN (exit 0) or, with `--strict`, as ERROR
+  (exit 1); `--json` emits machine-readable output.
+- Drift job in the reusable `adopter-validate` workflow, running the
+  pinned `validate.py drift` on pull-request events only, gated by a
+  new `strict-drift` input (boolean, default false). Push-event callers
+  and the existing validate job are unaffected.
+- Adopter-mode cross-check: every `components[].invariants` ID must
+  exist in the loaded invariant register (split and lite layouts alike);
+  a dangling component reference is an ERROR.
 
 ### Changed
 
