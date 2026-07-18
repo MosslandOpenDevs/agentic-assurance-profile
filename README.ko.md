@@ -233,7 +233,17 @@ Issue or change proposal
 
 ## 채택 방식
 
-채택하는 저장소에는 다음을 추가합니다.
+`core`에서는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
+
+```text
+AGENTS.md
+AGENTIC_ASSURANCE.md
+.agentic-assurance/
+├── adoption.yaml
+└── assurance.yaml
+```
+
+`service`부터는(또는 `core`에서도 원한다면) 레지스터마다 파일을 따로 두는 split 구성을 사용합니다.
 
 ```text
 AGENTS.md
@@ -327,6 +337,7 @@ assurance/
 │   └── REVIEW-GUIDE.md
 ├── schemas/
 │   ├── adoption.schema.json
+│   ├── assurance-lite.schema.json
 │   ├── claims.schema.json
 │   ├── defeaters.schema.json
 │   ├── invariants.schema.json
@@ -344,6 +355,7 @@ assurance/
     ├── SYSTEM.md
     ├── THREAT_MODEL.md
     ├── adoption.yaml
+    ├── assurance.yaml
     └── github/
         ├── CODEOWNERS
         ├── ISSUE_TEMPLATE/

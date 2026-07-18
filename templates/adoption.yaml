@@ -17,6 +17,11 @@ profiles:
   # - agent-runtime
   # - archived
 
+# layout: lite
+# (single-file core layout — put purpose/non-goals/invariants/residuals in
+#  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
+#  profiles beyond core requires the default split layout.)
+
 specification_workflow:
   system: existing
   # openspec | spec-kit | adr-rfc | existing | minimal

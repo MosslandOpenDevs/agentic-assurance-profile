@@ -54,6 +54,11 @@ profiles:
   # - agent-runtime
   # - archived
 
+# layout: lite
+# (single-file core layout — put purpose/non-goals/invariants/residuals in
+#  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
+#  profiles beyond core requires the default split layout.)
+
 specification_workflow:
   system: existing
   # Examples: openspec, spec-kit, adr-rfc, existing, minimal
@@ -101,9 +106,21 @@ Only a named human owner or governing body may approve:
 
 ## 4. Required local artifacts
 
-Keep generic rules upstream and project truth local.
+Keep generic rules upstream and project truth local. Two layouts satisfy PROFILE.md §6.1.
 
-Minimum layout (`core`, per PROFILE.md §6.1):
+**Lite layout** — the minimum for `core`. Declare it with `layout: lite` in `adoption.yaml`:
+
+```text
+AGENTS.md
+AGENTIC_ASSURANCE.md
+.agentic-assurance/
+├── adoption.yaml     # with `layout: lite`
+└── assurance.yaml    # purpose, non-goals, invariants, residuals in one file
+```
+
+`assurance.yaml` (start from `templates/assurance.yaml`) carries purpose, non-goals, residuals, and optionally invariants and defeaters. Its optional `system` section satisfies the system-description obligation; when absent, keep a separate `SYSTEM.md` at the path in `paths.system`. Section items use exactly the same shapes as the split registers, so graduating is a copy that preserves IDs. Selecting any profile beyond `core` requires the split layout.
+
+**Split layout** — the default (no `layout` field), and required from `service` onward:
 
 ```text
 AGENTS.md
@@ -128,7 +145,7 @@ assurance/
 └── evidence/
 ```
 
-An invariant register is what anchors the profile's regression protection, so most adopters will want `INVARIANTS.yaml` even at `core` — both pilot adoptions did — but it becomes an obligation only from the `service` profile (PROFILE.md §6.2).
+An invariant register is what anchors the profile's regression protection, so most adopters will want one even at `core` — both pilot adoptions did — but it becomes an obligation only from the `service` profile (PROFILE.md §6.2). In the lite layout that register is the `invariants` section of `assurance.yaml`; in the split layout it is `assurance/INVARIANTS.yaml`.
 
 Existing repository conventions MAY be reused instead of these exact paths. Record the mapping in `adoption.yaml`.
 

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MosslandOpenDevs/agentic-assurance-profile/main/schemas/assurance-lite.schema.json",
+  "title": "Agentic Assurance Profile lite assurance file",
+  "description": "Schema for `.agentic-assurance/assurance.yaml`, the single assurance file of the lite layout (`layout: lite` in adoption.yaml; core profile only). This is a thin envelope: it types the prose fields and names the register sections, but deliberately does not duplicate the register entry shapes. Items in the `invariants`, `defeaters`, and `residuals` sections follow the entry shapes of invariants.schema.json, defeaters.schema.json, and residuals.schema.json respectively; the validator extracts each present section and validates it against the corresponding register schema, so every entry shape is defined in exactly one place. Graduating to the split layout preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop `layout: lite`.",
+  "type": "object",
+  "required": ["version", "purpose", "non_goals", "residuals"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Lite assurance file format version."
+    },
+    "purpose": {
+      "type": "string",
+      "description": "What the system is for (PROFILE.md section 6.1)."
+    },
+    "non_goals": {
+      "type": "array",
+      "description": "Explicit non-goals — what the system deliberately does not do (PROFILE.md section 6.1 requires non-goals).",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "system": {
+      "type": "string",
+      "description": "Short as-built system description, satisfying PROFILE.md section 6.1's system description obligation for small adopters. When absent, keep a separate system file mapped via adoption.yaml `paths.system` (default `assurance/SYSTEM.md`); the validator requires one of the two."
+    },
+    "invariants": {
+      "type": "array",
+      "description": "Invariant register section (recommended at core). Items follow the entry shape of invariants.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
+    },
+    "defeaters": {
+      "type": "array",
+      "description": "Defeater register section. Items follow the entry shape of defeaters.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
+    },
+    "residuals": {
+      "type": "array",
+      "description": "Residual register section. Items follow the entry shape of residuals.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
+    }
+  }
+}

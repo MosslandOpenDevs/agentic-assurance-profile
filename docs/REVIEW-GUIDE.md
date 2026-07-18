@@ -12,7 +12,7 @@ You are the named human owner of a repository — the person the profile's autho
 
 ## What arrives
 
-At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**.
+At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**. For a small `core` repository the whole draft may be a single file — `.agentic-assurance/assurance.yaml`, the lite layout of [ADOPTION.md §3.0](ADOPTION.md) — and the same four decision families below apply however many files carry them.
 
 **Nothing in that proposal is decided yet, and the pull request must not be merged until you have answered the decisions below — merging the pull request IS your act of acceptance.** ([ADOPTION.md §4.3](ADOPTION.md))
 
