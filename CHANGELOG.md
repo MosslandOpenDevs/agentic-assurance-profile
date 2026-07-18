@@ -15,6 +15,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 - Adoption guide §2 and `RELEASING.md` now state that the tag commit is the
   canonical release pin, with `git rev-list -n1 vX.Y.Z` as the lookup.
+- Prose-provenance rule (second-pilot lesson — an adopting agent cited an
+  agent-written comment as intent authority and caught its own circular
+  reasoning): `PROFILE.md` §7 now states that committed prose with
+  agent-assisted authorship remains an agent narrative, that provenance
+  SHOULD be checked against commit authorship, and that intent authority
+  comes from a human act (a reviewed merge or recorded review outcome),
+  not from who typed the text; operationalized in the adoption guide §4.1
+  (`git blame` / `Co-Authored-By` check), the `AGENTIC_ASSURANCE.md`
+  template §6.2, the review guide, and a new glossary entry.
 
 ## v0.1.0-rc.1 — 2026-07-18
 

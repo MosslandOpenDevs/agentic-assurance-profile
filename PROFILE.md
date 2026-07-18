@@ -207,6 +207,8 @@ Each non-`UNKNOWN` material conclusion SHOULD cite concrete evidence such as fil
 
 An AI-generated explanation is not evidence by itself.
 
+This rule extends to committed prose. A comment, document, or note is not evidence of human intent merely because it is committed; when its authorship is agent-assisted — for example, an agent co-authorship trailer on the introducing commit — it remains an agent narrative under this section. The provenance of prose cited as intent authority SHOULD be checked against commit authorship. Authority comes from a human act, not from who typed the text: an agent-drafted record of an explicit human decision, anchored by the human's own approval act such as a reviewed merge or a recorded review outcome, is human authority; committed agent prose without such an act is not, and the affected intent classification remains `UNKNOWN`.
+
 Before broad remediation, a human owner MUST review:
 
 - purpose and non-goals;

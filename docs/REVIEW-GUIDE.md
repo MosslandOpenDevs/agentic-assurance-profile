@@ -42,6 +42,8 @@ The archaeology finds behaviors: the code limits login attempts, expires session
 
 **It is normal to leave some items `UNKNOWN`.** `UNKNOWN` is an honest recorded answer, not a failure grade ([Glossary §3](GLOSSARY.md)); you can confirm the five behaviors you have real opinions about and leave the rest for a later pass.
 
+**Documents in the repository do not count as your approval.** In an agent-built repository the comments, READMEs, and design notes were mostly written by agents too — an agent citing "the docs say this is intentional" may be citing another agent. Your agent is expected to check who authored such prose before treating it as intent, and either way, it is your answer in this review — not any committed text — that turns `UNKNOWN` into `INTENDED`.
+
 **With your answer,** the agent updates the intent classification in the invariants file, citing you as the authority.
 
 ### 3. Residual disposition
