@@ -103,7 +103,7 @@ Only a named human owner or governing body may approve:
 
 Keep generic rules upstream and project truth local.
 
-Minimum layout:
+Minimum layout (`core`, per PROFILE.md §6.1):
 
 ```text
 AGENTS.md
@@ -112,7 +112,6 @@ AGENTIC_ASSURANCE.md
 └── adoption.yaml
 assurance/
 ├── SYSTEM.md
-├── INVARIANTS.yaml
 └── RESIDUALS.yaml
 ```
 
@@ -120,6 +119,7 @@ Add when applicable:
 
 ```text
 assurance/
+├── INVARIANTS.yaml   # recommended at core; required from `service`
 ├── CLAIMS.yaml
 ├── DEFEATERS.yaml
 ├── THREAT_MODEL.md
@@ -127,6 +127,8 @@ assurance/
 ├── reviews/
 └── evidence/
 ```
+
+An invariant register is what anchors the profile's regression protection, so most adopters will want `INVARIANTS.yaml` even at `core` — both pilot adoptions did — but it becomes an obligation only from the `service` profile (PROFILE.md §6.2).
 
 Existing repository conventions MAY be reused instead of these exact paths. Record the mapping in `adoption.yaml`.
 
