@@ -68,8 +68,8 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.1.2` | Yes — current release |
-| `v0.1.1`, `v0.1.0` | Yes — previous releases; upgrade at convenience |
+| `v0.2.0` | Yes — current release |
+| `v0.1.2`, `v0.1.1`, `v0.1.0` | Yes — previous releases; upgrade at convenience |
 | `v0.1.0-rc.1` | Superseded — upgrade to the current release |
 | Draft on default branch | Yes |
 | Earlier unreleased draft commits | No — upgrade to the current release |
