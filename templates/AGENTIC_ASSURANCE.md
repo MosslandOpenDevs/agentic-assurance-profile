@@ -349,9 +349,10 @@ When first applying this file to an existing repository, produce a reviewable pr
 7. `INTENDED`, `ACCIDENTAL`, `UNKNOWN`, and `DEPRECATED` behavior candidates;
 8. initial defeaters and residuals;
 9. staged remediation plan;
-10. exact files created or changed.
+10. exact files created or changed;
+11. a handoff summary for the human owner, in the owner's working language, that states nothing is decided, lists each pending decision in plain language, and instructs that the pull request must not be merged until those decisions are made.
 
-Do not describe adoption as complete merely because the documents were created.
+Do not describe adoption as complete merely because the documents were created. In the handoff summary, the drafting agent must not describe its result as "settled" or "complete" — completion language is reserved for the human owner's acceptance.
 
 Initial adoption is complete only when the upstream pin, human-approved intent, critical claims and invariants, evidence links, explicit unknowns, and residual ownership are all present in the repository's normal change process.
 

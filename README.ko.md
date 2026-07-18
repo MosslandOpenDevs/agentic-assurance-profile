@@ -285,7 +285,7 @@ assurance/
 
 파일만 만들었다고 채택한 것이 아닙니다.
 
-실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오.
+실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오. 채택 결과를 검토하는 human owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하십시오. 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
 
 ---
 
@@ -322,7 +322,9 @@ assurance/
 ├── docs/
 │   ├── ADOPTION.md
 │   ├── DISCLOSURE-AND-ISSUES.md
-│   └── MAPPINGS.md
+│   ├── GLOSSARY.md
+│   ├── MAPPINGS.md
+│   └── REVIEW-GUIDE.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── claims.schema.json
