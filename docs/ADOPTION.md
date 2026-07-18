@@ -249,6 +249,46 @@ python .assurance-profile-pin/scripts/validate.py drift \
 
 On noise: start with two to four components covering the paths of your critical invariants, and expand the map only as it proves quiet — a map that warns on every routine pull request teaches reviewers to ignore the warnings.
 
+### 3.8 Adoption stages: DRAFT, HUMAN_REVIEWED, CONFORMANT
+
+The optional `adoption_stage` field in `adoption.yaml` declares how far the adoption has progressed. Nobody awards a stage — the declaration is self-made and self-binding: the validator enforces exactly the stage you declare, turning its requirements into errors. Declare high, meet it, or the build is red. An absent field means `DRAFT`, and a `DRAFT` (or absent) declaration changes nothing: validation behaves exactly as in §3.6.
+
+Each stage includes every requirement of the stages below it:
+
+| Stage | Adds on top of the previous stage | Who advances it |
+|---|---|---|
+| `DRAFT` | Nothing — the ordinary validation of §3.6; unfilled placeholders and `UNKNOWN` are allowed everywhere. | Nobody needs to; it is the default. |
+| `HUMAN_REVIEWED` | No unfilled `REPLACE_WITH_` placeholder anywhere in the adoption file or any loaded register (split sections or the lite file alike); a `human_review` block with non-empty `date`, `reviewer`, and `record`. | The human owner, after completing the §4.3 review. |
+| `CONFORMANT` | Passed `review_after` dates are errors (as with `--strict-review-dates`); every severity-`critical` invariant has a decided `intent.classification` — anything but `UNKNOWN`, so `ACCIDENTAL` or `DEPRECATED` counts as decided; at least one attributable entry in `human_review.approvals`. | The human owner, when standing behind the conformance statement of [PROFILE.md §17](../PROFILE.md). |
+
+Advancing the stage is an owner act, recorded like a §4.3 outcome: the change that raises `adoption_stage` should carry, or point at, the review record that justifies it. An agent may propose the raise; it may not perform it on its own authority.
+
+**Attributable approval.** From `CONFORMANT`, the `human_review` block must carry an `approvals` list with at least one entry naming who approved, where the approval can be inspected, and when:
+
+```yaml
+human_review:
+  date: 2026-07-01
+  reviewer: alice
+  record: assurance/reviews/2026-07-01-adoption.md
+  approvals:
+    - approver: alice
+      review_url: https://github.com/OWNER/REPO/pull/42#pullrequestreview-123456789
+      at: 2026-07-01
+      covers: [ INV-AUTH-001, RES-002 ]   # optional: what the approval covers
+      rule: codeowners-default-branch     # optional: the local review rule it satisfies
+```
+
+`approver`, `review_url`, and `at` must all be non-empty; `covers` and `rule` are optional. One honest limitation, stated plainly: the workflow does not yet verify the `review_url` through the GitHub API — it does not check that the URL is a real approved review, or that the approver is not the author. Treat the entry as a claim reviewable by humans, exactly like the rest of the register; future tooling may verify the approved state and author ≠ approver mechanically.
+
+**The CI check split.** The reusable workflow (§3.4) reports two checks so a stage cannot be misread:
+
+- `assurance / structure` always runs: the ordinary adopter validation of §3.6 with stage requirements skipped (the validator's `--ignore-stage` flag) — a `DRAFT`-equivalent pass/fail.
+- `assurance / conformance` runs the full stage-enforcing validation, and is skipped entirely while the declared stage is `DRAFT` or absent.
+
+The `structure` check was previously named `validate`: adopters who made it a required status check must update the branch-protection setting from `validate` to `structure` when re-pinning. The split exists so a green check cannot be misread: a green `assurance / structure` means the artifacts are structurally valid — it never means the adoption is conformant. Conformance is asserted only by the declared stage, and only the `conformance` check holds the repository to that assertion.
+
+Locally, the §3.6 command enforces the declared stage by default and reports one summary line on success (`stage <X>: requirements satisfied`); add `--ignore-stage` to reproduce the `structure` check.
+
 ## 4. Brownfield adoption
 
 Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). The practical sequence has four stages; do not compress them into one change, and do not mix archaeology with feature work, security audit, or broad refactoring.

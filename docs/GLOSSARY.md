@@ -152,6 +152,16 @@ Claim wording must not exceed the support of its evidence tier — an `OPERATOR_
 
 Taking the profile into a repository: pinning the upstream profile, creating the local artifacts, and running the review workflow. Creating the files alone is not adoption — adoption is complete only when the pin, human-approved intent, claims and invariants, evidence links, explicit unknowns, and residual ownership are all live in the project's normal change process. ([PROFILE.md §5](../PROFILE.md), [§16](../PROFILE.md); [ADOPTION.md §6](ADOPTION.md))
 
+### Adoption stage (채택 단계)
+
+How far an adoption has progressed, declared by the adopter in the optional `adoption_stage` field of `adoption.yaml`. The declaration is self-made and self-binding: nobody awards a stage, the validator enforces exactly the stage declared, and declaring a stage the repository does not meet fails the build. Advancing the stage is a human owner's act, recorded like a review outcome; an absent field means `DRAFT`. The three stages:
+
+- `DRAFT` — work in progress; placeholders and `UNKNOWN` are allowed everywhere.
+- `HUMAN_REVIEWED` — no placeholders remain, and a completed human review is recorded with date, reviewer, and record.
+- `CONFORMANT` — additionally, review dates are fresh, every critical invariant's intent is decided, and at least one attributable approval (who, where, when) is on record.
+
+([PROFILE.md §17](../PROFILE.md); [ADOPTION.md §3.8](ADOPTION.md))
+
 ### Archaeology (고고학적 복원)
 
 The read-only reconstruction of an existing repository that initial adoption must begin with: recovering purpose, entities, trust boundaries, claims, candidate invariants, enforcement, evidence, ambiguous behavior, defeaters, and gaps — from what actually exists, before changing anything. Example: reading the schema, migrations, tests, and CI history to reconstruct what the system enforces today, without touching functional code. ([PROFILE.md §7](../PROFILE.md); [ADOPTION.md §4.1](ADOPTION.md))
