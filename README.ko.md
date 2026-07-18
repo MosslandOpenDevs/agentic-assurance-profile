@@ -4,7 +4,7 @@
 
 > AI 코딩 에이전트가 상당 부분을 만들거나 유지보수하는 소프트웨어를 위한, 가볍고 증거 중심적인 채택 프로필입니다.
 
-**상태:** Draft / experimental (`v0.1.0` 목표)  
+**상태:** 릴리스됨 — 최신 릴리스는 [releases 페이지](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases) 참조  
 **저장소:** `MosslandOpenDevs/agentic-assurance-profile`  
 **현재 성숙도:** 참조 프로필이며 인증 제도가 아님
 

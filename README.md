@@ -2,7 +2,7 @@
 
 > A lightweight, evidence-oriented adoption profile for software substantially built or maintained by AI coding agents.
 
-**Status:** Draft / experimental (targeting `v0.1.0`)  
+**Status:** Released — current release on the [releases page](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases)  
 **Repository:** `MosslandOpenDevs/agentic-assurance-profile`  
 **Current maturity:** reference profile, not a certification scheme
 
