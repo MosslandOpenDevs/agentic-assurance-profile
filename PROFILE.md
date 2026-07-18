@@ -1,6 +1,6 @@
 # OpenDevs Agentic Assurance Profile
 
-**Status:** Unreleased draft (targeting v0.1.0)  
+**Status:** Released — adopters pin a [tagged release](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases); `main` carries in-progress changes between releases (see `VERSION`)  
 **Normative language:** `MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, and `MAY` express profile obligations.
 
 ## 1. Purpose and scope
