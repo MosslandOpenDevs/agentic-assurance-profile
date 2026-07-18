@@ -16,6 +16,16 @@
 #
 #       with:
 #         adoption-file: path/to/adoption.yaml
+#
+# On pull_request events an additional `drift` job routes the change set
+# against the optional `components:` map in the adoption file (impact
+# routing): it warns when a mapped component changes without an assurance
+# update, an invariant mention, or an explicit no-impact statement in the PR
+# description. Push-event callers are unaffected. To turn those warnings
+# into failures:
+#
+#       with:
+#         strict-drift: true
 
 name: adopter-validate
 
@@ -27,6 +37,11 @@ on:
         type: string
         required: false
         default: .agentic-assurance/adoption.yaml
+      strict-drift:
+        description: Treat unrouted component impact as an error in the pull-request drift job.
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   validate:
@@ -159,3 +174,92 @@ jobs:
                   "review (PROFILE.md section 16)."
               )
           EOF
+
+  # Impact routing (pull requests only): route the PR's changed files against
+  # the optional `components:` map in the adoption file, using the pinned
+  # profile's validator. The PR body and both SHAs are passed through
+  # environment variables, never interpolated into scripts.
+  drift:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out adopting repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator dependencies
+        run: pip install pyyaml jsonschema
+
+      - name: Read upstream pin from adoption file
+        id: pin
+        env:
+          ADOPTION_FILE: ${{ inputs.adoption-file }}
+        run: |
+          python - "$ADOPTION_FILE" <<'EOF'
+          import os
+          import sys
+
+          import yaml
+
+          path = sys.argv[1]
+          with open(path, encoding="utf-8") as f:
+              adoption = yaml.safe_load(f)
+
+          if not isinstance(adoption, dict):
+              raise SystemExit(f"{path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
+          upstream = adoption.get("upstream")
+          if not isinstance(upstream, dict):
+              raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
+          missing = [key for key in ("repository", "commit", "version") if key not in upstream]
+          if missing:
+              raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"repository={upstream['repository']}\n")
+              out.write(f"commit={upstream['commit']}\n")
+              out.write(f"version={upstream['version']}\n")
+          EOF
+
+      - name: Check out pinned profile
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pin.outputs.repository }}
+          ref: ${{ steps.pin.outputs.commit }}
+          path: .assurance-profile-pin
+
+      # Three-dot diff: the files this PR changes relative to the merge base,
+      # unaffected by unrelated commits that landed on the base branch since
+      # the PR branched.
+      - name: Compute changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/changed-files.txt"
+
+      - name: Write PR description to a file
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
+
+      - name: Route impact against the component map
+        env:
+          ADOPTION_FILE: ${{ inputs.adoption-file }}
+          STRICT_DRIFT: ${{ inputs.strict-drift }}
+        run: |
+          STRICT_FLAG=""
+          if [ "$STRICT_DRIFT" = "true" ]; then
+            STRICT_FLAG="--strict"
+          fi
+          python .assurance-profile-pin/scripts/validate.py drift \
+            --adoption "$ADOPTION_FILE" \
+            --changed-files "$RUNNER_TEMP/changed-files.txt" \
+            --pr-body "$RUNNER_TEMP/pr-body.txt" \
+            $STRICT_FLAG

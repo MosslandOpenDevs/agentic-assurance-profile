@@ -116,6 +116,38 @@
       },
       "additionalProperties": { "type": "string" }
     },
+    "components": {
+      "type": "object",
+      "description": "Optional component map for impact routing. Each key names a repository component; the value lists the gitwildmatch-style path globs that define it and the invariant IDs it carries. On pull requests, `validate.py drift` flags a change that touches a component's paths without also touching assurance artifacts, mentioning every mapped invariant ID in the PR description, or declaring an explicit no-impact statement (a line `Assurance impact: none` plus a mandatory `Reason: ...` line). Every listed invariant ID must exist in the invariant register; the adopter validation rejects dangling references.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["paths", "invariants"],
+        "additionalProperties": false,
+        "properties": {
+          "paths": {
+            "type": "array",
+            "description": "Gitwildmatch-style globs (`**/`, `**`, `*`, `?`) matched against repository-relative changed-file paths.",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "invariants": {
+            "type": "array",
+            "description": "Invariant IDs this component carries. Each must exist in the invariant register (split or lite layout).",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+            }
+          },
+          "tests": {
+            "type": "array",
+            "description": "Test path globs for the component. Informational in this release; not yet checked by the validator.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
     "security": {
       "type": "object",
       "description": "Security and disclosure locations. Never put a private tracker URL, token, or sensitive identifier in a public file.",

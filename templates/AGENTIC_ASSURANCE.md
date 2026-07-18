@@ -59,6 +59,15 @@ profiles:
 #  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
 #  profiles beyond core requires the default split layout.)
 
+# components:
+#   authentication:
+#     paths: [ "src/auth/**", "migrations/session_*" ]   # required, gitwildmatch-style globs
+#     invariants: [ REPLACE_WITH_INVARIANT_IDS ]           # required, existing invariant IDs
+#     tests: [ "tests/auth/**" ]                           # optional, informational in this release
+# (optional impact-routing map — wires code paths to the invariant IDs they
+#  protect. On pull requests, the drift check warns when a component's paths
+#  change without its invariants being addressed; see docs/ADOPTION.md §3.7.)
+
 specification_workflow:
   system: existing
   # Examples: openspec, spec-kit, adr-rfc, existing, minimal

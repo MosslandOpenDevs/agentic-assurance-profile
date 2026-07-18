@@ -199,6 +199,56 @@ It also emits non-blocking warnings: `trust-critical` without a defeaters file; 
 
 Entries classified `RESTRICTED` may be committed to a private repository, but they bind its visibility: the repository must not be made public while `RESTRICTED` material is present. Before any publication, sanitize `RESTRICTED` entries to `SUMMARY_ONLY` or `PUBLIC`, or move them to the restricted record ([DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md)). The validator's `RESTRICTED` warnings exist to keep this constraint visible on every run.
 
+### 3.7 Impact routing (optional): wire code changes to invariants
+
+An invariant register protects against regressions only when the changes that enter an invariant's territory are confronted with it. The optional `components` map in `adoption.yaml` makes that confrontation mechanical — it is what turns the register from documentation into a regression gate:
+
+```yaml
+components:
+  authentication:
+    paths: [ "src/auth/**", "migrations/session_*" ]   # required, gitwildmatch-style globs
+    invariants: [ INV-AUTH-001, INV-AUTH-004 ]          # required, existing invariant IDs
+    tests: [ "tests/auth/**" ]                          # optional, informational in this release
+```
+
+Each component names the repository paths it covers — gitwildmatch-style globs, where `**` crosses directory boundaries and `*`/`?` stay within one path segment — and the invariant IDs those paths protect. `tests` is recorded but not checked in this release.
+
+When the map is present, the reusable workflow (§3.4) runs a drift check on every pull request, against the pinned validator like everything else; push-event runs are unaffected. For each component whose `paths` match at least one changed file, the pull request satisfies that component if any of the following holds:
+
+1. the change also touches assurance artifacts — any path under `assurance/` or `.agentic-assurance/`;
+2. the pull-request description mentions every invariant ID listed for the component (a plain substring match; listing them under "Affected assurance IDs" in the pull-request template is sufficient);
+3. the description carries an explicit no-impact statement — both lines at the start of a line, and the reason is mandatory (`Assurance impact: none` alone does not satisfy):
+
+```text
+Assurance impact: none
+Reason: <why this change cannot affect the mapped invariants>
+```
+
+An unsatisfied component produces a warning naming the component, the number of matched files, and the invariant IDs to address; the job still passes. To escalate the warnings into a failing check, pass the `strict-drift` input to the reusable workflow:
+
+```yaml
+    with:
+      strict-drift: true
+```
+
+Without a `components` map the check reports that impact routing is not configured and passes.
+
+The map itself is validated in the ordinary adopter run (§3.6): each component requires non-empty `paths` and `invariants`, and every listed invariant ID must exist in the invariant register — split or lite layout alike — so a dangling component reference is a validation error, not a silently dead route.
+
+The drift check is a plain validator subcommand, runnable locally against the pinned checkout:
+
+```bash
+git diff --name-only BASE_SHA HEAD_SHA > changed-files.txt
+python .assurance-profile-pin/scripts/validate.py drift \
+  --adoption .agentic-assurance/adoption.yaml \
+  --changed-files changed-files.txt \
+  --pr-body pr-body.txt
+```
+
+`--changed-files` takes newline-separated repository-relative paths; `--pr-body` takes the pull-request description as a file, where a missing or empty file means an empty description. Add `--strict` to reproduce the escalated mode and `--json` for machine-readable output.
+
+On noise: start with two to four components covering the paths of your critical invariants, and expand the map only as it proves quiet — a map that warns on every routine pull request teaches reviewers to ignore the warnings.
+
 ## 4. Brownfield adoption
 
 Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). The practical sequence has four stages; do not compress them into one change, and do not mix archaeology with feature work, security audit, or broad refactoring.

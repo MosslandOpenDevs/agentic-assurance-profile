@@ -21,6 +21,14 @@ Usage examples:
           --schemas .assurance-profile-pin/schemas \\
           --profile-checkout .assurance-profile-pin
 
+  On a pull request, routing the change set against the optional
+  ``components:`` map of the adoption file (impact routing):
+
+      python scripts/validate.py drift \\
+          --adoption .agentic-assurance/adoption.yaml \\
+          --changed-files changed-files.txt \\
+          --pr-body pr-body.txt
+
 Output: human-readable lines prefixed ``ERROR:``, ``WARN:``, or ``OK:``.
 Exit code is 1 if any error was reported, otherwise 0. With ``--json`` a
 machine-readable summary is printed instead of the human-readable lines.
@@ -127,6 +135,15 @@ REFERENCE_FIELDS = (
 
 # Defeater statuses whose grounds must be recorded in `resolution`.
 CLOSED_DEFEATER_STATUSES = ("RESOLVED", "MITIGATED", "WITHDRAWN")
+
+# Impact routing (the optional `components:` map in adoption.yaml).
+# A change set that touches anything under these prefixes counts as an
+# assurance update for every touched component.
+ASSURANCE_ARTIFACT_PREFIXES = ("assurance/", ".agentic-assurance/")
+# Explicit no-impact statement in a PR description: the declaration line and
+# a mandatory reason line, anywhere in the same body, in either order.
+NO_IMPACT_RE = re.compile(r"^Assurance impact:\s*none", re.IGNORECASE | re.MULTILINE)
+NO_IMPACT_REASON_RE = re.compile(r"^Reason:\s*\S+", re.IGNORECASE | re.MULTILINE)
 
 
 class Report:
@@ -345,6 +362,37 @@ def register_entries(document: object, kind: str) -> list | None:
 
 def nonempty_string(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def compile_path_glob(pattern: str) -> re.Pattern[str]:
+    """Compile a gitwildmatch-style glob into an anchored full-path regex.
+
+    Supported subset: ``**/`` (any leading directories, including none),
+    ``**`` (anything, across directory separators), ``*`` (anything within
+    one path segment), ``?`` (one character within a segment). Everything
+    else matches literally. The pattern is matched against the entire
+    repository-relative path (use ``fullmatch``), so ``src/auth/**`` matches
+    ``src/auth/deep/nested.ts`` but not ``src/authx/file.ts``.
+    """
+    parts: list[str] = []
+    index = 0
+    while index < len(pattern):
+        if pattern.startswith("**/", index):
+            parts.append("(?:.*/)?")
+            index += 3
+        elif pattern.startswith("**", index):
+            parts.append(".*")
+            index += 2
+        elif pattern[index] == "*":
+            parts.append("[^/]*")
+            index += 1
+        elif pattern[index] == "?":
+            parts.append("[^/]")
+            index += 1
+        else:
+            parts.append(re.escape(pattern[index]))
+            index += 1
+    return re.compile("".join(parts))
 
 
 def coerce_date(value: object) -> datetime.date | None:
@@ -1016,6 +1064,60 @@ def check_lite_required_files(
         )
 
 
+def check_component_map(
+    adoption: dict, registers: dict[str, list | None], report: Report
+) -> None:
+    """Cross-check the optional `components:` impact-routing map.
+
+    Shape errors are the adoption schema's concern; this check resolves the
+    references: every ``components.<name>.invariants`` ID must exist in the
+    loaded invariant register. ``registers`` is the same mapping the split
+    layout's ``check_artifacts`` and the lite layout's ``check_lite_file``
+    produce, so both layouts are covered. A register file that exists but is
+    unusable was already reported; its references are skipped, and no OK line
+    is claimed for the map in that case.
+    """
+    components = adoption.get("components")
+    if not isinstance(components, dict) or not components:
+        return
+    register_exists = "invariants" in registers
+    register_unusable = register_exists and registers["invariants"] is None
+    known_ids = {
+        entry["id"]
+        for entry in (registers.get("invariants") or [])
+        if isinstance(entry, dict) and nonempty_string(entry.get("id"))
+    }
+    errors_before = sum(1 for level, _ in report.results if level == "error")
+    for name, component in components.items():
+        if not isinstance(component, dict):
+            continue  # rejected by the adoption schema; error already reported
+        references = component.get("invariants")
+        if not isinstance(references, list):
+            continue  # rejected by the adoption schema; error already reported
+        for reference in references:
+            if not isinstance(reference, str):
+                continue
+            if not register_exists:
+                report.error(
+                    f"components.{name}: references invariant {reference} "
+                    "but no invariant register exists"
+                )
+            elif register_unusable:
+                continue  # register file exists but is unusable; already reported
+            elif reference not in known_ids:
+                report.error(
+                    f"components.{name}: references invariant {reference}, "
+                    "which does not exist in the invariant register"
+                )
+    errors_after = sum(1 for level, _ in report.results if level == "error")
+    if errors_after == errors_before and not register_unusable:
+        count = len(components)
+        plural = "component" if count == 1 else "components"
+        report.ok(
+            f"component map: {count} {plural} — every invariant reference resolves"
+        )
+
+
 def run_adopter(args: argparse.Namespace) -> int:
     report = Report()
     adoption_path = Path(args.adoption)
@@ -1050,9 +1152,157 @@ def run_adopter(args: argparse.Namespace) -> int:
         registers = check_artifacts(project_root, paths, schemas, report)
         check_semantics(registers, report, strict_review_dates=args.strict_review_dates)
         check_required_files(project_root, paths, profiles, report)
+    check_component_map(adoption, registers, report)
     check_adopter_warnings(project_root, profiles, report)
 
     return report.emit("adopter", args.json)
+
+
+# ---------------------------------------------------------------------------
+# drift subcommand (impact routing on pull requests)
+# ---------------------------------------------------------------------------
+
+
+def read_changed_files(path: Path) -> tuple[list[str] | None, str | None]:
+    """Read a newline-separated changed-file list; return (paths, error)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return None, f"cannot read {path}: {exc}"
+    changed = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("./"):
+            line = line[2:]
+        changed.append(line)
+    return changed, None
+
+
+def read_pr_body(path: Path) -> str:
+    """Read the PR description text; a missing or unreadable file is empty."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def run_drift(args: argparse.Namespace) -> int:
+    """Route a pull request's change set against the adoption component map.
+
+    A component is *touched* when any of its path globs matches a changed
+    file. A touched component is satisfied when the change set also touches
+    assurance artifacts, when the PR description mentions every invariant ID
+    mapped to the component, or when the description carries an explicit
+    no-impact statement (``Assurance impact: none`` plus a mandatory
+    ``Reason:`` line). Unsatisfied components warn by default and fail with
+    ``--strict``. The invariant IDs come from the map itself; whether they
+    exist in the register is the adopter subcommand's cross-check.
+    """
+    report = Report()
+    adoption_path = Path(args.adoption)
+
+    # Strict loading, as in adopter mode: an unreadable or malformed
+    # adoption declaration is an error, never silently skipped.
+    document, error = load_yaml(adoption_path)
+    if error is not None:
+        report.error(f"adoption file: {error}")
+        return report.emit("drift", args.json)
+    if not isinstance(document, dict):
+        report.error(f"adoption file {adoption_path}: top level is not a mapping")
+        return report.emit("drift", args.json)
+
+    components = document.get("components")
+    if components is None:
+        report.ok("no component map — impact routing not configured")
+        return report.emit("drift", args.json)
+    if not isinstance(components, dict) or not components:
+        report.error(
+            "components: must be a non-empty mapping of component name to "
+            "{paths, invariants}"
+        )
+        return report.emit("drift", args.json)
+
+    changed, error = read_changed_files(Path(args.changed_files))
+    if error is not None:
+        report.error(f"changed-files list: {error}")
+        return report.emit("drift", args.json)
+    body = read_pr_body(Path(args.pr_body))
+
+    assurance_touched = any(
+        path.startswith(ASSURANCE_ARTIFACT_PREFIXES) for path in changed
+    )
+    no_impact_declared = NO_IMPACT_RE.search(body) is not None
+    no_impact_ok = no_impact_declared and NO_IMPACT_REASON_RE.search(body) is not None
+
+    touched_any = False
+    for name, component in components.items():
+        # Light structural checks so drift stays usable standalone; the full
+        # shape validation lives in the adoption schema (adopter subcommand).
+        if not isinstance(component, dict):
+            report.error(f"component '{name}': must be a mapping with 'paths' and 'invariants'")
+            continue
+        path_globs = component.get("paths")
+        invariant_ids = component.get("invariants")
+        if not (
+            isinstance(path_globs, list)
+            and path_globs
+            and all(nonempty_string(item) for item in path_globs)
+        ):
+            report.error(f"component '{name}': 'paths' must be a non-empty list of glob strings")
+            continue
+        if not (
+            isinstance(invariant_ids, list)
+            and invariant_ids
+            and all(nonempty_string(item) for item in invariant_ids)
+        ):
+            report.error(f"component '{name}': 'invariants' must be a non-empty list of invariant IDs")
+            continue
+
+        regexes = [compile_path_glob(pattern) for pattern in path_globs]
+        matched = [
+            path for path in changed if any(regex.fullmatch(path) for regex in regexes)
+        ]
+        if not matched:
+            continue
+        touched_any = True
+        count = len(matched)
+        touched = f"component '{name}' touched ({count} changed file{'s' if count != 1 else ''})"
+        ids = ", ".join(invariant_ids)
+        if assurance_touched:
+            report.ok(f"{touched} — assurance artifacts updated in the same change")
+        elif all(invariant_id in body for invariant_id in invariant_ids):
+            report.ok(f"{touched} — PR description mentions {ids}")
+        elif no_impact_ok:
+            report.ok(
+                f"{touched} — PR description declares 'Assurance impact: none' "
+                "with a reason"
+            )
+        else:
+            message = (
+                f"{touched} without assurance update, invariant mention, or a "
+                f"no-impact statement — address {ids} or add "
+                "'Assurance impact: none' + 'Reason: ...' to the PR description"
+            )
+            if no_impact_declared:
+                message += (
+                    " ('Assurance impact: none' was found but the mandatory "
+                    "'Reason:' line is missing)"
+                )
+            if args.strict:
+                report.error(message)
+            else:
+                report.warn(message)
+
+    if not touched_any:
+        count = len(changed)
+        report.ok(
+            f"no mapped component is touched by this change "
+            f"({count} changed file{'s' if count != 1 else ''})"
+        )
+
+    return report.emit("drift", args.json)
 
 
 # ---------------------------------------------------------------------------
@@ -1112,6 +1362,36 @@ def build_parser() -> argparse.ArgumentParser:
         "--json", action="store_true", help="emit a machine-readable JSON summary"
     )
     adopter.set_defaults(handler=run_adopter)
+
+    drift = subparsers.add_parser(
+        "drift",
+        help="route a pull request's changed files against the adoption "
+        "component map (impact routing)",
+    )
+    drift.add_argument(
+        "--adoption",
+        required=True,
+        help="path to the adoption declaration (.agentic-assurance/adoption.yaml)",
+    )
+    drift.add_argument(
+        "--changed-files",
+        required=True,
+        help="file holding the newline-separated repo-relative changed paths",
+    )
+    drift.add_argument(
+        "--pr-body",
+        required=True,
+        help="file holding the PR description text (missing file = empty body)",
+    )
+    drift.add_argument(
+        "--strict",
+        action="store_true",
+        help="treat unsatisfied components as errors instead of warnings",
+    )
+    drift.add_argument(
+        "--json", action="store_true", help="emit a machine-readable JSON summary"
+    )
+    drift.set_defaults(handler=run_drift)
 
     return parser
 

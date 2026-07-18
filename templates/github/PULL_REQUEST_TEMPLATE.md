@@ -10,7 +10,14 @@
 
 ## Affected assurance IDs
 
-<!-- List affected CLAIM-, INV-, DEF-, and RES- identifiers, or state "none". -->
+<!-- List affected CLAIM-, INV-, DEF-, and RES- identifiers, or state "none".
+     If this repository maps components in `.agentic-assurance/adoption.yaml`
+     and this pull request touches mapped component paths without changing
+     assurance artifacts, either list that component's invariant IDs above or
+     add this two-line no-impact statement to the description — both lines at
+     the start of a line, and the reason is mandatory:
+       Assurance impact: none
+       Reason: <why the mapped invariants are unaffected> -->
 
 - 
 
