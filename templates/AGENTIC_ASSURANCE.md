@@ -189,7 +189,7 @@ Classify every material conclusion as:
 
 Each non-`UNKNOWN` conclusion must cite concrete evidence: file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric.
 
-An AI-generated explanation is not evidence by itself.
+An AI-generated explanation is not evidence by itself. Committed prose inherits this rule when its authorship is agent-assisted (check the introducing commit's co-authorship trailers with `git blame`): cite such text as a description of behavior, never as human intent. The check is one-directional — an agent marker disqualifies; the absence of one proves nothing, since many agents leave no marker. Intent authority comes from a human act — a reviewed merge or a recorded review outcome — not from who typed the text.
 
 ### 6.3 Human intent review
 
