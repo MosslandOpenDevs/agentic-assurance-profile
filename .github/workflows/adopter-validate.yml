@@ -80,6 +80,27 @@ jobs:
           ref: ${{ steps.pin.outputs.commit }}
           path: .assurance-profile-pin
 
+      # A release identifier can appear in more than one commit's VERSION file
+      # (the release PR's branch commit and the merge commit the tag points to).
+      # Only the tag commit is the canonical pin; enforce that mechanically.
+      - name: Verify release pin matches its tag
+        if: ${{ steps.pin.outputs.version != 'unreleased' }}
+        env:
+          PINNED_VERSION: ${{ steps.pin.outputs.version }}
+          PINNED_COMMIT: ${{ steps.pin.outputs.commit }}
+        run: |
+          set -e
+          if ! git -C .assurance-profile-pin fetch --quiet --depth 1 origin "refs/tags/${PINNED_VERSION}:refs/tags/${PINNED_VERSION}"; then
+            echo "::error::Release tag $PINNED_VERSION does not exist upstream — a release version pin must reference a published tag."
+            exit 1
+          fi
+          TAG_SHA=$(git -C .assurance-profile-pin rev-list -n1 "refs/tags/${PINNED_VERSION}")
+          if [ "$TAG_SHA" != "$PINNED_COMMIT" ]; then
+            echo "::error::upstream.commit ($PINNED_COMMIT) is not the commit tag $PINNED_VERSION points to ($TAG_SHA). Pin the tag commit: git rev-list -n1 $PINNED_VERSION."
+            exit 1
+          fi
+          echo "pin matches tag $PINNED_VERSION ($TAG_SHA)"
+
       - name: Validate against the pinned profile
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}

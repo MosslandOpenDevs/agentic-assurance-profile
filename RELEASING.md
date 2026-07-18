@@ -32,7 +32,7 @@ Adopters may pin only commits whose `VERSION` content equals their declared `ups
    - states the release's semver classification per PROFILE.md §16;
    - is reviewed per [GOVERNANCE.md](GOVERNANCE.md) — a major release requires explicit governing-body approval recorded in this pull request.
 2. **Merge.** The merge commit on `main` is the release commit.
-3. **Tag.** Create the tag (for example `v0.1.0`) on the merge commit. The tag string must equal the `VERSION` content at that commit.
+3. **Tag.** Create the tag (for example `v0.1.0`) on the merge commit. The tag string must equal the `VERSION` content at that commit. Note that the release pull request's branch commit also carries the same `VERSION` content and remains reachable as the merge's second parent — **the tag commit is the canonical adopter pin**, and the `adopter-validate` workflow rejects a release pin whose commit is not the one the tag points to.
 4. **GitHub Release.** Publish a GitHub Release for the tag whose body is the CHANGELOG section for that version.
 5. **Follow-up commit.** Immediately set `VERSION` to the next development identifier per §1, so that no subsequent commit can be mistaken for the release commit.
 
