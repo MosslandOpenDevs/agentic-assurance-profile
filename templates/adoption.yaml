@@ -9,18 +9,19 @@ project:
   repository: REPLACE_WITH_OWNER_AND_REPOSITORY
   human_owner: REPLACE_WITH_PERSON_OR_GOVERNING_BODY
 
-# Classify from what the repository IS and promises before setting this — do
-# not leave it at `core` by default. See docs/ADOPTION.md §4.0: run the trigger
-# scan, escalate on any fired trigger with file:line evidence, and declare the
-# resulting set in this field (not only in the handoff prose — this field is
-# what selects the checks).
+# Classify from what the repository IS and promises (docs/ADOPTION.md §4.0): run
+# the trigger scan, escalate on any fired trigger with file:line evidence, and
+# replace the placeholder below with the classified set. This field selects the
+# checks, and validation fails until it is filled — inheriting a default is not
+# an option.
 profiles:
-  - core
+  - REPLACE_WITH_CLASSIFIED_PROFILE
+  # add each fired profile, for example:
   # - service
   # - trust-critical
   # - data-curation
   # - agent-runtime
-  # - archived
+  # - archived  # archived is exclusive — declare it alone
 
 # layout: lite
 # (single-file core layout — put purpose/non-goals/invariants/residuals in

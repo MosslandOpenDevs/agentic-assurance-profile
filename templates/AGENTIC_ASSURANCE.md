@@ -46,9 +46,10 @@ project:
   human_owner: REPLACE_WITH_PERSON_OR_GOVERNING_BODY
 
 profiles:
-  - core
-  # Classify from what the repository IS and promises (docs/ADOPTION.md §4.0) —
-  # do not default to `core`; declare every fired trigger's profile here:
+  - REPLACE_WITH_CLASSIFIED_PROFILE
+  # Classify from what the repository IS and promises (docs/ADOPTION.md §4.0);
+  # replace the placeholder above with the classified set — validation fails
+  # until it is filled. Add each fired profile:
   # - service
   # - trust-critical
   # - data-curation

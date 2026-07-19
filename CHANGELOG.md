@@ -31,6 +31,15 @@ description; full §6.6 field enforcement tracked in #40).
   invariant, one residual — with only the fields an adopter must fill, so
   the full `templates/assurance.yaml` no longer doubles as the starting
   point. The self-check validates both templates, so neither can drift.
+- **The adoption template no longer defaults to `core`.**
+  `templates/adoption.yaml` (and the copy example in
+  `AGENTIC_ASSURANCE.md`) ship a `REPLACE_WITH_CLASSIFIED_PROFILE`
+  sentinel in `profiles:` — the central self-check substitutes it to a
+  valid enum, but an adopter who copies the template must replace it with
+  the classified set or validation fails on the unfilled placeholder, so
+  no adoption silently inherits a `core` default. (This is a completion
+  guard; detecting a *wrong* profile against the actual code remains the
+  separately-tracked under-classification backstop.)
 
 #### Adopter impact / upgrade actions
 
@@ -60,7 +69,9 @@ description; full §6.6 field enforcement tracked in #40).
   enforcement — a present-but-empty `SYSTEM.md` still passes, and the
   four §6.6 statements (not-operated, historical purpose, known
   limitations, last supported revision) are **not yet mechanically
-  checked**. Structured, field-level enforcement is tracked in #40.
+  checked**. Selecting `archived` now also emits a warning that these
+  four statements need human confirmation. Structured, field-level
+  enforcement is tracked in #40.
 - **Date placeholders are caught at `HUMAN_REVIEWED`.** An unfilled
   `review_after: YYYY-MM-DD` in a register — like a `REPLACE_WITH_`
   token — now fails from `HUMAN_REVIEWED` on, instead of passing even at

@@ -880,6 +880,16 @@ class TestLiteLayout(ValidatorTestCase):
             text = (REPO_ROOT / "templates" / name).read_text(encoding="utf-8")
             self.assertNotIn("Replace with ", text, name)
 
+    def test_adoption_template_profiles_is_a_sentinel_not_a_core_default(self):
+        # The copied adoption template must not ship `profiles: [core]` as a
+        # concrete default (that nudges under-classification). It ships a
+        # REPLACE_WITH_ sentinel — the central self-check substitutes it to a
+        # valid enum, but an adopter must replace it with the classified set
+        # (§4.0), so an unfilled copy fails validation.
+        text = (REPO_ROOT / "templates" / "adoption.yaml").read_text(encoding="utf-8")
+        self.assertIn("REPLACE_WITH_CLASSIFIED_PROFILE", text)
+        self.assertNotIn("\n  - core\n", text)
+
     def test_default_public_assurance_root_warns_but_passes(self):
         adoption = baseline_lite_adoption()
         adoption["security"] = {"public_assurance_root": "assurance"}

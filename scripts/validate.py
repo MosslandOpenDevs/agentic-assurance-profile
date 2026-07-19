@@ -75,6 +75,10 @@ PLACEHOLDER_SUBSTITUTIONS = {
     "REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA": "0" * 40,
     "REPLACE_WITH_PINNED_VERSION": "unreleased",
     "REPLACE_WITH_OWNER_AND_REPOSITORY": "example/example",
+    # The adoption template ships this in `profiles:` so an adopter must
+    # declare a classified set rather than inherit a `core` default; the
+    # central self-check substitutes it to a valid enum value.
+    "REPLACE_WITH_CLASSIFIED_PROFILE": "core",
 }
 DEFAULT_PLACEHOLDER_SUBSTITUTION = "placeholder"
 DATE_PLACEHOLDER = "YYYY-MM-DD"
@@ -1127,6 +1131,13 @@ def check_adopter_warnings(project_root: Path, profiles: list[str], report: Repo
                 f"profile '{profile}' is provisional — obligations may change "
                 "in a minor release"
             )
+    if "archived" in profiles:
+        report.warn(
+            "profile 'archived': PROFILE.md section 6.6's four statements "
+            "(not operated, historical purpose, known limitations, last "
+            "supported revision) are not mechanically verified — human review "
+            "must confirm them in the system description (tracked: issue #40)"
+        )
 
 
 def check_profile_exclusivity(profiles: list[str], report: Report) -> None:
