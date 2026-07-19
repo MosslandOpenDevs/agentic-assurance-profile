@@ -4,22 +4,28 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.3.2 — 2026-07-19
+
 Extends the register policy diff from "reviewed items cannot silently
 disappear" (v0.3.1) to change control over every recorded human decision:
-acceptance, terminal dispositions, accountability, disclosure, re-review
-commitments, both residual assessment axes, and the assurance-graph
-edges. From a fifth external review (of v0.3.1). No schema changes.
+acceptance, terminal dispositions, accountability, re-review commitments,
+both residual assessment axes, and the assurance-graph edges. From a
+fifth external review of v0.3.1. No schema changes.
 
 #### Adopter impact / upgrade actions
 
 - None required. The drift job reports strictly more findings; pull
   requests that change the fields below now need the same
   stage-proportional acknowledgment as deletions and closures. Legitimate
-  versions of these changes (a real acceptance, an owner handover, a
-  review-cycle `review_after` bump) surface as findings by design — under
-  a `DRAFT` base an `Assurance policy change:` line downgrades them to
-  warnings; under a reviewed base stage, merging over the red check is
-  the human owner's recorded decision.
+  versions of these changes (a real acceptance, an owner handover)
+  surface as findings by design — under a `DRAFT` base an `Assurance
+  policy change:` line downgrades them to warnings; under a reviewed base
+  stage, merging over the red check is the human owner's recorded
+  decision. Routine acts that are *not* findings, deliberately:
+  rescheduling a `review_after` date that has not yet passed, and
+  reclassifying an entry's `disclosure`.
 - Adopters whose registers are in-tree symlinks: the base side of the
   policy diff previously dropped such registers silently; they are now
   compared like regular files.
