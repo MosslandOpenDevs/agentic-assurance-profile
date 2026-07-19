@@ -119,9 +119,27 @@ def baseline_residual():
     }
 
 
+def baseline_invariant():
+    return {
+        "id": "INV-CORE-001",
+        "title": "Example invariant",
+        "statement": "The example property always holds",
+        "severity": "low",
+        "scope": "example scope",
+        "status": "UNKNOWN",
+        "disclosure": "PUBLIC",
+        "owner": "Alice Example",
+    }
+
+
 def baseline_registers():
-    """Minimal registers for a passing core adoption: residuals only."""
-    return {"residuals": {"version": 1, "residuals": [baseline_residual()]}}
+    """Minimal registers for a passing core adoption: one invariant, one residual.
+
+    Both are obligations for every non-archived profile (PROFILE.md section 6.1)."""
+    return {
+        "invariants": {"version": 1, "invariants": [baseline_invariant()]},
+        "residuals": {"version": 1, "residuals": [baseline_residual()]},
+    }
 
 
 def human_review_block():
@@ -259,6 +277,7 @@ def baseline_lite_assurance():
         "purpose": "Demonstrate the lite layout",
         "non_goals": ["No production guarantees"],
         "system": "A single-service example system",
+        "invariants": [baseline_invariant()],
         "residuals": [baseline_residual()],
     }
 
@@ -605,11 +624,26 @@ class TestRegisterObligations(ValidatorTestCase):
     present-but-empty file is a vacuous pass and fails validation."""
 
     def test_empty_residuals_register_core_profile_fails(self):
-        registers = {"residuals": {"version": 1, "residuals": []}}
+        registers = baseline_registers()
+        registers["residuals"]["residuals"] = []
         code, out = self.run_split(baseline_adoption(), registers)
         self.assertEqual(code, 1, out)
-        self.assertIn("register is empty", out)
         self.assertIn("residuals register is empty", out)
+
+    def test_empty_invariants_register_core_profile_fails(self):
+        registers = baseline_registers()
+        registers["invariants"]["invariants"] = []
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("invariants register is empty", out)
+
+    def test_missing_invariants_register_core_profile_fails(self):
+        # A split `core` adopter with no invariants file at all — the register
+        # is an obligation from `core`, not only from `service` (PROFILE §6.1).
+        registers = {"residuals": {"version": 1, "residuals": [baseline_residual()]}}
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("INVARIANTS.yaml missing", out)
 
     def test_empty_invariants_register_service_profile_fails(self):
         adoption = baseline_adoption()
@@ -636,6 +670,18 @@ class TestRegisterObligations(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("register is empty", out)
         self.assertIn("claims register is empty", out)
+
+    def test_archived_only_adoption_exempt_from_invariants_and_residuals(self):
+        # An archived-only adopter (PROFILE.md section 6.6) is exempt from the
+        # invariant, residual, and system obligations — pins the `any(profile
+        # != "archived")` scoping so a mis-guard that demanded them everywhere
+        # would be caught.
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["archived"]
+        code, out = self.run_split(adoption, {})
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("ERROR:", out)
+        self.assertNotIn("register is empty", out)
 
 
 # ---------------------------------------------------------------------------
@@ -710,7 +756,8 @@ class TestSchemaHardening(ValidatorTestCase):
             "accepted_by": "   ",
             "accepted_at": "2026-01-01",
         }
-        registers = {"residuals": {"version": 1, "residuals": [residual]}}
+        registers = baseline_registers()
+        registers["residuals"]["residuals"] = [residual]
         code, out = self.run_split(baseline_adoption(), registers)
         self.assertEqual(code, 1, out)
         self.assertIn("accepted_by", out)
@@ -741,6 +788,22 @@ class TestLiteLayout(ValidatorTestCase):
         code, out = self.run_lite(baseline_lite_adoption(), assurance)
         self.assertEqual(code, 1, out)
         self.assertIn("purpose", out)
+
+    def test_missing_invariants_section_fails(self):
+        # `invariants` is required in the lite envelope from `core` (an absent
+        # section is caught by the schema, not the emptiness obligation).
+        assurance = baseline_lite_assurance()
+        del assurance["invariants"]
+        code, out = self.run_lite(baseline_lite_adoption(), assurance)
+        self.assertEqual(code, 1, out)
+        self.assertIn("'invariants' is a required property", out)
+
+    def test_empty_invariants_section_fails(self):
+        assurance = baseline_lite_assurance()
+        assurance["invariants"] = []
+        code, out = self.run_lite(baseline_lite_adoption(), assurance)
+        self.assertEqual(code, 1, out)
+        self.assertIn("invariants register is empty", out)
 
     def test_profile_beyond_core_fails(self):
         adoption = baseline_lite_adoption()

@@ -136,6 +136,7 @@ A `core` adopter MUST have:
 - an agent-visible reading order, normally through `AGENTS.md`;
 - human-approved purpose and non-goals;
 - a current system description or mapping to an existing equivalent;
+- at least one project invariant — a property that must remain true (section 8);
 - an active residual register;
 - a material-change workflow.
 
@@ -143,7 +144,6 @@ A `core` adopter MUST have:
 
 A `service` adopter MUST additionally have:
 
-- project invariants;
 - trust-boundary or threat-model documentation;
 - enforcement and verification references for critical invariants;
 - release or deployment evidence linked to a bounded revision.

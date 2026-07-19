@@ -2,9 +2,36 @@
 
 All notable changes to the OpenDevs Agentic Assurance Profile will be documented here.
 
-## Unreleased
+## Unreleased (v0.4.0 target)
 
-Nothing yet.
+A usability-focused minor: makes adoption harder to get wrong at the
+entry point, and turns the invariant register into a `core` obligation.
+
+- **Profile classification is now an explicit first step of adoption.**
+  `docs/ADOPTION.md` §4.0 ("Classify the profile first") makes profile
+  selection an evidence-based finding — a cheap §5 trigger scan with
+  `file:line` evidence, a bias toward escalation, an adversarial
+  self-check of the cited evidence, and the classified set declared in
+  `adoption.yaml`'s enforced `profiles:` field rather than only in the
+  handoff prose. The prior "start at `core` / lite is the default /
+  select `core` only at first" framing is flipped throughout (§0, §1.2,
+  §3.0, §3.2, §5); `README.md` and `README.ko.md` route a bare "apply
+  this profile" prompt into classify-first; and `PROFILE.md` §5
+  clarifies that the smallest applicable set covers the system's actual
+  nature. Documentation only — no schema or validator change.
+- **At least one invariant is now required at `core`** (previously an
+  obligation only from `service`). `PROFILE.md` §6.1, the lite envelope
+  schema (`invariants` now required), and the split-layout file-presence
+  and non-emptiness checks all enforce it — a repository with nothing
+  that must stay true has not found its invariants yet.
+
+#### Adopter impact / upgrade actions
+
+- A `core` adopter with no invariant register, or an empty one, now
+  fails validation. Add at least one invariant — the properties that
+  must remain true. Both pilot adoptions already carry invariants, so no
+  live adopter is affected; `service` and above are unchanged (they
+  already required invariants).
 
 ## v0.3.2 — 2026-07-19
 

@@ -8,6 +8,7 @@
     "version",
     "purpose",
     "non_goals",
+    "invariants",
     "residuals"
   ],
   "additionalProperties": false,
@@ -40,7 +41,7 @@
     },
     "invariants": {
       "type": "array",
-      "description": "Invariant register section (recommended at core). Items follow the entry shape of invariants.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
+      "description": "Invariant register section (required at core — at least one entry; PROFILE.md section 6.1). Items follow the entry shape of invariants.schema.json; the validator validates this section against that schema — the shape is not duplicated here."
     },
     "defeaters": {
       "type": "array",

@@ -1,7 +1,7 @@
 # OpenDevs Agentic Assurance — single-file lite layout (core adopters).
 #
 # What this is: the entire local assurance record for a `core` adoption in one
-# file — purpose, non-goals, residuals, and (recommended) invariants — instead
+# file — purpose, non-goals, invariants, and residuals — instead
 # of the split assurance/ directory.
 #
 # Placement: copy this file to `.agentic-assurance/assurance.yaml` in the
@@ -36,8 +36,8 @@ non_goals:
 # system: |
 #   REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
 
-# Recommended at core; 5-15 entries; same fields as assurance/INVARIANTS.yaml —
-# graduating to split is a copy.
+# Required at core (at least one; 5-15 typical); same fields as
+# assurance/INVARIANTS.yaml — graduating to split is a copy.
 invariants:
   - id: INV-EXAMPLE-001
     title: Replace with a precise invariant title

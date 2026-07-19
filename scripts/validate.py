@@ -1047,8 +1047,8 @@ def check_required_files(
     if any(profile != "archived" for profile in profiles):
         require("system", "non-archived profiles")
         require("residuals", "non-archived profiles")
+        require("invariants", "non-archived profiles")
     if "service" in profiles:
-        require("invariants", "profile 'service'")
         require("threat_model", "profile 'service'")
     if "trust-critical" in profiles:
         require("claims", "profile 'trust-critical'")
@@ -1069,18 +1069,18 @@ def check_register_obligations(
 
     File presence alone allows a vacuous pass: a ``version: 1`` file with an
     empty array satisfies the schema and every per-entry check trivially.
-    PROFILE.md requires project invariants for 'service', public claims for
-    'trust-critical', and an active residual register for every non-archived
-    profile — "active" is not an empty list (a project that believes it has
-    zero residual risk should record that belief as its first residual).
-    A register that is absent or unusable is skipped here: presence and
+    PROFILE.md requires at least one project invariant and an active residual
+    register for every non-archived profile, plus public claims for
+    'trust-critical' — "active" is not an empty list (a project that believes
+    it has zero residual risk should record that belief as its first residual;
+    a project with nothing that must stay true has not found its invariants
+    yet). A register that is absent or unusable is skipped here: presence and
     load errors are reported by their own checks.
     """
     obligations = []
     if any(profile != "archived" for profile in profiles):
         obligations.append(("residuals", "non-archived profiles"))
-    if "service" in profiles:
-        obligations.append(("invariants", "profile 'service'"))
+        obligations.append(("invariants", "non-archived profiles"))
     if "trust-critical" in profiles:
         obligations.append(("claims", "profile 'trust-critical'"))
     for kind, reason in obligations:
@@ -1810,7 +1810,7 @@ def register_policy_regressions(
 
     Compared by stable ID; additions are never findings. A register present
     on the base but absent on the head is a whole-register removal finding
-    (listing the former IDs) — an optional register such as invariants under
+    (listing the former IDs) — an optional register such as defeaters under
     the core profile could otherwise be deleted wholesale with no finding;
     an unreadable head register, or a head register with duplicate IDs
     (last-one-wins would hide a weaker shadow entry), fails closed (the
@@ -1926,7 +1926,7 @@ def register_policy_regressions(
             continue
         base_by_id = by_id(base_registers[kind])
         # Whole-register disappearance must not skip the per-ID diff silently:
-        # for an optional register (e.g. invariants under core), deleting the
+        # for an optional register (e.g. defeaters under core), deleting the
         # file would otherwise erase every reviewed entry with no finding.
         if kind not in head_registers:
             if base_by_id:
