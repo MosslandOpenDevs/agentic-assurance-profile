@@ -360,6 +360,7 @@ assurance/
     ├── SYSTEM.md
     ├── THREAT_MODEL.md
     ├── adoption.yaml
+    ├── assurance.minimal.yaml
     ├── assurance.yaml
     └── github/
         ├── CODEOWNERS
@@ -382,6 +383,8 @@ assurance/
 - **Major:** 의무를 없애거나 약화하거나 실질적으로 바꿉니다.
 - **Minor:** 하위 호환을 지키면서 요구사항, 프로필, 필드를 더합니다.
 - **Patch:** 의무의 의도는 그대로 두고 문구를 다듬거나 schema를 고칩니다.
+
+`v1.0.0` 이전에는 프로필이 활발한 개발 단계입니다. 의무를 새로 더하거나 강화하는 것도 minor로 다루며(이미 적합하던 채택에 새 내용이 필요해질 수 있습니다), 그 영향은 changelog에 명시합니다. `v1.0.0`부터는 의무를 실질적으로 바꾸는 것이 major입니다.
 
 채택 저장소는 사람이 읽는 버전과 정확한 commit SHA를 함께 고정합니다. 업그레이드는 영향 검토를 거치는 명시적인 프로젝트 변경으로 다룹니다.
 

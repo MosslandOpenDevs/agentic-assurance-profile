@@ -360,6 +360,7 @@ Layout of this central repository:
     ├── SYSTEM.md
     ├── THREAT_MODEL.md
     ├── adoption.yaml
+    ├── assurance.minimal.yaml
     ├── assurance.yaml
     └── github/
         ├── CODEOWNERS
@@ -382,6 +383,8 @@ The profile should use semantic versioning and publish tagged releases.
 - **Major:** removes, weakens, or materially changes an obligation.
 - **Minor:** adds backward-compatible requirements, profiles, or fields.
 - **Patch:** clarifies wording or fixes schemas without changing intended obligations.
+
+Before `v1.0.0` the profile is under active development: adding or tightening an obligation is a minor change (and may require new content from a previously conforming adoption), called out in the changelog with its adopter impact. From `v1.0.0`, materially changing an obligation is major.
 
 Adopting repositories pin both the human-readable version and the exact commit SHA. Upgrades are explicit project changes with impact review.
 

@@ -378,6 +378,8 @@ The profile uses semantic versioning.
 - **Minor:** adds backward-compatible requirements, profiles, or fields;
 - **Patch:** clarifies wording or repairs validation without changing intended obligations.
 
+Before the first stable release (`v1.0.0`), the profile is under active development: adding a new obligation, or tightening an existing one, is a **minor** change, and MAY cause a previously conforming adoption to require new content. Such changes are called out in the changelog with their adopter impact. From `v1.0.0`, materially changing an obligation is major.
+
 Release identifiers MUST use the form `vMAJOR.MINOR.PATCH`. Pre-releases MUST use the form `vMAJOR.MINOR.PATCH-rc.N`.
 
 A published tag MUST NOT be moved or reused. A correction MUST be published as a new tag.

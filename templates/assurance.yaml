@@ -10,9 +10,9 @@
 # How to declare it: add `layout: lite` to `.agentic-assurance/adoption.yaml`.
 # Without that line the default split layout applies and this file is ignored.
 #
-# When to graduate: the lite layout is valid only for the `core` (or
-# `archived`) profile. Selecting `service`, `trust-critical`, `data-curation`,
-# or `agent-runtime` requires the split layout. Split-out preserves IDs — move
+# When to graduate: the lite layout is valid only for the `core` profile.
+# Any other profile — `service`, `trust-critical`, `data-curation`,
+# `agent-runtime`, or `archived` — requires the split layout. Split-out preserves IDs — move
 # the section arrays into assurance/INVARIANTS.yaml, assurance/RESIDUALS.yaml,
 # and assurance/DEFEATERS.yaml unchanged, and drop `layout: lite`.
 #
@@ -40,13 +40,13 @@ non_goals:
 # assurance/INVARIANTS.yaml — graduating to split is a copy.
 invariants:
   - id: INV-EXAMPLE-001
-    title: Replace with a precise invariant title
-    statement: Replace with a proposition that must remain true.
+    title: REPLACE_WITH_INVARIANT_TITLE
+    statement: REPLACE_WITH_THE_PROPOSITION_THAT_MUST_HOLD
     severity: critical
     intent:
       classification: UNKNOWN
       authority: null
-    scope: Replace with bounded system scope.
+    scope: REPLACE_WITH_BOUNDED_SYSTEM_SCOPE
     assumptions: []
     limitations: []
     enforcement: []
@@ -62,7 +62,7 @@ invariants:
 # inconsistencies, and remaining doubt. Same fields as assurance/RESIDUALS.yaml.
 residuals:
   - id: RES-EXAMPLE-001
-    summary: Replace with a safe summary of remaining uncertainty.
+    summary: REPLACE_WITH_RESIDUAL_SUMMARY
     private_detail_location: null
     affected_claims: []
     affected_invariants: []
@@ -83,7 +83,7 @@ residuals:
 # as assurance/DEFEATERS.yaml.
 # defeaters:
 #   - id: DEF-EXAMPLE-001
-#     statement: Replace with a concrete reason a claim may be false or incomplete.
+#     statement: REPLACE_WITH_A_CONCRETE_DEFEATER_REASON
 #     affected_claims: []
 #     affected_invariants: []
 #     evidence: []

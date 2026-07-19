@@ -32,11 +32,22 @@ entry point, and turns the invariant register into a `core` obligation.
 
 #### Adopter impact / upgrade actions
 
-- A `core` adopter with no invariant register, or an empty one, now
-  fails validation. Add at least one invariant — the properties that
-  must remain true. Both pilot adoptions already carry invariants, so no
-  live adopter is affected; `service` and above are unchanged (they
-  already required invariants).
+- A previously conforming adoption of **any non-archived profile** —
+  `core`, `service`, `trust-critical`, `data-curation`, or
+  `agent-runtime` — with no invariant register, or an empty one, now
+  fails validation. (Before, only `service` required invariants, so a
+  `core`-, `data-curation`-, `trust-critical`-, or `agent-runtime`-only
+  adoption without invariants was previously conforming.) Add at least
+  one invariant — the properties that must remain true. Both pilot
+  adoptions already carry invariants, so no live adopter is affected.
+  Classified as **minor** per §16's pre-`v1.0.0` rule (a new obligation
+  before the first stable release), not a patch.
+- `layout: lite` is now `core`-only; `archived` adoptions use the split
+  layout. The lite envelope's required fields (purpose, non-goals,
+  invariants, residuals) are shaped for `core`, not archived's §6.6
+  obligations — and `archived` + `lite` was already a broken combination
+  (accepted by the profile check, then rejected by the schema). It is
+  now a single, clear error.
 
 ## v0.3.2 — 2026-07-19
 

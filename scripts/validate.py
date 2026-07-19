@@ -104,7 +104,7 @@ LITE_MINIMAL_TEMPLATE = "assurance.minimal.yaml"
 # Register sections a lite assurance file may carry, in output order.
 LITE_SECTION_KINDS = ("invariants", "defeaters", "residuals")
 # Lite is core-only; any other profile requires graduating to the split layout.
-LITE_PROFILES = ("core", "archived")
+LITE_PROFILES = ("core",)
 
 # Artifact kind -> (schema file, default repository-relative path).
 ARTIFACT_KINDS = {
@@ -857,6 +857,10 @@ def check_lite_template(
         substituted, label, schemas, report, schema_label_prefix="schemas/"
     )
     check_semantics(registers, report, ok_label=f"{label} semantic checks")
+    # Lite is core-only: the same non-emptiness obligations an adopter faces,
+    # so a template that ships an empty `invariants: []`/`residuals: []` is
+    # caught here too and cannot drift into a vacuous pass.
+    check_register_obligations(["core"], registers, report)
 
 
 def check_forbidden_string(repo_root: Path, report: Report) -> None:
@@ -1126,7 +1130,7 @@ def check_lite_profiles(profiles: list[str], report: Report) -> None:
     if beyond_core:
         listed = ", ".join(f"'{profile}'" for profile in beyond_core)
         report.error(
-            f"layout 'lite' supports only the core and archived profiles, but "
+            f"layout 'lite' supports only the core profile, but "
             f"profiles include {listed} — graduate to the split layout "
             f"(split-out preserves IDs: move the section arrays of "
             f"{LITE_ASSURANCE_PATH} into assurance/INVARIANTS.yaml etc. "

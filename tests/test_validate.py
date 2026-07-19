@@ -810,7 +810,26 @@ class TestLiteLayout(ValidatorTestCase):
         adoption["profiles"] = ["core", "service"]
         code, out = self.run_lite(adoption, baseline_lite_assurance())
         self.assertEqual(code, 1, out)
-        self.assertIn("layout 'lite' supports only the core and archived profiles", out)
+        self.assertIn("layout 'lite' supports only the core profile", out)
+
+    def test_archived_profile_with_lite_fails(self):
+        # Lite is core-only: `archived` (like any non-core profile) must use
+        # the split layout — the lite schema's required fields are shaped for
+        # core, not archived's PROFILE.md section 6.6 obligations.
+        adoption = baseline_lite_adoption()
+        adoption["profiles"] = ["archived"]
+        code, out = self.run_lite(adoption, baseline_lite_assurance())
+        self.assertEqual(code, 1, out)
+        self.assertIn("layout 'lite' supports only the core profile", out)
+
+    def test_lite_templates_use_detectable_placeholder_sentinels(self):
+        # Every fill-in field in the shipped lite templates must be a
+        # REPLACE_WITH_ sentinel, so an adopter who leaves one is caught at
+        # HUMAN_REVIEWED. A bare "Replace with ..." would pass that check
+        # silently (it is not a REPLACE_WITH_ token).
+        for name in ("assurance.minimal.yaml", "assurance.yaml"):
+            text = (REPO_ROOT / "templates" / name).read_text(encoding="utf-8")
+            self.assertNotIn("Replace with ", text, name)
 
     def test_default_public_assurance_root_warns_but_passes(self):
         adoption = baseline_lite_adoption()

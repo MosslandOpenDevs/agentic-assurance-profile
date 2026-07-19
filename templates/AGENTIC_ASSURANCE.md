@@ -136,7 +136,7 @@ AGENTIC_ASSURANCE.md
 └── assurance.yaml    # purpose, non-goals, invariants, residuals in one file
 ```
 
-`assurance.yaml` (start from `templates/assurance.yaml`) carries purpose, non-goals, invariants, and residuals — at least one invariant and one residual — and optionally defeaters. Its optional `system` section satisfies the system-description obligation; when absent, keep a separate `SYSTEM.md` at the path in `paths.system`. Section items use exactly the same shapes as the split registers, so graduating is a copy that preserves IDs. Selecting any profile beyond `core` requires the split layout.
+`assurance.yaml` (start from `templates/assurance.minimal.yaml` — the required minimum; `templates/assurance.yaml` is the same file with every field and the optional `defeaters` section shown) carries purpose, non-goals, invariants, and residuals — at least one invariant and one residual — and optionally defeaters. Its optional `system` section satisfies the system-description obligation; when absent, keep a separate `SYSTEM.md` at the path in `paths.system`. Section items use exactly the same shapes as the split registers, so graduating is a copy that preserves IDs. Selecting any profile beyond `core` requires the split layout.
 
 **Split layout** — the default (no `layout` field), and required from `service` onward:
 

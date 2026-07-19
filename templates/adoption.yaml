@@ -9,6 +9,11 @@ project:
   repository: REPLACE_WITH_OWNER_AND_REPOSITORY
   human_owner: REPLACE_WITH_PERSON_OR_GOVERNING_BODY
 
+# Classify from what the repository IS and promises before setting this — do
+# not leave it at `core` by default. See docs/ADOPTION.md §4.0: run the trigger
+# scan, escalate on any fired trigger with file:line evidence, and declare the
+# resulting set in this field (not only in the handoff prose — this field is
+# what selects the checks).
 profiles:
   - core
   # - service
