@@ -1169,6 +1169,54 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
         self.assertEqual(code, 0, out)
         self.assertIn("no assurance policy regression", out)
 
+    def test_scalar_basis_field_does_not_crash(self):
+        # The diff loads registers without schema validation, so a claim's
+        # evidence/limitations may hold a non-list scalar (e.g. `evidence: 42`
+        # or a YAML-coerced bool). Iterating it must not crash the gate.
+        def set_scalar(registers):
+            registers["claims"]["claims"][0]["evidence"] = 42
+            registers["claims"]["claims"][0]["limitations"] = True
+
+        code, out = self.run_register_diff(lambda head: None, mutate_base=set_scalar)
+        self.assertNotIn("Traceback", out)
+        # base == head here, so no basis removal is reported and the run passes.
+        self.assertEqual(code, 0, out)
+
+    def test_list_basis_field_replaced_by_scalar_is_removal(self):
+        # A list of evidence in the base replaced by a scalar in the head
+        # removes the basis entirely — reported, not crashed.
+        def set_list(registers):
+            registers["claims"]["claims"][0]["evidence"] = ["evidence/proof.json"]
+
+        def to_scalar(head):
+            head["claims"]["claims"][0]["evidence"] = 0
+
+        code, out = self.run_register_diff(to_scalar, mutate_base=set_list)
+        self.assertEqual(code, 1, out)
+        self.assertIn("evidence item(s) removed: evidence/proof.json", out)
+
+    def test_dot_slash_register_path_still_compared(self):
+        # A register declared with a './'-prefixed path is read by the
+        # validator; the workflow's base-materialization must accept the same
+        # paths, or a deletion under that path would be silently missed. The
+        # validator side is exercised here: with paths.claims = ./assurance/...
+        # the base claim's deletion is still detected.
+        base = baseline_adoption()
+        base["paths"] = {"claims": "./assurance/CLAIMS.yaml"}
+        head = copy.deepcopy(base)
+        base_registers = drift_register_fixture()
+        head_registers = copy.deepcopy(base_registers)
+        head_registers["claims"]["claims"] = []
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            base_adoption=base,
+            base_registers=base_registers,
+            head_registers=head_registers,
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("claims entry CLAIM-CORE-001 deleted", out)
+
     def test_entry_deleted_fails(self):
         def mutate(head):
             head["residuals"]["residuals"] = []

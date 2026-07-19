@@ -1802,6 +1802,19 @@ def register_policy_regressions(
         """
         return isinstance(before, str) and after in table.get(before, ())
 
+    def str_items(entry: dict, field: str) -> set[str]:
+        """The string items of a list-valued register field, else empty.
+
+        The registers are unvalidated (see ``reclassified``), so a field
+        that should be a list of strings may be any YAML type — a scalar
+        such as ``evidence: 42`` must not crash the diff (``for x in 42``).
+        Only genuine lists contribute items; anything else contributes none.
+        """
+        value = entry.get(field)
+        if not isinstance(value, list):
+            return set()
+        return {item for item in value if isinstance(item, str)}
+
     for kind in REGISTER_KINDS:
         if kind not in base_registers or base_registers[kind] is None:
             continue
@@ -1868,16 +1881,7 @@ def register_policy_regressions(
                 if base_entry.get("severity") in ("critical", "high"):
                     for field in INVARIANT_EVIDENCE_LISTS:
                         removed = sorted(
-                            {
-                                item
-                                for item in (base_entry.get(field) or [])
-                                if isinstance(item, str)
-                            }
-                            - {
-                                item
-                                for item in (head_entry.get(field) or [])
-                                if isinstance(item, str)
-                            }
+                            str_items(base_entry, field) - str_items(head_entry, field)
                         )
                         if removed:
                             findings.append(
@@ -1929,16 +1933,7 @@ def register_policy_regressions(
                 # touching its wording — a mechanism change, not a wording one.
                 for field in CLAIM_BASIS_LISTS:
                     removed = sorted(
-                        {
-                            item
-                            for item in (base_entry.get(field) or [])
-                            if isinstance(item, str)
-                        }
-                        - {
-                            item
-                            for item in (head_entry.get(field) or [])
-                            if isinstance(item, str)
-                        }
+                        str_items(base_entry, field) - str_items(head_entry, field)
                     )
                     if removed:
                         findings.append(

@@ -76,9 +76,11 @@
 # no-impact statement in the PR description. It also screens the assurance
 # policy against the base branch — the adoption declaration (stage
 # downgrade, pin change, component removal/narrowing, owner/path moves)
-# and the registers themselves (deleted entries, severity/status/proof-tier
-# downgrades, evidence removal, stable-ID diff) — failing unless the PR
-# description carries an explicit `Assurance policy change: <why>` line;
+# and the registers themselves, by stable ID (deleted entries, whole
+# register removal, severity/status/proof-tier downgrades, evidence and
+# claim-basis removal, a cleared CONTRADICTED status, and residual/defeater
+# closing dispositions) — failing unless the PR description carries an
+# explicit `Assurance policy change: <why>` line;
 # when the base declaration's stage is HUMAN_REVIEWED or CONFORMANT the
 # findings stay errors even when acknowledged. Push-event callers are
 # unaffected. To turn routing warnings into failures:
@@ -557,21 +559,30 @@ jobs:
           tmp = os.environ["RUNNER_TEMP"]
 
           def safe_relative(path):
-              """A plain repository-relative literal, or None.
+              """Normalized in-tree relative path, or None if it escapes.
 
               The adoption paths are pull-request-controlled, and they flow
-              into git pathspecs and filesystem writes below. Reject anything
-              that is not a simple in-tree relative path — absolute paths,
-              parent traversal, and empty segments — so a crafted `paths:`
-              value cannot reach a git-pathspec magic form or escape the
-              base-tree write directory.
+              into git pathspecs and filesystem writes below. This MUST
+              accept exactly what the validator's check_declared_paths
+              accepts (any path resolving inside the project root) — a stray
+              './' or in-tree '..' that the validator reads but this step
+              rejects would silently drop that register from the base
+              materialization, hiding its deletion from the policy diff.
+              So normalize first (collapsing '.'/harmless '..'), then reject
+              only genuine escapes: absolute paths, and paths that climb out
+              of the tree.
               """
-              if not isinstance(path, str) or not path or path.startswith("/"):
+              if not isinstance(path, str) or not path or posixpath.isabs(path):
                   return None
-              parts = path.split("/")
-              if any(part in ("", ".", "..") for part in parts):
+              normalized = posixpath.normpath(path)
+              if (
+                  normalized == "."
+                  or normalized == ".."
+                  or normalized.startswith("../")
+                  or posixpath.isabs(normalized)
+              ):
                   return None
-              return posixpath.normpath(path)
+              return normalized
 
           def show(ref, path):
               result = subprocess.run(
