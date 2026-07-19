@@ -235,7 +235,7 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 **Adoption begins by classifying the profile, not by copying files.** Which of `core`, `service`, `trust-critical`, `data-curation`, and `agent-runtime` apply is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). The layout follows from that classification — never from the repository's size.
 
-At `core` alone, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content in a single `assurance.yaml`:
+At `core` alone, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content (purpose, non-goals, at least one invariant, and at least one residual) in a single `assurance.yaml`:
 
 ```text
 AGENTS.md

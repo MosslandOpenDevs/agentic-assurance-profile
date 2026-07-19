@@ -235,7 +235,7 @@ Issue or change proposal
 
 **채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** `core`, `service`, `trust-critical`, `data-curation`, `agent-runtime` 중 무엇이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
 
-`core` 하나만 해당할 때는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
+`core` 하나만 해당할 때는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체(목적, 비목표, 최소 하나의 불변조건, 최소 하나의 잔차)를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
 
 ```text
 AGENTS.md
