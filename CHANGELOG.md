@@ -4,7 +4,120 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+Extends the register policy diff from "reviewed items cannot silently
+disappear" (v0.3.1) to change control over every recorded human decision:
+acceptance, terminal dispositions, accountability, disclosure, re-review
+commitments, both residual assessment axes, and the assurance-graph
+edges. From a fifth external review (of v0.3.1). No schema changes.
+
+#### Adopter impact / upgrade actions
+
+- None required. The drift job reports strictly more findings; pull
+  requests that change the fields below now need the same
+  stage-proportional acknowledgment as deletions and closures. Legitimate
+  versions of these changes (a real acceptance, an owner handover, a
+  review-cycle `review_after` bump) surface as findings by design — under
+  a `DRAFT` base an `Assurance policy change:` line downgrades them to
+  warnings; under a reviewed base stage, merging over the red check is
+  the human owner's recorded decision.
+- Adopters whose registers are in-tree symlinks: the base side of the
+  policy diff previously dropped such registers silently; they are now
+  compared like regular files.
+
+#### Fixed — register policy diff: human decisions are change-controlled
+
+- **Residual acceptance is gated.** Any status transition into `ACCEPTED`
+  is now a finding: accepting a residual risk is a human decision
+  (PROFILE.md §3, §12), and the acceptance fields are self-declared
+  strings — previously an agent could fabricate `accepted_by`/
+  `accepted_at`/`acceptance_rationale`, flip a critical residual from
+  `OPEN` to `ACCEPTED`, and turn a failing `CONFORMANT` state green with
+  no finding. Rewriting or removing an existing acceptance record is
+  likewise a finding.
+- **A recorded judgement value cannot be silently unset.** Removing,
+  emptying, or de-stringing `status` (all registers), `severity`,
+  `proof_tier`, `impact`, `uncertainty`, or an `INTENDED`
+  `intent.classification` is now a finding. Every weakening check is
+  pair-keyed — it needs a meaningful value on both sides — so unsetting
+  one was a free first hop: drop it in one pull request (nothing to
+  compare, silent), record the weaker value in the next (no baseline,
+  silent), while the one-step edit was an error the whole time. The
+  residual/defeater disposition gates additionally fire on the head
+  *arriving* at a gated status regardless of what the base recorded.
+  This closes the *unset* shape of that first hop; overwriting a value
+  with an unrecognized string is pair-keyed the same way and remains the
+  schema enum check's job, since flagging it in the diff would also
+  flag an adopter repairing a value that predates the stricter schema.
+- **Defeater terminal dispositions are gated.** `MITIGATED → RESOLVED`
+  and `MITIGATED → WITHDRAWN` were invisible inside the single "closed"
+  class; they are now findings (an extra edge on the closed-set
+  condition, so an out-of-schema base status keeps failing toward a
+  finding, not toward silence). `RESOLVED ↔ WITHDRAWN` lateral moves and
+  re-opening remain non-findings.
+- **`review_after` is a kept commitment.** Removing it, replacing it
+  with an unparsable value, or pushing it out *after the recorded date
+  had already passed* are findings — that last case is the review being
+  evaded rather than done, and is how a live overdue warning would
+  otherwise be cleared. Rescheduling a date still in the future is the
+  normal outcome of completing a review and is deliberately **not** a
+  finding: putting a red check on the one act the schedule exists to
+  produce would teach adopters to ignore the check. An unparsable *base*
+  value still counts as a recorded commitment, so dropping it or
+  swapping it for different garbage is a finding; repairing it into a
+  real date is not.
+- **Accountability fields are compared:** a changed entry `owner` (all
+  registers); a changed `human_review.reviewer`/`human_review.record` in
+  the adoption declaration (`human_review.date` is deliberately not
+  compared — advancing it is the normal re-review act); and the full
+  `INTENDED` intent row (`COMPATIBILITY`/`DEPRECATED` join
+  `UNKNOWN`/`ACCIDENTAL`). Entry `disclosure` is deliberately **not**
+  compared: it is not a strength axis, the risky direction on a public
+  repository is already an error at `CONFORMANT`, and reclassifying
+  during triage is routine.
+- **Assurance-graph edges are protected.** Removing items from claims'
+  `defeaters`/`residuals`, invariants' `assumptions`/`limitations`/
+  `defeaters`/`residuals` (at every severity — edges are graph
+  structure, not evidence volume), defeaters' `affected_claims`/
+  `affected_invariants`/`evidence`, and residuals' `affected_claims`/
+  `affected_invariants`/`mitigation` is now a finding, generalizing the
+  v0.3.1 claim-basis check into a per-kind protected-list map. The
+  severity-gated invariant `enforcement`/`verification`/`evidence` check
+  is unchanged.
+- **Residual `uncertainty` downgrades are findings**, parallel to
+  `impact` — the two assessment axes were asymmetrically protected.
+
+#### Fixed — fail-closed hardening
+
+- **Symlinked base registers are compared.** The drift job materializes
+  the base side as a detached `git worktree` instead of per-file
+  `git show` writes: `git show` renders a symlink blob as its
+  target-path string, so a symlinked register materialized as a regular
+  file holding a path string, loaded as unusable, and silently dropped
+  out of the policy diff — one innocuous pull request converting a
+  register to a symlink disabled its protection for every later one. The
+  base adoption declaration is read from the same worktree
+  (symlink-aware, containment-checked), and a present-but-unreadable
+  base declaration fails the job instead of skipping the comparison.
+- **Unusable registers are hard errors on both sides.** A register file
+  that parses but is not a mapping carrying the register's list — a lite
+  assurance file that is not a mapping, or whose section is not a list —
+  and a register path that exists but is not a readable regular file (a
+  directory, a broken symlink) are reported instead of silently skipping
+  that register's diff. Only a genuinely absent file still means
+  "register absent".
+- **Duplicate head IDs fail closed.** The diff compares by stable ID
+  (last-one-wins), so a weak shadow entry under a duplicated ID was
+  invisible to it; a head register with duplicate IDs is now itself a
+  finding, instead of relying on the structure job being configured as a
+  required check.
+
+#### Process
+
+- RELEASING.md: the release pull request now states the release's review
+  class per GOVERNANCE.md §2 (e.g. `SOLE_OWNER_ATTESTED +
+  AUTOMATION_VERIFIED`), citing any external technical reviews — the
+  GOVERNANCE.md obligation that every release state its class was never
+  wired into the release ritual.
 
 ## v0.3.1 — 2026-07-19
 

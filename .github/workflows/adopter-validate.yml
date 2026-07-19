@@ -532,11 +532,12 @@ jobs:
         run: |
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
 
-      # The base branch's adoption declaration and register files (for the
-      # policy regression check), and the diff of the assurance artifacts —
-      # scoped by the paths BOTH declarations actually name (custom `paths:`
-      # mappings included), not just the default directories.
-      - name: Extract base declaration, base registers, and assurance diff
+      # The base branch's adoption declaration and registers (for the policy
+      # regression check) come from a detached worktree of the base SHA, and
+      # the diff of the assurance artifacts is scoped by the paths BOTH
+      # declarations actually name (custom `paths:` mappings included), not
+      # just the default directories.
+      - name: Materialize the base tree and compute the assurance diff
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -551,7 +552,7 @@ jobs:
           import posixpath
 
           import yaml
-          from validate import DEFAULT_PATHS, LITE_ASSURANCE_PATH, REGISTER_KINDS, resolve_paths
+          from validate import DEFAULT_PATHS, LITE_ASSURANCE_PATH, resolve_paths
 
           base_sha = os.environ["BASE_SHA"]
           head_sha = os.environ["HEAD_SHA"]
@@ -562,7 +563,7 @@ jobs:
               """Normalized in-tree relative path, or None if it escapes.
 
               The adoption paths are pull-request-controlled, and they flow
-              into git pathspecs and filesystem writes below. This MUST
+              into git pathspecs and base-worktree reads below. This MUST
               accept exactly what the validator's check_declared_paths
               accepts (any path resolving inside the project root) — a stray
               './' or in-tree '..' that the validator reads but this step
@@ -583,13 +584,6 @@ jobs:
               ):
                   return None
               return normalized
-
-          def show(ref, path):
-              result = subprocess.run(
-                  ["git", "--literal-pathspecs", "show", f"{ref}:{path}"],
-                  capture_output=True,
-              )
-              return result.stdout if result.returncode == 0 else None
 
           # Fixed, in-tree literals; the adoption-declared paths are added
           # only after passing safe_relative.
@@ -612,8 +606,43 @@ jobs:
               head_adoption = yaml.safe_load(handle)
           diff_scope |= set(declared_paths(head_adoption).values())
 
-          base_bytes = show(base_sha, adoption_file)
-          if base_bytes is None:
+          # The base side is a detached worktree of the base SHA, not
+          # per-file `git show` writes: `git show` renders a symlink blob as
+          # its target-path string, so a symlinked register would
+          # materialize as a regular file holding a path string, load as
+          # unusable, and silently drop out of the policy diff. A worktree
+          # preserves file modes, giving the base side the same filesystem
+          # semantics as the head checkout (the validator's containment
+          # check rejects register paths that resolve outside this root).
+          # fetch-depth: 0 above guarantees the base SHA exists locally.
+          base_root = os.path.realpath(os.path.join(tmp, "base-tree"))
+          worktree = subprocess.run(
+              ["git", "worktree", "add", "--detach", base_root, base_sha],
+              capture_output=True,
+          )
+          if worktree.returncode != 0:
+              sys.stderr.write(worktree.stderr.decode("utf-8", "replace"))
+              print("::error::Could not materialize the base tree (git worktree add failed).")
+              raise SystemExit(1)
+
+          base_adoption_file = None
+          if adoption_rel is not None:
+              candidate = os.path.join(base_root, adoption_rel)
+              if os.path.isfile(candidate):
+                  # Defence in depth: adoption_rel passed safe_relative, but
+                  # a symlink inside the base tree could resolve elsewhere.
+                  resolved = os.path.realpath(candidate)
+                  if not resolved.startswith(base_root + os.sep):
+                      print("::error::The base adoption declaration resolves outside the base tree.")
+                      raise SystemExit(1)
+                  base_adoption_file = candidate
+              elif os.path.lexists(candidate):
+                  # Present but unreadable (e.g. a broken symlink): the
+                  # policy baseline exists and cannot be read — fail closed
+                  # rather than comparing against nothing.
+                  print("::error::The base adoption declaration exists but is not a readable file.")
+                  raise SystemExit(1)
+          if base_adoption_file is None:
               print(
                   f"::notice::No adoption declaration at {adoption_file} on the base "
                   "branch — policy comparison skipped (new adoption, or a moved "
@@ -621,29 +650,12 @@ jobs:
                   "policy change)."
               )
           else:
+              with open(base_adoption_file, "rb") as handle:
+                  base_bytes = handle.read()
               with open(os.path.join(tmp, "base-adoption.yaml"), "wb") as handle:
                   handle.write(base_bytes)
               base_adoption = yaml.safe_load(base_bytes)
-              base_declared = declared_paths(base_adoption)
-              diff_scope |= set(base_declared.values())
-              wanted = {
-                  base_declared[kind] for kind in REGISTER_KINDS if kind in base_declared
-              } | {LITE_ASSURANCE_PATH}
-              base_root = os.path.realpath(os.path.join(tmp, "base-tree"))
-              for relative in sorted(wanted):
-                  content = show(base_sha, relative)
-                  if content is None:
-                      continue
-                  destination = os.path.realpath(os.path.join(base_root, relative))
-                  # Defence in depth: LITE_ASSURANCE_PATH is a constant and the
-                  # rest passed safe_relative, but confirm containment anyway.
-                  if destination != base_root and not destination.startswith(
-                      base_root + os.sep
-                  ):
-                      continue
-                  os.makedirs(os.path.dirname(destination), exist_ok=True)
-                  with open(destination, "wb") as handle:
-                      handle.write(content)
+              diff_scope |= set(declared_paths(base_adoption).values())
 
           # --literal-pathspecs: the scope entries are plain paths, never git
           # pathspec magic. Fail closed on a diff error rather than proceeding
