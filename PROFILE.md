@@ -111,7 +111,7 @@ Current production behavior is evidence of current behavior. It is not automatic
 
 ## 5. Adoption profiles
 
-Use the smallest applicable set.
+Use the smallest applicable set. The smallest applicable set is the smallest that covers every characteristic the system actually has — not the fewest profiles selected in the hope of escalating later. Declaring a lighter profile than the system's nature does not reduce its obligations; it only leaves them unstated, and unstates the checks the system needs.
 
 | Profile | Applies to |
 |---|---|
