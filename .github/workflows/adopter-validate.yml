@@ -546,6 +546,8 @@ jobs:
           import sys
 
           sys.path.insert(0, ".assurance-profile-pin/scripts")
+          import posixpath
+
           import yaml
           from validate import DEFAULT_PATHS, LITE_ASSURANCE_PATH, REGISTER_KINDS, resolve_paths
 
@@ -554,19 +556,50 @@ jobs:
           adoption_file = os.environ["ADOPTION_FILE"]
           tmp = os.environ["RUNNER_TEMP"]
 
+          def safe_relative(path):
+              """A plain repository-relative literal, or None.
+
+              The adoption paths are pull-request-controlled, and they flow
+              into git pathspecs and filesystem writes below. Reject anything
+              that is not a simple in-tree relative path — absolute paths,
+              parent traversal, and empty segments — so a crafted `paths:`
+              value cannot reach a git-pathspec magic form or escape the
+              base-tree write directory.
+              """
+              if not isinstance(path, str) or not path or path.startswith("/"):
+                  return None
+              parts = path.split("/")
+              if any(part in ("", ".", "..") for part in parts):
+                  return None
+              return posixpath.normpath(path)
+
           def show(ref, path):
               result = subprocess.run(
-                  ["git", "show", f"{ref}:{path}"], capture_output=True
+                  ["git", "--literal-pathspecs", "show", f"{ref}:{path}"],
+                  capture_output=True,
               )
               return result.stdout if result.returncode == 0 else None
 
-          diff_scope = {"assurance", ".agentic-assurance", adoption_file}
+          # Fixed, in-tree literals; the adoption-declared paths are added
+          # only after passing safe_relative.
+          diff_scope = {"assurance", ".agentic-assurance"}
           diff_scope |= set(DEFAULT_PATHS.values()) | {LITE_ASSURANCE_PATH}
+          adoption_rel = safe_relative(adoption_file)
+          if adoption_rel is not None:
+              diff_scope.add(adoption_rel)
+
+          def declared_paths(adoption):
+              if not isinstance(adoption, dict):
+                  return {}
+              return {
+                  kind: rel
+                  for kind, value in resolve_paths(adoption).items()
+                  if (rel := safe_relative(value)) is not None
+              }
 
           with open(adoption_file, encoding="utf-8") as handle:
               head_adoption = yaml.safe_load(handle)
-          if isinstance(head_adoption, dict):
-              diff_scope |= set(resolve_paths(head_adoption).values())
+          diff_scope |= set(declared_paths(head_adoption).values())
 
           base_bytes = show(base_sha, adoption_file)
           if base_bytes is None:
@@ -580,26 +613,45 @@ jobs:
               with open(os.path.join(tmp, "base-adoption.yaml"), "wb") as handle:
                   handle.write(base_bytes)
               base_adoption = yaml.safe_load(base_bytes)
-              if isinstance(base_adoption, dict):
-                  resolved = resolve_paths(base_adoption)
-                  diff_scope |= set(resolved.values())
-                  wanted = {
-                      resolved[kind] for kind in REGISTER_KINDS if kind in resolved
-                  } | {LITE_ASSURANCE_PATH}
-                  for relative in sorted(wanted):
-                      content = show(base_sha, relative)
-                      if content is None:
-                          continue
-                      destination = os.path.join(tmp, "base-tree", relative)
-                      os.makedirs(os.path.dirname(destination), exist_ok=True)
-                      with open(destination, "wb") as handle:
-                          handle.write(content)
+              base_declared = declared_paths(base_adoption)
+              diff_scope |= set(base_declared.values())
+              wanted = {
+                  base_declared[kind] for kind in REGISTER_KINDS if kind in base_declared
+              } | {LITE_ASSURANCE_PATH}
+              base_root = os.path.realpath(os.path.join(tmp, "base-tree"))
+              for relative in sorted(wanted):
+                  content = show(base_sha, relative)
+                  if content is None:
+                      continue
+                  destination = os.path.realpath(os.path.join(base_root, relative))
+                  # Defence in depth: LITE_ASSURANCE_PATH is a constant and the
+                  # rest passed safe_relative, but confirm containment anyway.
+                  if destination != base_root and not destination.startswith(
+                      base_root + os.sep
+                  ):
+                      continue
+                  os.makedirs(os.path.dirname(destination), exist_ok=True)
+                  with open(destination, "wb") as handle:
+                      handle.write(content)
 
-          # git diff ignores pathspecs that match nothing, so the union is safe.
+          # --literal-pathspecs: the scope entries are plain paths, never git
+          # pathspec magic. Fail closed on a diff error rather than proceeding
+          # with an empty (falsely "no change") diff.
           diff = subprocess.run(
-              ["git", "diff", f"{base_sha}...{head_sha}", "--", *sorted(diff_scope)],
+              [
+                  "git",
+                  "--literal-pathspecs",
+                  "diff",
+                  f"{base_sha}...{head_sha}",
+                  "--",
+                  *sorted(diff_scope),
+              ],
               capture_output=True,
           )
+          if diff.returncode != 0:
+              sys.stderr.write(diff.stderr.decode("utf-8", "replace"))
+              print("::error::Could not compute the assurance diff (git diff failed).")
+              raise SystemExit(1)
           with open(os.path.join(tmp, "assurance-diff.txt"), "wb") as handle:
               handle.write(diff.stdout)
           EOF

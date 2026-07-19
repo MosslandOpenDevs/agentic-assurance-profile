@@ -178,15 +178,26 @@ PROOF_TIER_ORDER = (
     "OPERATOR_ATTESTED",
     "NOT_CLAIMED",
 )
-# Conclusion statuses whose replacement counts as a weakening. CONTRADICTED
-# is deliberately NOT a weakening target: recording a contradiction is an
-# honesty upgrade, never something to gate.
+# Conclusion statuses whose replacement counts as a weakening. Moving TO
+# CONTRADICTED is deliberately NOT a weakening — recording a contradiction
+# is an honesty upgrade. Moving AWAY from a recorded CONTRADICTED is handled
+# separately (clearing a contradiction is a disposition that needs review),
+# so CONTRADICTED is not a key here.
 STATUS_WEAKENINGS = {"VERIFIED": ("INFERRED", "UNKNOWN"), "INFERRED": ("UNKNOWN",)}
 # Intent reclassifications that weaken a recorded human decision.
 INTENT_WEAKENINGS = {"INTENDED": ("UNKNOWN", "ACCIDENTAL")}
 # Evidence-bearing list fields whose shrinkage is a weakening on
 # high/critical invariants.
 INVARIANT_EVIDENCE_LISTS = ("enforcement", "verification", "evidence")
+# Claim list fields whose shrinkage removes assurance basis (evidence,
+# supporting invariants) or a stated caveat (limitations).
+CLAIM_BASIS_LISTS = ("evidence", "invariants", "limitations")
+# Register statuses that mean "closed / no longer a live, tracked concern".
+# Moving an entry into one of these dispositions removes it from active
+# scrutiny without deleting its ID, so it needs the same acknowledgment as a
+# deletion. Re-opening (moving out of these) is never a weakening.
+RESIDUAL_CLOSED_STATUSES = ("RESOLVED",)
+DEFEATER_CLOSED_STATUSES = ("MITIGATED", "RESOLVED", "WITHDRAWN")
 
 REPO_VISIBILITIES = ("public", "private", "internal")
 
@@ -1741,16 +1752,31 @@ def register_policy_regressions(
 ) -> list[tuple[str, str]]:
     """Weakenings of the head registers versus the base registers.
 
-    Compared by stable ID; additions are never findings. A register absent
-    or unusable on either side is skipped (its own errors are reported
-    elsewhere). Detected weakenings: entry deletion (any register);
-    invariant severity downgrade, conclusion-status weakening
-    (VERIFIED/INFERRED moving toward UNKNOWN — CONTRADICTED is an honesty
-    upgrade, never flagged), INTENDED intent reclassified as
-    UNKNOWN/ACCIDENTAL, and enforcement/verification/evidence items removed
-    from high/critical invariants; claim status weakening and proof-tier
-    downgrade; residual impact downgrade. Claim/statement wording changes
-    are deliberately not compared — that is the human review's terrain.
+    Compared by stable ID; additions are never findings. A register present
+    on the base but absent on the head is a whole-register removal finding
+    (listing the former IDs) — an optional register such as invariants under
+    the core profile could otherwise be deleted wholesale with no finding;
+    an unreadable head register fails closed (the diff cannot be trusted). A
+    register absent on the base, or unusable on the base, is skipped (its
+    own errors are reported elsewhere).
+
+    Detected weakenings, by stable ID:
+    - any register: entry deletion; whole-register removal.
+    - invariants: severity downgrade; conclusion-status weakening
+      (VERIFIED/INFERRED toward UNKNOWN); INTENDED intent reclassified as
+      UNKNOWN/ACCIDENTAL; enforcement/verification/evidence items removed
+      from a high/critical invariant.
+    - claims: status weakening; proof-tier downgrade; evidence, supporting
+      invariant, or limitation items removed.
+    - invariants and claims: a recorded CONTRADICTED status cleared
+      (moving to CONTRADICTED is an honesty upgrade and is never flagged;
+      moving away from it is a reviewed disposition).
+    - residuals: impact downgrade; closing (status -> RESOLVED).
+    - defeaters: closing (status -> MITIGATED/RESOLVED/WITHDRAWN).
+
+    Claim/statement wording changes are deliberately not compared — that is
+    the human review's terrain. Re-opening a closed residual/defeater, or
+    recording a new contradiction, is never a weakening.
     """
     findings: list[tuple[str, str]] = []
 
@@ -1779,9 +1805,35 @@ def register_policy_regressions(
     for kind in REGISTER_KINDS:
         if kind not in base_registers or base_registers[kind] is None:
             continue
-        if kind not in head_registers or head_registers[kind] is None:
-            continue
         base_by_id = by_id(base_registers[kind])
+        # Whole-register disappearance must not skip the per-ID diff silently:
+        # for an optional register (e.g. invariants under core), deleting the
+        # file would otherwise erase every reviewed entry with no finding.
+        if kind not in head_registers:
+            if base_by_id:
+                ids = ", ".join(sorted(base_by_id))
+                findings.append(
+                    (
+                        "weakened",
+                        f"{kind} register removed (was present on the base "
+                        f"branch); former entries: {ids}",
+                    )
+                )
+            continue
+        if head_registers[kind] is None:
+            # The head register file exists but is unusable (a load/parse
+            # error, reported by the structural checks). Fail closed: the
+            # policy comparison cannot be trusted, so record that rather than
+            # passing the register silently.
+            findings.append(
+                (
+                    "weakened",
+                    f"{kind} register cannot be compared against the base "
+                    "branch — it is unreadable on the head branch; fix it so "
+                    "the policy diff can run",
+                )
+            )
+            continue
         head_by_id = by_id(head_registers[kind])
         for entry_id in sorted(base_by_id):
             if entry_id not in head_by_id:
@@ -1838,36 +1890,107 @@ def register_policy_regressions(
 
             if kind in ("invariants", "claims"):
                 before, after = base_entry.get("status"), head_entry.get("status")
+                noun = "invariant" if kind == "invariants" else "claim"
                 if reclassified(STATUS_WEAKENINGS, before, after):
-                    noun = "invariant" if kind == "invariants" else "claim"
                     findings.append(
                         (
                             "weakened",
                             f"{noun} {entry_id} status weakened from {before} to {after}",
                         )
                     )
-
-            if kind == "claims" and weakened(
-                PROOF_TIER_ORDER, base_entry.get("proof_tier"), head_entry.get("proof_tier")
-            ):
-                findings.append(
-                    (
-                        "weakened",
-                        f"claim {entry_id} proof_tier downgraded from "
-                        f"{base_entry.get('proof_tier')} to {head_entry.get('proof_tier')}",
+                # Clearing a recorded contradiction (moving away from
+                # CONTRADICTED) removes a known problem from the record; it
+                # must be a reviewed disposition, not a silent edit.
+                elif before == "CONTRADICTED" and after != "CONTRADICTED":
+                    findings.append(
+                        (
+                            "weakened",
+                            f"{noun} {entry_id} recorded contradiction cleared "
+                            f"(CONTRADICTED to {after}) — resolving a "
+                            "contradiction needs review",
+                        )
                     )
-                )
 
-            if kind == "residuals" and weakened(
-                IMPACT_ORDER, base_entry.get("impact"), head_entry.get("impact")
-            ):
-                findings.append(
-                    (
-                        "weakened",
-                        f"residual {entry_id} impact downgraded from "
-                        f"{base_entry.get('impact')} to {head_entry.get('impact')}",
+            if kind == "claims":
+                if weakened(
+                    PROOF_TIER_ORDER,
+                    base_entry.get("proof_tier"),
+                    head_entry.get("proof_tier"),
+                ):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"claim {entry_id} proof_tier downgraded from "
+                            f"{base_entry.get('proof_tier')} to {head_entry.get('proof_tier')}",
+                        )
                     )
-                )
+                # Removing evidence, supporting invariants, or stated
+                # limitations strips a claim's assurance basis without
+                # touching its wording — a mechanism change, not a wording one.
+                for field in CLAIM_BASIS_LISTS:
+                    removed = sorted(
+                        {
+                            item
+                            for item in (base_entry.get(field) or [])
+                            if isinstance(item, str)
+                        }
+                        - {
+                            item
+                            for item in (head_entry.get(field) or [])
+                            if isinstance(item, str)
+                        }
+                    )
+                    if removed:
+                        findings.append(
+                            (
+                                "weakened",
+                                f"claim {entry_id}: {field} item(s) removed: "
+                                f"{', '.join(removed)}",
+                            )
+                        )
+
+            if kind == "residuals":
+                if weakened(
+                    IMPACT_ORDER, base_entry.get("impact"), head_entry.get("impact")
+                ):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"residual {entry_id} impact downgraded from "
+                            f"{base_entry.get('impact')} to {head_entry.get('impact')}",
+                        )
+                    )
+                # Closing a residual (to RESOLVED) removes a tracked risk from
+                # active scrutiny. resolution_note being non-empty is a schema
+                # matter; whether the closure is justified is a review matter.
+                before, after = base_entry.get("status"), head_entry.get("status")
+                if (
+                    isinstance(before, str)
+                    and before not in RESIDUAL_CLOSED_STATUSES
+                    and after in RESIDUAL_CLOSED_STATUSES
+                ):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"residual {entry_id} closed ({before} to {after}) "
+                            "— closing a tracked residual needs review",
+                        )
+                    )
+
+            if kind == "defeaters":
+                before, after = base_entry.get("status"), head_entry.get("status")
+                if (
+                    isinstance(before, str)
+                    and before not in DEFEATER_CLOSED_STATUSES
+                    and after in DEFEATER_CLOSED_STATUSES
+                ):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"defeater {entry_id} closed ({before} to {after}) "
+                            "— closing a defeater needs review",
+                        )
+                    )
     return findings
 
 

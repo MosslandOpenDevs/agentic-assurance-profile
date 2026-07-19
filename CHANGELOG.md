@@ -4,7 +4,43 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+### v0.3.1 (in development)
+
+Completes the register policy diff so a base-branch, human-reviewed
+assurance item cannot silently disappear regardless of the form the change
+takes — deletion, whole-register removal, or a status that closes it out.
+From a fourth external review of v0.3.0. No schema changes; existing
+adopters see only stricter drift-job findings, and only on pull requests
+that actually remove reviewed assurance.
+
+#### Fixed — register policy diff completeness
+
+- **Whole-register removal is now caught (was fail-open).** The diff
+  skipped a register entirely when the head branch lacked it, so deleting
+  an optional register file (e.g. `INVARIANTS.yaml` under the `core`
+  profile, where it is not a required file) erased every reviewed entry
+  with no finding. A base register missing on the head is now a
+  "register removed" finding listing the former IDs; an unreadable head
+  register fails closed.
+- **Closing dispositions are now caught.** A residual moved to `RESOLVED`,
+  a defeater moved to `MITIGATED`/`RESOLVED`/`WITHDRAWN`, and a recorded
+  `CONTRADICTED` status cleared (moving *away* from `CONTRADICTED`) each
+  remove a tracked concern without deleting its ID; they are now findings,
+  subject to the same stage-proportional acknowledgment. Re-opening and
+  recording a new contradiction remain non-findings.
+- **Claim basis removal is now caught.** Removing a claim's `evidence`,
+  supporting `invariants`, or `limitations` items is flagged (parallel to
+  the invariant evidence-removal check) — stripping a claim's basis is a
+  mechanism change, not a wording change.
+
+#### Security
+
+- The drift job's assurance-diff step now runs `git` with
+  `--literal-pathspecs` and screens pull-request-controlled `paths:` values
+  through an in-tree containment check before using them as pathspecs or
+  base-tree write targets (belt-and-suspenders with the validator's
+  existing containment), and fails closed if `git diff` errors instead of
+  proceeding with an empty diff.
 
 ## v0.3.0 — 2026-07-19
 

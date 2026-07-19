@@ -252,7 +252,16 @@ Without a `components` map the component routing reports that impact routing is 
 
 The *adoption declaration*: an `adoption_stage` downgrade, a removed profile, a `layout` change, a removed component, removed path globs / invariant IDs inside a component, a changed `project.human_owner`, a changed artifact path under `paths:` (a moved path can point the validator at a freshly emptied file), or a changed `security.public_assurance_root`. A changed `upstream` pin is flagged with neutral wording: an upgrade is not a weakening, but [PROFILE.md §16](../PROFILE.md) requires every pin move to be an explicit, dedicated change, so it demands the same acknowledgment.
 
-The *registers themselves*, compared by stable ID (the substance the declaration merely frames): a deleted entry in any register; an invariant's severity downgraded, its conclusion status weakened (`VERIFIED` or `INFERRED` moving toward `UNKNOWN` — moving to `CONTRADICTED` is an honesty upgrade and is never flagged), an `INTENDED` intent reclassified as `UNKNOWN`/`ACCIDENTAL`, or `enforcement`/`verification`/`evidence` items removed from a high/critical invariant; a claim's status weakened or its `proof_tier` downgraded; a residual's impact downgraded. Wording changes are deliberately not compared — claim text and statement quality remain the §4.3 human review's terrain.
+The *registers themselves*, compared by stable ID (the substance the declaration merely frames). The governing principle: a human-reviewed assurance item cannot quietly disappear, whatever form the change takes — a deleted entry, a deleted register file, or a status that closes it out. Detected:
+
+- **Any register:** a deleted entry; a whole register that was present on the base branch and is gone (or unreadable — which fails closed) on the head. An optional register such as `invariants` under the `core` profile could otherwise be deleted in full with no finding.
+- **Invariants:** severity downgraded; conclusion status weakened (`VERIFIED`/`INFERRED` toward `UNKNOWN`); an `INTENDED` intent reclassified as `UNKNOWN`/`ACCIDENTAL`; `enforcement`/`verification`/`evidence` items removed from a high/critical invariant.
+- **Claims:** status weakened; `proof_tier` downgraded; `evidence`, supporting `invariants`, or `limitations` items removed — stripping a claim's basis is a mechanism change, not a wording one.
+- **Invariants and claims:** a recorded `CONTRADICTED` status *cleared* (moving to `CONTRADICTED` is an honesty upgrade and is never flagged; moving away from it resolves a known problem and needs review).
+- **Residuals:** impact downgraded; the residual *closed* (status → `RESOLVED`).
+- **Defeaters:** the defeater *closed* (status → `MITIGATED`/`RESOLVED`/`WITHDRAWN`).
+
+Re-opening a closed residual or defeater, and recording a new contradiction, are never findings. Wording changes are deliberately not compared — claim text and statement quality remain the §4.3 human review's terrain.
 
 Each finding fails the drift job (regardless of `strict-drift`) unless the pull-request description acknowledges it with an explicit line:
 
