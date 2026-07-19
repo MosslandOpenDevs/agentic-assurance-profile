@@ -12,16 +12,21 @@ To start adoption in an existing repository, give the coding agent a pointer to 
 Read docs/ADOPTION.md of MosslandOpenDevs/agentic-assurance-profile
 at commit <FULL_40_CHARACTER_SHA>, then begin adoption of this repository.
 This is an existing repository, so follow the brownfield sequence in §4:
-1. Perform the read-only archaeology (§4.1) and classification (§4.2)
-   without changing any functional code.
-2. Copy the templates and draft the core-profile artifacts (§3).
-3. Finish with a written proposal listing everything that requires
-   human review under §4.3. Do not declare adoption complete;
-   approval decisions belong to the human owner.
-4. Keep all changes on a branch and open a draft pull request;
+1. Classify the profile from evidence (§4.0) — determine which §5
+   profiles apply from what this repository is and promises; do not
+   assume `core`, and cite file:line for each trigger that fires.
+2. Perform the read-only archaeology (§4.1) and behavior
+   classification (§4.2) without changing any functional code.
+3. Copy the templates and draft the artifacts for the classified
+   profile(s) and layout (§3).
+4. Finish with a written proposal listing everything that requires
+   human review under §4.3 — starting with the profile set and
+   layout. Do not declare adoption complete; approval decisions
+   belong to the human owner.
+5. Keep all changes on a branch and open a draft pull request;
    do not merge to the default branch — merging is the human
    owner's act after the §4.3 review.
-5. End with a handoff summary addressed to the human owner,
+6. End with a handoff summary addressed to the human owner,
    written in the owner's working language: state first that
    nothing is decided yet and the pull request must not be merged
    until the owner has answered; then list each decision the
@@ -36,7 +41,7 @@ The agent drafts; the human owner approves (§4.3, §6). The expected shape of t
 Before creating any file, confirm:
 
 1. **A named human owner or governing body exists.** The profile requires a human authority over purpose, critical claims and invariants, public claim wording, control weakening, and residual acceptance ([PROFILE.md §3](../PROFILE.md)). Adoption cannot proceed without one.
-2. **Profiles are chosen provisionally.** Use the smallest applicable set from [PROFILE.md §5](../PROFILE.md). Start with `core`; add others only after assessment (see §4 and §5 below). An agent may propose profiles; the selection remains provisional until the human owner reviews it.
+2. **Profiles are chosen by classification, not by default.** Determine the profile set from what the repository is and promises, per §4.0 — the smallest set that *covers every trigger that fires*, which is not the same as starting at `core` and escalating later. An agent may propose the set, with `file:line` evidence for each fired trigger; the selection remains provisional until the human owner reviews it (§4.3).
 3. **The existing change workflow is identified.** OpenSpec, Spec Kit, ADR/RFC, an issue-driven process, or a minimal one — the profile reuses it rather than replacing it. This becomes the `specification_workflow` entry in the adoption file.
 4. **Public repositories have private security intake.** A `SECURITY.md` and GitHub Private Vulnerability Reporting (or an equivalent restricted channel) should exist before assurance artifacts are published; see [../SECURITY.md](../SECURITY.md) and [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md).
 
@@ -68,7 +73,9 @@ Until the profile publishes its first tagged release, pin `version: unreleased` 
 
 The step-by-step sequence for a repository adopting from the start — or for an existing repository after the archaeology of §4 has been reviewed.
 
-### 3.0 Lite adoption — the default for core
+### 3.0 Lite adoption — for a confirmed core-only repository
+
+Use the lite layout only after the §4.0 classification confirms the repository is `core` (or `archived`) alone — no `service`, `trust-critical`, `data-curation`, or `agent-runtime` trigger fires. Lite is the residual layout for a genuinely core-only repository, not a default to start from and escalate away from later.
 
 A repository adopting `core` only does not need the full split layout that the rest of this section describes. The lite layout collapses the assurance registers into a single file and brings first adoption down to four files: an `AGENTS.md` carrying the assurance reading-order section (§3.3), `AGENTIC_ASSURANCE.md` at the root, `.agentic-assurance/adoption.yaml` (§3.2) declaring `layout: lite`, and `.agentic-assurance/assurance.yaml` holding all assurance content. Copy from the same CC0-1.0 template set:
 
@@ -118,7 +125,7 @@ Replace every `REPLACE_WITH_` token — the validator treats a leftover token in
 
 - the `upstream` pin per §2;
 - `project` name, repository slug, and `human_owner`;
-- the `profiles` list (smallest applicable set);
+- the `profiles` list (from the §4.0 classification — the smallest set covering every fired trigger);
 - `layout: lite` when using the single-file layout of §3.0 (the field is optional; absent means the split layout);
 - the `specification_workflow` you identified in §1;
 - `paths` mappings when reusing existing conventions ([MAPPINGS.md](MAPPINGS.md)); the defaults are fine for a fresh layout.
@@ -339,7 +346,32 @@ Locally, the §3.6 command enforces the declared stage by default and reports on
 
 ## 4. Brownfield adoption
 
-Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). The practical sequence has four stages; do not compress them into one change, and do not mix archaeology with feature work, security audit, or broad refactoring.
+Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). Classify the profile first (§4.0) — a cheap pass that decides how deep everything after it must go — then work the four-stage sequence (§4.1–§4.4); do not compress the stages into one change, and do not mix archaeology with feature work, security audit, or broad refactoring.
+
+### 4.0 Classify the profile first
+
+The profile set is a *finding*, not a default. Before drafting any artifact, determine which of the [PROFILE.md §5](../PROFILE.md) profiles apply from what the repository **is and promises** — not from its size, and not by starting at `core` in the hope of escalating later. This classification sizes everything downstream: it decides the layout (§3.0 vs §3.1), which registers exist, and how deep the §4.1 reconstruction must go. Run it as a cheap first pass — surface signals are usually enough, and you do not need the full archaeology to classify.
+
+For each escalation trigger, ask the disqualifying question and, when it fires, cite the `file:line` that fired it:
+
+| Trigger | Fires when — surface signals | Adds |
+|---|---|---|
+| **service** | the repository is deployed or operated: a server framework, a `Dockerfile`, a deploy workflow, a live URL, a stateful backend | `service` |
+| **trust-critical** | it makes a security, privacy, identity, authorization, financial, governance, or public-verifiability claim: auth/session/JWT, wallet or SSO login, admin/role gating, voting/proposals/tallies, payment or token transfer, PII handling | `trust-critical` |
+| **data-curation** | it derives externally-sourced, editorial, scored, classified, or recommended data: embedding search or ranking, scoring, aggregated external feeds | `data-curation` |
+| **agent-runtime** | a model or agent **runs in this repository's production path** — an LLM SDK invoked in a request or worker, not merely a call to a backend that does | `agent-runtime` |
+
+`core` is the baseline every adopter carries; `archived` replaces the others for a repository that is no longer operated ([PROFILE.md §6.6](../PROFILE.md)). The result is the **smallest set that covers every trigger that fires** — that is what "smallest applicable set" means, not "the fewest profiles you can get away with."
+
+**Bias toward escalation.** When a trigger's evidence is genuine but ambiguous in degree, fire it. Under-classification is the expensive mistake: a repository declared `core` gets only the `core` checks, so the claims, proof tiers, and defeaters a trust-critical repository needs are never required — and the run still passes green. Over-classification only costs some unused artifacts, which the owner can drop; under-classification silently turns off enforcement. The owner can de-escalate a conservatively-fired trigger in the §4.3 review with a recorded reason — there is no matching mechanism to catch a trigger that was never fired.
+
+**Attack the classification before you commit it.** Re-open the cited evidence and challenge it from both sides: for each fired trigger, try to prove it should *not* fire — is the code load-bearing, or a stub, example, vendored copy, or test-only path? And hunt for triggers you missed — grep the actual code for the signals above, not just the directory names. (In a pilot classification the cited trust-critical evidence turned out to be a deprecated, frozen module; the adversarial pass found the live trust-critical behavior implemented on a different path — the verdict held, the evidence was corrected.)
+
+**Layout follows the profile, never the size.** `layout: lite` (§3.0) is valid only when the classification is `core` (or `archived`) alone; any fired trigger means the split layout of §3.1. A large, sprawling repository with no external promises can be `core`; a two-hundred-line library that verifies auth tokens is `trust-critical`. Size is not a trigger.
+
+Declare the proposed profile set and layout in `adoption.yaml` itself — the enforced `profiles:` field, not only the handoff prose — and list them in the §4.3 handoff, each fired trigger with its evidence, for the owner to confirm or de-escalate. Leaving `profiles: [core]` in the file while noting the escalation only in prose is the common miss: the handoff is read once, but the `profiles:` field is what selects the checks. The selection stays provisional until the owner's review (§1).
+
+**Worked example.** A loan-underwriting backend that authenticates applicants, gates approval actions by reviewer role, scores each application against externally-sourced credit data, and drafts decision rationales with a production LLM is not `core`. It fires `service` (deployed API), `trust-critical` (identity + authorization + financial), `data-curation` (scored external data), and `agent-runtime` (a model runs in its request path): the honest set is `core + service + trust-critical + data-curation + agent-runtime`, split layout. Declaring it `core` (lite) would hide every claim, proof tier, and defeater it most needs — and pass green. Its separate frontend, which only *calls* that backend for the same LLM-drafted rationale, is `service + trust-critical + data-curation` but **not** `agent-runtime`: the model runs in the backend, not the client. The line is where the model actually executes, not which product it belongs to.
 
 ### 4.1 Read-only reconstruction
 
@@ -364,9 +396,9 @@ Practical notes:
 - Check the provenance of prose evidence. In an agent-built repository most comments, READMEs, and notes are themselves agent-authored: before citing one as intent authority, `git blame` the lines and inspect the introducing commit's authorship (for example `Co-Authored-By:` trailers, bot committer identities, agent-session branch names). Agent-authored prose may be cited as a *description* of behavior, never as *human intent* — that classification stays `UNKNOWN` until the owner confirms it in the §4.3 review. The check only sorts prose into two bins — *disqualified* (an agent marker is present) and *provenance-uncertain* (no marker, which proves nothing: many agents leave none, and humans commit agent-written text under their own names). It never yields "definitely human"; provenance-uncertain prose is presented to the owner as a candidate, and the owner's §4.3 answer is what settles it. The line that matters is the human act, not the typist: an agent-drafted record of an explicit owner decision, anchored by the owner's reviewed merge, is valid authority (second-pilot lesson — an agent cited an agent-written comment as intent and caught its own circular reasoning). Machine-verifiable evidence (schema constraints, live response headers, command output, code behavior) is unaffected.
 - Keep the invariant register small: roughly 5–15 invariants per repository — the things that must never break, not the full specification. The real cost of an invariant is not writing it but re-examining it on every change that touches its scope; an exhaustive register stops being read and starts to rot. If the archaeology surfaces thirty candidates, that is a ranking exercise for the §4.3 review, not thirty register entries.
 
-### 4.2 Classification
+### 4.2 Behavior classification
 
-Classify observed behavior as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`, and each conclusion about the system as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED` ([PROFILE.md §4](../PROFILE.md)). `UNKNOWN` is a first-class result: recording uncertainty is correct; inventing confidence is prohibited. Current production behavior is evidence of current behavior, not automatic proof of intended behavior.
+This is distinct from the profile classification of §4.0: that decides *which profiles apply*; this classifies *observed behavior*. Classify observed behavior as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`, and each conclusion about the system as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED` ([PROFILE.md §4](../PROFILE.md)). `UNKNOWN` is a first-class result: recording uncertainty is correct; inventing confidence is prohibited. Current production behavior is evidence of current behavior, not automatic proof of intended behavior.
 
 ### 4.3 Human intent review
 
@@ -395,9 +427,9 @@ After the intent review:
 
 For the initial pilot adoptions of this profile (Passport-class projects):
 
-- select `core` only at first;
-- run the full §4 brownfield sequence before extending the profile set;
-- add `service` once the assessment confirms the repository operates a deployed service, and `trust-critical` only after the assessment establishes which security, identity, or public-verifiability claims the project actually makes — claims drive obligations, not the other way around;
+- classify the profile honestly up front (§4.0) — do not assume `core`; the smallest set is the one that covers every trigger the repository fires;
+- run the full §4 brownfield sequence to gather the evidence behind that classification before drafting artifacts;
+- `service` is warranted once the evidence confirms the repository operates a deployed service, and `trust-critical` once it establishes which security, identity, governance, or public-verifiability claims the project actually makes — claims drive obligations, not the other way around, and a fired trigger is not deferred to "later";
 - treat `agent-runtime` as a provisional profile: its obligations may change in a minor release, and the validator warns on its selection. (`data-curation` was promoted from provisional in v0.2.0 after the second pilot exercised it.)
 
 ## 6. What adoption is not
