@@ -4,7 +4,9 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-### v0.3.1 (in development)
+Nothing yet.
+
+## v0.3.1 — 2026-07-19
 
 Completes the register policy diff so a base-branch, human-reviewed
 assurance item cannot silently disappear regardless of the form the change
