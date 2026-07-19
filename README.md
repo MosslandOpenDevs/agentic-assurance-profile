@@ -233,7 +233,9 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 ## Adoption model
 
-At `core`, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content in a single `assurance.yaml`:
+**Adoption begins by classifying the profile, not by copying files.** Which of `core`, `service`, `trust-critical`, `data-curation`, and `agent-runtime` apply is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). The layout follows from that classification — never from the repository's size.
+
+At `core` alone, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content in a single `assurance.yaml`:
 
 ```text
 AGENTS.md
@@ -285,15 +287,18 @@ The upstream profile must be pinned by version and full commit SHA. An adopting 
 
 For an existing repository:
 
-1. inspect existing specifications, tests, workflows, policies, and release controls;
-2. reconstruct the as-built system without changing functional code;
-3. classify conclusions as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED`;
-4. obtain human review of purpose, non-goals, critical claims, critical invariants, and ambiguous behavior;
-5. record conformance gaps and residuals;
-6. remediate through separate, scoped Issues and pull requests;
-7. bind evidence to a commit, artifact digest, release, or deployment identifier.
+1. classify the profile from what the repository is and promises — escalate on any `service` / `trust-critical` / `data-curation` / `agent-runtime` trigger, with `file:line` evidence, and do not assume `core` ([§4.0](docs/ADOPTION.md));
+2. inspect existing specifications, tests, workflows, policies, and release controls;
+3. reconstruct the as-built system without changing functional code;
+4. classify conclusions as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED`;
+5. obtain human review of purpose, non-goals, critical claims, critical invariants, and ambiguous behavior;
+6. record conformance gaps and residuals;
+7. remediate through separate, scoped Issues and pull requests;
+8. bind evidence to a commit, artifact digest, release, or deployment identifier.
 
 Creating the files alone is not adoption.
+
+**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), and do not assume `core`; (3) then follow the brownfield sequence in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
 
 See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 

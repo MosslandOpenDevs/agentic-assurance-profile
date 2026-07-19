@@ -233,7 +233,9 @@ Issue or change proposal
 
 ## 채택 방식
 
-`core`에서는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
+**채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** `core`, `service`, `trust-critical`, `data-curation`, `agent-runtime` 중 무엇이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
+
+`core` 하나만 해당할 때는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
 
 ```text
 AGENTS.md
@@ -285,15 +287,18 @@ assurance/
 
 이미 존재하는 저장소라면 다음 순서를 밟습니다.
 
-1. 기존 명세, 테스트, workflow, 정책, release 통제를 살핍니다.
-2. 기능 코드는 건드리지 않고, 실제로 만들어진 그대로의 시스템을 복원합니다.
-3. 그렇게 내린 결론을 `VERIFIED`, `INFERRED`, `UNKNOWN`, `CONTRADICTED`로 분류합니다.
-4. 목적, 비목표, 핵심 주장, 핵심 불변조건, 모호한 동작은 사람의 검토를 받습니다.
-5. conformance 공백과 잔차를 기록합니다.
-6. 범위를 좁힌 별도의 Issue와 Pull Request로 보완합니다.
-7. 증거를 commit, 산출물 digest, release, 배포 식별자에 결부합니다.
+1. 저장소가 무엇이고 무엇을 약속하는지로 프로필을 분류합니다 — `service` / `trust-critical` / `data-curation` / `agent-runtime` 트리거 중 하나라도 걸리면 `file:line` 증거와 함께 승격하고, `core`라고 가정하지 않습니다([§4.0](docs/ADOPTION.md)).
+2. 기존 명세, 테스트, workflow, 정책, release 통제를 살핍니다.
+3. 기능 코드는 건드리지 않고, 실제로 만들어진 그대로의 시스템을 복원합니다.
+4. 그렇게 내린 결론을 `VERIFIED`, `INFERRED`, `UNKNOWN`, `CONTRADICTED`로 분류합니다.
+5. 목적, 비목표, 핵심 주장, 핵심 불변조건, 모호한 동작은 사람의 검토를 받습니다.
+6. conformance 공백과 잔차를 기록합니다.
+7. 범위를 좁힌 별도의 Issue와 Pull Request로 보완합니다.
+8. 증거를 commit, 산출물 digest, release, 배포 식별자에 결부합니다.
 
 파일만 만들었다고 채택한 것이 아닙니다.
+
+**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 먼저: (1) 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고). (2) 대상 저장소의 프로필을 그것이 무엇이고 무엇을 약속하는지로 **분류**하되([§4.0](docs/ADOPTION.md)) `core`라고 가정하지 않습니다. (3) 그다음 [docs/ADOPTION.md §4](docs/ADOPTION.md)의 brownfield 순서를 따라, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언하고, 결과를 브랜치에 올려 merge 없이 human owner에게 넘깁니다. [§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
 
 실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오. 채택 결과를 검토하는 human owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하십시오. 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
 
