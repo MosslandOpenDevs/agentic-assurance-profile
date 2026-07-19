@@ -210,8 +210,8 @@ The validator strict-checks the adoption file against the pinned adoption schema
 
 | Selected profiles | Files that must exist |
 |---|---|
-| all adopters | `AGENTIC_ASSURANCE.md` and `AGENTS.md` at the project root |
-| `core`, and any other non-`archived` profile | the `system`, `invariants`, and `residuals` artifacts |
+| all adopters | `AGENTIC_ASSURANCE.md` and `AGENTS.md` at the project root, and the `system` artifact (for `archived`, this is where §6.6's facts are recorded) |
+| non-`archived` profiles | additionally the `invariants` and `residuals` artifacts |
 | `service` | additionally the `threat_model` artifact |
 | `trust-critical` | additionally the `claims` artifact |
 

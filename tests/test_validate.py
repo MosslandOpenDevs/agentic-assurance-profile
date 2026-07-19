@@ -431,6 +431,26 @@ class TestAdopterPlaceholders(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("stage HUMAN_REVIEWED: unfilled placeholder", out)
 
+    def test_date_placeholder_in_register_fails_at_human_reviewed(self):
+        # An unfilled `review_after: YYYY-MM-DD` is a placeholder too — caught
+        # at HUMAN_REVIEWED, not only REPLACE_WITH_ tokens (the register
+        # templates ship this date placeholder).
+        adoption = baseline_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        registers = baseline_registers()
+        registers["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        code, out = self.run_split(adoption, registers)
+        self.assertEqual(code, 1, out)
+        self.assertIn("unfilled placeholder 'YYYY-MM-DD'", out)
+
+    def test_date_placeholder_in_register_passes_at_draft(self):
+        # DRAFT tolerates the date placeholder, exactly like REPLACE_WITH_.
+        registers = baseline_registers()
+        registers["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 0, out)
+
 
 # ---------------------------------------------------------------------------
 # 4. HUMAN_REVIEWED stage

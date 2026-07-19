@@ -323,10 +323,12 @@ def substitute_placeholders(node: object) -> object:
 
 
 def find_placeholder_strings(node: object, path: str = "$") -> list[tuple[str, str]]:
-    """Return (json_path, value) pairs for every remaining REPLACE_WITH_ token."""
+    """Return (json_path, value) pairs for every remaining template placeholder:
+    a ``REPLACE_WITH_`` token or an unfilled ``YYYY-MM-DD`` date (the date
+    placeholder the register templates carry in ``review_after``)."""
     found: list[tuple[str, str]] = []
     if isinstance(node, str):
-        if "REPLACE_WITH_" in node:
+        if "REPLACE_WITH_" in node or node == DATE_PLACEHOLDER:
             found.append((path, node))
     elif isinstance(node, list):
         for index, item in enumerate(node):

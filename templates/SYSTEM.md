@@ -5,6 +5,8 @@
 > **Evidence rule:** Every material conclusion in this document that is not classified `UNKNOWN` must cite concrete evidence: file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric. An AI-generated narrative is not evidence by itself. When evidence is insufficient, record `UNKNOWN` rather than invent confidence.
 >
 > **Paths note:** Sibling artifact references below use the default `assurance/` paths; if your repository remaps artifacts, substitute the paths recorded under `paths:` in `.agentic-assurance/adoption.yaml`.
+>
+> **Archived adopters:** for the `archived` profile (PROFILE.md §6.6), this file is where the four required statements are recorded — that the repository is no longer actively operated or maintained, its historical purpose, its known material limitations, and the last supported revision or release.
 
 ---
 

@@ -6,7 +6,8 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 A usability-focused minor: makes adoption harder to get wrong at the
 entry point, turns the invariant register into a `core` obligation, and
-closes two false-greens in the `archived` profile.
+hardens the `archived` profile (exclusivity + a required system
+description; full §6.6 field enforcement tracked in #40).
 
 - **Profile classification is now an explicit first step of adoption.**
   `docs/ADOPTION.md` §4.0 ("Classify the profile first") makes profile
@@ -50,16 +51,20 @@ closes two false-greens in the `archived` profile.
   valid `archived` + `lite` support** — a deliberate compatibility
   change in this release, not the repair of a pre-existing bug. No live
   adopter uses `archived`.
-- **The `archived` profile is now enforced rather than a no-op.**
-  `archived` must be declared **exclusively** — `[core, archived]` and
-  any other active-plus-archived set is now an error, since a repository
-  that is no longer operated cannot also carry an active obligation —
-  and an `archived` adoption must still carry a `system` description,
-  where §6.6's historical purpose, known limitations, and last supported
-  revision are recorded. Previously an `archived` adoption could pass,
-  even at `CONFORMANT`, with no assurance content at all. Structured,
-  field-level enforcement of the remaining §6.6 statements (e.g. a typed
-  last-supported-revision) is deferred to a follow-up.
+- **The `archived` profile is now partially enforced** (previously a
+  no-op). `archived` must be declared **exclusively** — `[core, archived]`
+  and any other active-plus-archived set is now an error, since a
+  repository that is no longer operated cannot also carry an active
+  obligation. An `archived` adoption must also carry a `system`
+  description; this is a **file-existence guard**, not full §6.6
+  enforcement — a present-but-empty `SYSTEM.md` still passes, and the
+  four §6.6 statements (not-operated, historical purpose, known
+  limitations, last supported revision) are **not yet mechanically
+  checked**. Structured, field-level enforcement is tracked in #40.
+- **Date placeholders are caught at `HUMAN_REVIEWED`.** An unfilled
+  `review_after: YYYY-MM-DD` in a register — like a `REPLACE_WITH_`
+  token — now fails from `HUMAN_REVIEWED` on, instead of passing even at
+  `CONFORMANT`.
 
 ## v0.3.2 — 2026-07-19
 

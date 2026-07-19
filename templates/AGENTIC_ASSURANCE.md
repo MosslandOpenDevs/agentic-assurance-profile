@@ -57,7 +57,8 @@ profiles:
 
 # layout: lite
 # (single-file core layout — put purpose/non-goals/invariants/residuals in
-#  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
+#  .agentic-assurance/assurance.yaml; start from templates/assurance.minimal.yaml
+#  (full reference: templates/assurance.yaml). Selecting
 #  profiles beyond core requires the default split layout.)
 
 # components:
