@@ -71,6 +71,11 @@ FORBIDDEN_VERSION_STRING = "v0.1.0" + "-draft"
 VERSION_FILE_RE = re.compile(r"^(unreleased|v\d+\.\d+\.\d+(-rc\.\d+)?(-dev)?)$")
 
 PLACEHOLDER_RE = re.compile(r"^REPLACE_WITH_[A-Z0-9_]+$")
+# v0.3.x register templates used this bare sentinel in ``review_after``.
+# Keep it as a path-scoped compatibility alias for copied DRAFT registers;
+# unlike a REPLACE_WITH_ token, it must never be treated as a placeholder in
+# arbitrary adopter data such as ``extensions.date_format``.
+LEGACY_REVIEW_DATE_PLACEHOLDER = "YYYY-MM-DD"
 # A far-future date: a substituted template review_after must not trip the
 # expired-review semantic check (a template is not an overdue review).
 DATE_SUBSTITUTION = "2999-01-01"
@@ -336,6 +341,46 @@ def substitute_placeholders(node: object) -> object:
     return node
 
 
+def substitute_register_placeholders(
+    node: object, *, preserve_review_date_placeholders: bool = False
+) -> object:
+    """Substitute placeholders in a register or lite assurance document.
+
+    In addition to the current ``REPLACE_WITH_`` sentinels, v0.3.x's bare
+    ``YYYY-MM-DD`` sentinel remains supported only at the two register paths
+    where it shipped: ``defeaters[*].review_after`` and
+    ``residuals[*].review_after``. The generic substitution helper deliberately
+    does not recognize it, so identical text in adopter extensions stays data.
+
+    Policy-diff callers set ``preserve_review_date_placeholders``: replacing a
+    real re-review commitment with either the current or legacy sentinel must
+    remain visibly unparsable to the weakening check, not become 2999-01-01.
+    """
+    substituted = substitute_placeholders(node)
+    if not isinstance(node, dict) or not isinstance(substituted, dict):
+        return substituted
+    for kind in ("defeaters", "residuals"):
+        source_entries = node.get(kind)
+        target_entries = substituted.get(kind)
+        if not isinstance(source_entries, list) or not isinstance(target_entries, list):
+            continue
+        for source_entry, target_entry in zip(source_entries, target_entries):
+            if not isinstance(source_entry, dict) or not isinstance(target_entry, dict):
+                continue
+            review_after = source_entry.get("review_after")
+            is_current_placeholder = isinstance(
+                review_after, str
+            ) and PLACEHOLDER_RE.fullmatch(review_after)
+            if preserve_review_date_placeholders and (
+                review_after == LEGACY_REVIEW_DATE_PLACEHOLDER
+                or is_current_placeholder
+            ):
+                target_entry["review_after"] = review_after
+            elif review_after == LEGACY_REVIEW_DATE_PLACEHOLDER:
+                target_entry["review_after"] = DATE_SUBSTITUTION
+    return substituted
+
+
 def find_placeholder_strings(node: object, path: str = "$") -> list[tuple[str, str]]:
     """Return (json_path, value) pairs for every remaining ``REPLACE_WITH_``
     placeholder token (including the register templates' review-after date
@@ -351,6 +396,26 @@ def find_placeholder_strings(node: object, path: str = "$") -> list[tuple[str, s
     elif isinstance(node, dict):
         for key, value in node.items():
             found.extend(find_placeholder_strings(value, f"{path}.{key}"))
+    return found
+
+
+def find_register_placeholder_strings(node: object) -> list[tuple[str, str]]:
+    """Find current and legacy placeholders in a register-shaped document."""
+    found = find_placeholder_strings(node)
+    if not isinstance(node, dict):
+        return found
+    for kind in ("defeaters", "residuals"):
+        entries = node.get(kind)
+        if not isinstance(entries, list):
+            continue
+        for index, entry in enumerate(entries):
+            if (
+                isinstance(entry, dict)
+                and entry.get("review_after") == LEGACY_REVIEW_DATE_PLACEHOLDER
+            ):
+                found.append(
+                    (f"$.{kind}[{index}].review_after", LEGACY_REVIEW_DATE_PLACEHOLDER)
+                )
     return found
 
 
@@ -825,7 +890,12 @@ def check_template(
     if error is not None:
         report.error(f"templates/{template}: {error}")
         return None
-    substituted = substitute_placeholders(document)
+    substitute = (
+        substitute_placeholders
+        if schema_name == "adoption.schema.json"
+        else substitute_register_placeholders
+    )
+    substituted = substitute(document)
     errors = schema_errors(substituted, schema, f"templates/{template}")
     if errors:
         for message in errors:
@@ -860,7 +930,7 @@ def check_lite_template(
     if error is not None:
         report.error(f"{label}: {error}")
         return
-    substituted = substitute_placeholders(document)
+    substituted = substitute_register_placeholders(document)
     errors = schema_errors(substituted, schema, label)
     if errors:
         for message in errors:
@@ -1036,7 +1106,7 @@ def check_artifacts(
         # Template placeholder values are tolerated in artifact registers so
         # that freshly copied templates validate; substitution mirrors
         # self-check. The adoption declaration itself remains strict.
-        substituted = substitute_placeholders(document)
+        substituted = substitute_register_placeholders(document)
         registers[kind] = register_entries(substituted, kind)
         schema = schemas.get(schema_name)
         if schema is None:
@@ -1170,8 +1240,23 @@ def check_profile_exclusivity(profiles: list[str], report: Report) -> None:
         report.ok("profile 'archived' is declared exclusively")
 
 
-def check_lite_profiles(profiles: list[str], report: Report) -> None:
+def check_lite_profiles(declared_profiles: object, report: Report) -> None:
     """Layout 'lite' is core-only; richer profiles need the split layout."""
+    # The adoption schema reports malformed/unknown/duplicate declarations.
+    # Do not layer a contradictory layout verdict on top of that error: only
+    # classify a declaration whose shape and values are independently valid.
+    if (
+        not isinstance(declared_profiles, list)
+        or not declared_profiles
+        or any(not isinstance(profile, str) for profile in declared_profiles)
+        or len(set(declared_profiles)) != len(declared_profiles)
+        or any(
+            profile not in LITE_PROFILES + SPLIT_ONLY_PROFILES
+            for profile in declared_profiles
+        )
+    ):
+        return
+    profiles = declared_profiles
     beyond_core = [profile for profile in profiles if profile in SPLIT_ONLY_PROFILES]
     if beyond_core:
         listed = ", ".join(f"'{profile}'" for profile in beyond_core)
@@ -1209,7 +1294,7 @@ def check_lite_file(
     # Template placeholder values are tolerated, as in the split-layout
     # registers, so a freshly copied template validates; the adoption
     # declaration itself remains strict.
-    substituted = substitute_placeholders(document)
+    substituted = substitute_register_placeholders(document)
     schema = schemas.get(LITE_SCHEMA_FILE)
     if schema is None:
         report.error(f"{relative}: cannot validate, {LITE_SCHEMA_FILE} unusable")
@@ -1349,10 +1434,11 @@ def check_adoption_stage(
     rung of the ladder it actually falls off.
 
     HUMAN_REVIEWED: no unfilled ``REPLACE_WITH_`` placeholder anywhere in
-    the adoption file or any loaded register (the raw, unsubstituted
-    documents are re-scanned — the split registers that exist, or the lite
-    assurance file), and a ``human_review`` block with non-empty ``date``,
-    ``reviewer``, and ``record``.
+    the adoption file or any loaded register, and no legacy v0.3.x
+    ``YYYY-MM-DD`` sentinel at a register ``review_after`` path (the raw,
+    unsubstituted documents are re-scanned — the split registers that exist,
+    or the lite assurance file). A ``human_review`` block with non-empty
+    ``date``, ``reviewer``, and ``record`` is also required.
 
     CONFORMANT: additionally, every severity-critical invariant has a
     decided (non-UNKNOWN) ``intent.classification``, and
@@ -1414,11 +1500,13 @@ def check_adoption_stage(
     # the adoption file or any loaded register. The raw documents are
     # re-loaded so that the substitution tolerated by the structural checks
     # cannot mask a leftover token.
-    scan_targets: list[tuple[str, Path]] = [(str(adoption_path), adoption_path)]
+    scan_targets: list[tuple[str, Path, bool]] = [
+        (str(adoption_path), adoption_path, False)
+    ]
     if adoption.get("layout") == "lite":
         lite_path = project_root / LITE_ASSURANCE_PATH
         if lite_path.is_file():
-            scan_targets.append((LITE_ASSURANCE_PATH, lite_path))
+            scan_targets.append((LITE_ASSURANCE_PATH, lite_path, True))
     else:
         for kind in REGISTER_KINDS:
             relative = paths.get(kind)
@@ -1426,8 +1514,8 @@ def check_adoption_stage(
                 continue  # rejected by check_declared_paths; already reported
             path = project_root / relative
             if path.is_file():
-                scan_targets.append((relative, path))
-    for label, path in scan_targets:
+                scan_targets.append((relative, path, True))
+    for label, path, register_shaped in scan_targets:
         document, error = load_yaml(path)
         if error is not None:
             # The structural checks already reported the load failure; this
@@ -1436,7 +1524,12 @@ def check_adoption_stage(
                 f"stage HUMAN_REVIEWED: cannot scan {label} for placeholders — {error}"
             )
             continue
-        for json_path, value in find_placeholder_strings(document):
+        find_placeholders = (
+            find_register_placeholder_strings
+            if register_shaped
+            else find_placeholder_strings
+        )
+        for json_path, value in find_placeholders(document):
             report.error(
                 f"stage HUMAN_REVIEWED: unfilled placeholder {value!r} "
                 f"in {label} at {json_path}"
@@ -1628,7 +1721,7 @@ def run_adopter(args: argparse.Namespace) -> int:
         # Lite layout: one consolidated assurance file replaces the split
         # registers. Sections face the same register schemas and the same
         # semantic checks; only the file layout differs.
-        check_lite_profiles(profiles, report)
+        check_lite_profiles(declared_profiles, report)
         # The default public_assurance_root ('assurance') points at the split
         # layout's directory; the lite assurance file lives elsewhere.
         security = adoption.get("security")
@@ -2409,9 +2502,12 @@ def load_registers_from_root(
                 f"{label} ({LITE_ASSURANCE_PATH}): top level is not a mapping"
             )
             return {kind: None for kind in LITE_SECTION_KINDS}
+        comparable = substitute_register_placeholders(
+            document, preserve_review_date_placeholders=True
+        )
         for kind in LITE_SECTION_KINDS:
-            if kind in document:
-                entries = register_entries({"version": 1, kind: document[kind]}, kind)
+            if kind in comparable:
+                entries = register_entries({"version": 1, kind: comparable[kind]}, kind)
                 if entries is None:
                     report.error(
                         f"{label} ({LITE_ASSURANCE_PATH}): section "
@@ -2440,7 +2536,10 @@ def load_registers_from_root(
             report.error(f"{label} ({relative}): {error}")
             registers[kind] = None
             continue
-        entries = register_entries(substitute_placeholders(document), kind)
+        comparable = substitute_register_placeholders(
+            document, preserve_review_date_placeholders=True
+        )
+        entries = register_entries(comparable, kind)
         if entries is None:
             report.error(
                 f"{label} ({relative}): not a mapping with a '{kind}' list "

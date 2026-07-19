@@ -73,9 +73,14 @@ description; full §6.6 field enforcement tracked in #40).
   four statements need human confirmation. Structured, field-level
   enforcement is tracked in #40.
 - **Date placeholders are caught at `HUMAN_REVIEWED`.** An unfilled
-  `review_after: YYYY-MM-DD` in a register — like a `REPLACE_WITH_`
-  token — now fails from `HUMAN_REVIEWED` on, instead of passing even at
-  `CONFORMANT`.
+  `review_after: REPLACE_WITH_REVIEW_AFTER_DATE` in a register now fails
+  from `HUMAN_REVIEWED` on, like every other `REPLACE_WITH_` token. The
+  v0.3.x `review_after: YYYY-MM-DD` sentinel remains a path-scoped
+  compatibility alias: DRAFT still tolerates it in residual and defeater
+  entries, while `HUMAN_REVIEWED` rejects it. A literal `YYYY-MM-DD`
+  elsewhere remains ordinary adopter data. The policy diff preserves both
+  sentinels as raw values, so a real re-review date cannot silently regress
+  back to an unfilled placeholder.
 
 ## v0.3.2 — 2026-07-19
 

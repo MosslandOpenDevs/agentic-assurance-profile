@@ -454,14 +454,68 @@ class TestAdopterPlaceholders(ValidatorTestCase):
         code, out = self.run_split(baseline_adoption(), registers)
         self.assertEqual(code, 0, out)
 
-    def test_literal_yyyy_mm_dd_value_is_not_a_placeholder(self):
-        # A literal "YYYY-MM-DD" string used as real data (here a local
-        # `extensions` value) is data, not a placeholder, and must not be
-        # rejected — the schema permits the extensions namespace.
-        adoption = baseline_adoption()
-        adoption["extensions"] = {"date_format": "YYYY-MM-DD"}
-        code, out = self.run_split(adoption, baseline_registers())
+    def registers_with_legacy_review_dates(self):
+        """Registers copied from the v0.3.x templates before the new sentinel."""
+        registers = baseline_registers()
+        registers["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        registers["defeaters"] = {
+            "version": 1,
+            "defeaters": [
+                {
+                    "id": "DEF-CORE-001",
+                    "statement": "The example invariant may not cover every path",
+                    "status": "OPEN",
+                    "disclosure": "PUBLIC",
+                    "owner": "Alice Example",
+                    "review_after": "YYYY-MM-DD",
+                }
+            ],
+        }
+        return registers
+
+    def test_legacy_date_placeholders_in_registers_pass_at_draft(self):
+        # A v0.3.x adopter can upgrade its pin without first rewriting every
+        # still-unfilled review date in its DRAFT registers.
+        code, out = self.run_split(
+            baseline_adoption(), self.registers_with_legacy_review_dates()
+        )
         self.assertEqual(code, 0, out)
+
+    def test_legacy_date_placeholders_in_registers_fail_at_human_reviewed(self):
+        # Compatibility stops at the review boundary: both legacy register
+        # paths are still recognized as unfilled placeholders.
+        adoption = baseline_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        code, out = self.run_split(
+            adoption, self.registers_with_legacy_review_dates()
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("unfilled placeholder 'YYYY-MM-DD'", out)
+        self.assertIn("$.residuals[0].review_after", out)
+        self.assertIn("$.defeaters[0].review_after", out)
+
+    def test_literal_yyyy_mm_dd_value_is_not_a_placeholder(self):
+        # A literal "YYYY-MM-DD" string used as local data is not a placeholder,
+        # even below a key named review_after. Cover both adoption extensions
+        # and register-entry extensions at DRAFT and HUMAN_REVIEWED.
+        for stage in ("DRAFT", "HUMAN_REVIEWED"):
+            with self.subTest(stage=stage):
+                adoption = baseline_adoption()
+                adoption["extensions"] = {
+                    "date_format": "YYYY-MM-DD",
+                    "local_policy": {"review_after": "YYYY-MM-DD"},
+                }
+                if stage == "HUMAN_REVIEWED":
+                    adoption["adoption_stage"] = stage
+                    adoption["human_review"] = human_review_block()
+                registers = baseline_registers()
+                registers["residuals"]["residuals"][0]["local_metadata"] = {
+                    "date_format": "YYYY-MM-DD",
+                    "review_after": "YYYY-MM-DD",
+                }
+                code, out = self.run_split(adoption, registers)
+                self.assertEqual(code, 0, out)
 
 
 # ---------------------------------------------------------------------------
@@ -921,6 +975,39 @@ class TestLiteLayout(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("unfilled placeholder 'REPLACE_WITH_CLASSIFIED_PROFILE'", out)
         self.assertNotIn("graduate to the split layout", out)
+        self.assertNotIn("layout 'lite' is declared with core-only profiles", out)
+
+    def test_invalid_profile_declarations_under_lite_have_no_layout_verdict(self):
+        # The adoption schema owns malformed profile diagnostics. The layout
+        # checker must neither report core-only success nor advise a split for
+        # an empty, unknown, duplicate, or non-string declaration.
+        for profiles in ([], ["bogus"], ["core", "core"], ["core", 7]):
+            with self.subTest(profiles=profiles):
+                adoption = baseline_lite_adoption()
+                adoption["profiles"] = profiles
+                code, out = self.run_lite(adoption, baseline_lite_assurance())
+                self.assertEqual(code, 1, out)
+                self.assertNotIn(
+                    "layout 'lite' is declared with core-only profiles", out
+                )
+                self.assertNotIn("layout 'lite' supports only the core profile", out)
+
+    def test_legacy_review_date_in_lite_passes_at_draft(self):
+        assurance = baseline_lite_assurance()
+        assurance["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        code, out = self.run_lite(baseline_lite_adoption(), assurance)
+        self.assertEqual(code, 0, out)
+
+    def test_legacy_review_date_in_lite_fails_at_human_reviewed(self):
+        adoption = baseline_lite_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        assurance = baseline_lite_assurance()
+        assurance["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        code, out = self.run_lite(adoption, assurance)
+        self.assertEqual(code, 1, out)
+        self.assertIn("unfilled placeholder 'YYYY-MM-DD'", out)
+        self.assertIn("$.residuals[0].review_after", out)
 
     def test_archived_profile_emits_section_6_6_warning(self):
         adoption = baseline_adoption()
@@ -2041,6 +2128,51 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
             "value ('someday'; was 2026-12-31)",
             out,
         )
+
+    def test_real_review_after_replaced_by_date_sentinel_fails(self):
+        # Adopter-mode substitution keeps DRAFT templates usable, but the
+        # policy diff must compare review-date sentinels raw: replacing a real
+        # commitment with either the current or v0.3.x sentinel is a weakening.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
+
+        for sentinel in ("REPLACE_WITH_REVIEW_AFTER_DATE", "YYYY-MM-DD"):
+            with self.subTest(sentinel=sentinel):
+                def mutate(head):
+                    head["residuals"]["residuals"][0]["review_after"] = sentinel
+
+                code, out = self.run_register_diff(
+                    mutate, mutate_base=schedule_base
+                )
+                self.assertEqual(code, 1, out)
+                self.assertIn(
+                    "residual RES-CORE-001 review_after replaced with an "
+                    f"unparsable value ({sentinel!r}; was 2099-01-01)",
+                    out,
+                )
+
+    def test_legacy_review_after_repaired_to_real_date_not_flagged(self):
+        def placeholder_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
+
+        code, out = self.run_register_diff(mutate, mutate_base=placeholder_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_unchanged_review_after_sentinel_not_flagged(self):
+        for sentinel in ("REPLACE_WITH_REVIEW_AFTER_DATE", "YYYY-MM-DD"):
+            with self.subTest(sentinel=sentinel):
+                def placeholder_base(base):
+                    base["residuals"]["residuals"][0]["review_after"] = sentinel
+
+                code, out = self.run_register_diff(
+                    lambda head: None, mutate_base=placeholder_base
+                )
+                self.assertEqual(code, 0, out)
+                self.assertIn("no assurance policy regression", out)
 
     def test_residual_review_after_brought_forward_not_flagged(self):
         # Moving a re-review earlier strengthens scrutiny.
