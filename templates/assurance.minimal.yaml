@@ -1,0 +1,53 @@
+# OpenDevs Agentic Assurance — minimal lite assurance file (core adopters).
+#
+# The smallest complete `core` adoption in one file: purpose, non-goals, a
+# system description, at least one invariant, and at least one residual — the
+# required minimum at `core` (the `system` section may instead live in a
+# separate SYSTEM.md; see the note below).
+#
+# Placement: copy to `.agentic-assurance/assurance.yaml`, next to adoption.yaml,
+# and add `layout: lite` to adoption.yaml.
+#
+# For the full field set, the optional `defeaters` section, and inline docs on
+# every field, see templates/assurance.yaml and the split register templates
+# (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml). Section items use the
+# same shapes as those files, so graduating to the split layout is a copy that
+# preserves IDs.
+
+version: 1
+
+# One paragraph: what this system is for and the boundary of what it promises.
+# Human-approved intent — an agent must not rewrite it to match behavior.
+purpose: REPLACE_WITH_ONE_PARAGRAPH_PURPOSE
+
+# What this system deliberately does not do.
+non_goals:
+  - REPLACE_WITH_A_DELIBERATE_NON_GOAL
+
+# A short as-built description. Alternatively delete this and keep a separate
+# SYSTEM.md at adoption.yaml `paths.system` — one of the two must exist.
+system: |
+  REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
+
+# At least one — the properties that must remain true. These eight fields are
+# the required minimum; templates/INVARIANTS.yaml documents the optional ones
+# (intent, enforcement, verification, evidence, defeaters, residuals, ...).
+invariants:
+  - id: INV-EXAMPLE-001
+    title: Replace with a precise invariant title
+    statement: Replace with a proposition that must remain true.
+    severity: critical
+    scope: Replace with the bounded system scope.
+    status: UNKNOWN
+    disclosure: PUBLIC
+    owner: REPLACE_WITH_OWNER
+
+# At least one — known limitations, unverified assumptions, and remaining doubt.
+residuals:
+  - id: RES-EXAMPLE-001
+    summary: Replace with a safe summary of remaining uncertainty.
+    impact: unknown
+    uncertainty: unknown
+    status: OPEN
+    disclosure: SUMMARY_ONLY
+    owner: REPLACE_WITH_OWNER

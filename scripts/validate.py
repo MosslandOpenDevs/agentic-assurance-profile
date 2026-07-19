@@ -98,6 +98,9 @@ SCHEMA_FILES = (
 LITE_SCHEMA_FILE = "assurance-lite.schema.json"
 LITE_ASSURANCE_PATH = ".agentic-assurance/assurance.yaml"
 LITE_TEMPLATE = "assurance.yaml"
+# The minimal lite template: the smallest complete core adoption, validated
+# alongside the full one so it cannot drift out of validity.
+LITE_MINIMAL_TEMPLATE = "assurance.minimal.yaml"
 # Register sections a lite assurance file may carry, in output order.
 LITE_SECTION_KINDS = ("invariants", "defeaters", "residuals")
 # Lite is core-only; any other profile requires graduating to the split layout.
@@ -818,19 +821,25 @@ def check_template(
     return substituted
 
 
-def check_lite_template(repo_root: Path, schemas: dict[str, dict], report: Report) -> None:
-    """Validate templates/assurance.yaml through the lite-layout flow.
+def check_lite_template(
+    repo_root: Path,
+    schemas: dict[str, dict],
+    report: Report,
+    template: str = LITE_TEMPLATE,
+) -> None:
+    """Validate a lite-layout assurance template through the lite-layout flow.
 
     Mirrors what an adopter's ``.agentic-assurance/assurance.yaml`` faces:
     envelope validation against the lite schema, per-section validation
-    against the register schemas, and the shared semantic checks.
+    against the register schemas, and the shared semantic checks. Runs for
+    every shipped lite template so none can drift out of validity.
     """
-    label = f"templates/{LITE_TEMPLATE}"
+    label = f"templates/{template}"
     schema = schemas.get(LITE_SCHEMA_FILE)
     if schema is None:
         report.error(f"{label}: cannot validate, schemas/{LITE_SCHEMA_FILE} unusable")
         return
-    document, error = load_yaml(repo_root / "templates" / LITE_TEMPLATE)
+    document, error = load_yaml(repo_root / "templates" / template)
     if error is not None:
         report.error(f"{label}: {error}")
         return
@@ -904,6 +913,7 @@ def run_self_check(args: argparse.Namespace) -> int:
     # adopter registers face.
     check_semantics(registers, report)
     check_lite_template(repo_root, schemas, report)
+    check_lite_template(repo_root, schemas, report, LITE_MINIMAL_TEMPLATE)
     check_forbidden_string(repo_root, report)
 
     return report.emit("self-check", args.json)

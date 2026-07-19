@@ -84,7 +84,9 @@ A repository adopting `core` only does not need the full split layout that the r
 | [templates/AGENTIC_ASSURANCE.md](../templates/AGENTIC_ASSURANCE.md) | `AGENTIC_ASSURANCE.md` |
 | [templates/AGENTS.md](../templates/AGENTS.md) | `AGENTS.md` (merge if one exists; see §3.3) |
 | [templates/adoption.yaml](../templates/adoption.yaml) | `.agentic-assurance/adoption.yaml`, adding `layout: lite` |
-| [templates/assurance.yaml](../templates/assurance.yaml) | `.agentic-assurance/assurance.yaml` |
+| [templates/assurance.minimal.yaml](../templates/assurance.minimal.yaml) | `.agentic-assurance/assurance.yaml` — the required-minimum starting point (purpose, non-goals, system, one invariant, one residual) |
+
+For the full field set, the optional `defeaters` section, and inline documentation on every field, copy [templates/assurance.yaml](../templates/assurance.yaml) instead — it is the same lite file with everything shown. Both validate identically; the minimal template exists so a fresh `core` adoption sees only what it must fill in.
 
 `assurance.yaml` starts with `version: 1` and carries the `core` obligations of [PROFILE.md §6.1](../PROFILE.md) as sections:
 

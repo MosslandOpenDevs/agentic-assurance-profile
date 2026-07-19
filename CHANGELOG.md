@@ -24,6 +24,11 @@ entry point, and turns the invariant register into a `core` obligation.
   schema (`invariants` now required), and the split-layout file-presence
   and non-emptiness checks all enforce it — a repository with nothing
   that must stay true has not found its invariants yet.
+- **A minimal lite template** (`templates/assurance.minimal.yaml`) ships
+  the required-minimum `core` adoption — purpose, non-goals, system, one
+  invariant, one residual — with only the fields an adopter must fill, so
+  the full `templates/assurance.yaml` no longer doubles as the starting
+  point. The self-check validates both templates, so neither can drift.
 
 #### Adopter impact / upgrade actions
 
