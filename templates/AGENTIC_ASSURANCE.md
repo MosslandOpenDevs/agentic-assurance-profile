@@ -47,7 +47,8 @@ project:
 
 profiles:
   - core
-  # Add only after assessment:
+  # Classify from what the repository IS and promises (docs/ADOPTION.md §4.0) —
+  # do not default to `core`; declare every fired trigger's profile here:
   # - service
   # - trust-critical
   # - data-curation

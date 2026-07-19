@@ -673,15 +673,37 @@ class TestRegisterObligations(ValidatorTestCase):
 
     def test_archived_only_adoption_exempt_from_invariants_and_residuals(self):
         # An archived-only adopter (PROFILE.md section 6.6) is exempt from the
-        # invariant, residual, and system obligations — pins the `any(profile
-        # != "archived")` scoping so a mis-guard that demanded them everywhere
-        # would be caught.
+        # invariant and residual obligations (but still needs a system
+        # description) — pins the `any(profile != "archived")` scoping so a
+        # mis-guard that demanded registers everywhere would be caught.
         adoption = baseline_adoption()
         adoption["profiles"] = ["archived"]
         code, out = self.run_split(adoption, {})
         self.assertEqual(code, 0, out)
         self.assertNotIn("ERROR:", out)
         self.assertNotIn("register is empty", out)
+
+    def test_archived_without_system_fails(self):
+        # Archived is exempt from invariants and residuals, but still needs a
+        # system description — where section 6.6's historical purpose, known
+        # limitations, and last supported revision are recorded.
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["archived"]
+        root = self.make_tmp()
+        adoption_path = build_split_project(root, adoption, {})
+        (root / "assurance" / "SYSTEM.md").unlink()
+        code, out = self.run_adopter(root, adoption_path)
+        self.assertEqual(code, 1, out)
+        self.assertIn("SYSTEM.md missing", out)
+
+    def test_archived_combined_with_active_profile_fails(self):
+        # `archived` is exclusive: a repository that is no longer operated
+        # cannot also declare an active profile.
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["core", "archived"]
+        code, out = self.run_split(adoption, baseline_registers())
+        self.assertEqual(code, 1, out)
+        self.assertIn("'archived' cannot be combined", out)
 
 
 # ---------------------------------------------------------------------------
@@ -822,12 +844,19 @@ class TestLiteLayout(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("layout 'lite' supports only the core profile", out)
 
-    def test_lite_templates_use_detectable_placeholder_sentinels(self):
-        # Every fill-in field in the shipped lite templates must be a
-        # REPLACE_WITH_ sentinel, so an adopter who leaves one is caught at
-        # HUMAN_REVIEWED. A bare "Replace with ..." would pass that check
-        # silently (it is not a REPLACE_WITH_ token).
-        for name in ("assurance.minimal.yaml", "assurance.yaml"):
+    def test_templates_use_detectable_placeholder_sentinels(self):
+        # Every fill-in field in the shipped assurance templates — lite and
+        # split registers alike — must be a REPLACE_WITH_ sentinel, so an
+        # adopter who leaves one is caught at HUMAN_REVIEWED. A bare "Replace
+        # with ..." would pass that check silently (not a REPLACE_WITH_ token).
+        for name in (
+            "assurance.minimal.yaml",
+            "assurance.yaml",
+            "INVARIANTS.yaml",
+            "RESIDUALS.yaml",
+            "CLAIMS.yaml",
+            "DEFEATERS.yaml",
+        ):
             text = (REPO_ROOT / "templates" / name).read_text(encoding="utf-8")
             self.assertNotIn("Replace with ", text, name)
 

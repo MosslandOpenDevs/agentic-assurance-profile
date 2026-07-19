@@ -1058,8 +1058,11 @@ def check_required_files(
         else:
             report.error(f"{relative} missing (paths.{key}, required for {reason})")
 
+    # Every adopter needs a system description — for an `archived` repository
+    # this is where PROFILE.md section 6.6's historical purpose, known
+    # limitations, and last supported revision are recorded.
+    require("system", "all adopters")
     if any(profile != "archived" for profile in profiles):
-        require("system", "non-archived profiles")
         require("residuals", "non-archived profiles")
         require("invariants", "non-archived profiles")
     if "service" in profiles:
@@ -1122,6 +1125,24 @@ def check_adopter_warnings(project_root: Path, profiles: list[str], report: Repo
                 f"profile '{profile}' is provisional — obligations may change "
                 "in a minor release"
             )
+
+
+def check_profile_exclusivity(profiles: list[str], report: Report) -> None:
+    """`archived` is exclusive: a repository that is no longer operated cannot
+    also declare an active profile (PROFILE.md sections 5 and 6.6 — `archived`
+    replaces the others)."""
+    if "archived" not in profiles:
+        return
+    if len(profiles) > 1:
+        others = ", ".join(f"'{p}'" for p in profiles if p != "archived")
+        report.error(
+            f"profile 'archived' cannot be combined with an active profile "
+            f"({others}) — archived means the repository is no longer operated, "
+            "which contradicts any active obligation; declare 'archived' alone "
+            "or drop it"
+        )
+    else:
+        report.ok("profile 'archived' is declared exclusively")
 
 
 def check_lite_profiles(profiles: list[str], report: Report) -> None:
@@ -1566,6 +1587,7 @@ def run_adopter(args: argparse.Namespace) -> int:
         for profile in (declared_profiles if isinstance(declared_profiles, list) else [])
         if isinstance(profile, str)
     ]
+    check_profile_exclusivity(profiles, report)
 
     # Stage enforcement (unless --ignore-stage). Stage CONFORMANT turns
     # passed review_after dates into errors, as if --strict-review-dates had

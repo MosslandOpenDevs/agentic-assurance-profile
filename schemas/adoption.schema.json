@@ -87,7 +87,7 @@
       ]
     },
     "layout": {
-      "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core (and archived) profiles. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
+      "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core profile (archived and every other profile use the split layout). Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
       "enum": [
         "split",
         "lite"

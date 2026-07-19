@@ -5,7 +5,8 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 ## Unreleased (v0.4.0 target)
 
 A usability-focused minor: makes adoption harder to get wrong at the
-entry point, and turns the invariant register into a `core` obligation.
+entry point, turns the invariant register into a `core` obligation, and
+closes two false-greens in the `archived` profile.
 
 - **Profile classification is now an explicit first step of adoption.**
   `docs/ADOPTION.md` §4.0 ("Classify the profile first") makes profile
@@ -32,22 +33,33 @@ entry point, and turns the invariant register into a `core` obligation.
 
 #### Adopter impact / upgrade actions
 
-- A previously conforming adoption of **any non-archived profile** —
-  `core`, `service`, `trust-critical`, `data-curation`, or
-  `agent-runtime` — with no invariant register, or an empty one, now
-  fails validation. (Before, only `service` required invariants, so a
-  `core`-, `data-curation`-, `trust-critical`-, or `agent-runtime`-only
-  adoption without invariants was previously conforming.) Add at least
-  one invariant — the properties that must remain true. Both pilot
-  adoptions already carry invariants, so no live adopter is affected.
-  Classified as **minor** per §16's pre-`v1.0.0` rule (a new obligation
-  before the first stable release), not a patch.
-- `layout: lite` is now `core`-only; `archived` adoptions use the split
-  layout. The lite envelope's required fields (purpose, non-goals,
-  invariants, residuals) are shaped for `core`, not archived's §6.6
-  obligations — and `archived` + `lite` was already a broken combination
-  (accepted by the profile check, then rejected by the schema). It is
-  now a single, clear error.
+- A previously conforming adoption now **fails** if it declares a
+  non-archived profile but has no invariant register, or an empty one.
+  The **newly affected** profiles are `core`, `data-curation`,
+  `trust-critical`, and `agent-runtime` — before this release only
+  `service` required an invariant, so any of these declared without
+  `service` was previously conforming. Add at least one invariant (the
+  properties that must remain true). Both pilot adoptions already carry
+  invariants, so no live adopter is affected. **Owner-classified as
+  minor** per §16's pre-`v1.0.0` rule (a new obligation before the first
+  stable release), recorded on approval of this change — not a patch.
+- `layout: lite` is now **`core`-only**; `archived` (and every other
+  non-`core` profile) uses the split layout. The lite envelope's
+  required fields (purpose, non-goals, invariants, residuals) are shaped
+  for `core`, not archived's §6.6 obligations. This **removes previously
+  valid `archived` + `lite` support** — a deliberate compatibility
+  change in this release, not the repair of a pre-existing bug. No live
+  adopter uses `archived`.
+- **The `archived` profile is now enforced rather than a no-op.**
+  `archived` must be declared **exclusively** — `[core, archived]` and
+  any other active-plus-archived set is now an error, since a repository
+  that is no longer operated cannot also carry an active obligation —
+  and an `archived` adoption must still carry a `system` description,
+  where §6.6's historical purpose, known limitations, and last supported
+  revision are recorded. Previously an `archived` adoption could pass,
+  even at `CONFORMANT`, with no assurance content at all. Structured,
+  field-level enforcement of the remaining §6.6 statements (e.g. a typed
+  last-supported-revision) is deferred to a follow-up.
 
 ## v0.3.2 — 2026-07-19
 

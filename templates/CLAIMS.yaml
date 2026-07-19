@@ -1,8 +1,8 @@
 version: 1
 claims:
   - id: CLAIM-EXAMPLE-001
-    text: Replace with the exact user-facing or operator-facing claim.
-    scope: Replace with bounded system and version scope.
+    text: REPLACE_WITH_THE_EXACT_CLAIM
+    scope: REPLACE_WITH_BOUNDED_SYSTEM_AND_VERSION_SCOPE
     proof_tier: OPERATOR_ATTESTED
     invariants: []
     evidence: []

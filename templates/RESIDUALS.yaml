@@ -1,7 +1,7 @@
 version: 1
 residuals:
   - id: RES-EXAMPLE-001
-    summary: Replace with a safe summary of remaining uncertainty.
+    summary: REPLACE_WITH_RESIDUAL_SUMMARY
     private_detail_location: null
     affected_claims: []
     affected_invariants: []

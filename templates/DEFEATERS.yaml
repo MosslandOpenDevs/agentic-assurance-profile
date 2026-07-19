@@ -1,7 +1,7 @@
 version: 1
 defeaters:
   - id: DEF-EXAMPLE-001
-    statement: Replace with a concrete reason a claim may be false or incomplete.
+    statement: REPLACE_WITH_A_CONCRETE_DEFEATER_REASON
     affected_claims: []
     affected_invariants: []
     evidence: []
