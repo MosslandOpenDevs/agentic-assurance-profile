@@ -904,6 +904,7 @@ class TestDriftRouting(ValidatorTestCase):
 def regression_base_adoption():
     adoption = baseline_adoption()
     adoption["adoption_stage"] = "CONFORMANT"
+    adoption["human_review"] = human_review_block()
     adoption["components"] = {
         "api": {
             "paths": ["src/api/**", "src/legacy/**"],
@@ -1018,6 +1019,44 @@ class TestDriftPolicyRegression(ValidatorTestCase):
         self.assertIn(
             "project.human_owner changed from 'Alice Example' to 'Bob Example'", out
         )
+
+    def test_human_review_reviewer_change_fails(self):
+        # The review provenance the declared stage rests on: rewriting who
+        # reviewed, or where the durable record lives, is a policy change.
+        def mutate(head):
+            head["human_review"] = {
+                "date": "2026-01-01",
+                "reviewer": "Mallory",
+                "record": "docs/reviews/2026-01-01.md",
+            }
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "human_review.reviewer changed from 'Alice Example' to 'Mallory'", out
+        )
+
+    def test_human_review_record_removal_fails(self):
+        def mutate(head):
+            head["human_review"].pop("record")
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "human_review.record changed from 'docs/reviews/2026-01-01.md' "
+            "to None",
+            out,
+        )
+
+    def test_human_review_date_advanced_not_flagged(self):
+        # Advancing the review date is the normal re-review act, not a
+        # policy change — deliberately not compared.
+        def mutate(head):
+            head["human_review"]["date"] = "2026-06-01"
+
+        code, out = self.run_regression(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
 
     def test_paths_invariants_change_fails(self):
         def mutate(head):
@@ -1612,6 +1651,896 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("invariants register removed", out)
         self.assertIn("the base declaration is stage HUMAN_REVIEWED", out)
+
+    # -- v0.3.2: residual acceptance is a human decision -------------------
+
+    def test_residual_open_to_accepted_fails(self):
+        # Accepting a critical residual needs a human decision; the
+        # acceptance fields are trivially fabricatable strings, so the
+        # transition itself must route through the review gate even when
+        # the head entry is formally complete.
+        def mutate(head):
+            residual = head["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Alice Example"
+            residual["accepted_at"] = "2026-07-01"
+            residual["acceptance_rationale"] = "Cost of mitigation exceeds exposure"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("assurance policy weakened", out)
+        self.assertIn("residual RES-CORE-001 accepted (OPEN to ACCEPTED)", out)
+
+    def test_residual_resolved_to_accepted_fails(self):
+        # Reopening lands in ACCEPTED, not OPEN: the un-resolving is fine,
+        # but arriving at an acceptance is still an acceptance decision.
+        def resolve_base(base):
+            residual = base["residuals"]["residuals"][0]
+            residual["status"] = "RESOLVED"
+            residual["resolution_note"] = "Previously closed"
+
+        def mutate(head):
+            residual = head["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Alice Example"
+            residual["accepted_at"] = "2026-07-01"
+            residual["acceptance_rationale"] = "Risk re-accepted after re-triage"
+
+        code, out = self.run_register_diff(mutate, mutate_base=resolve_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn("residual RES-CORE-001 accepted (RESOLVED to ACCEPTED)", out)
+
+    def test_residual_acceptance_record_rewrite_fails(self):
+        # Rewriting who accepted a recorded risk mutates a human decision.
+        def accept_base(base):
+            residual = base["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Alice Example"
+            residual["accepted_at"] = "2026-01-01"
+            residual["acceptance_rationale"] = "Cost of mitigation exceeds exposure"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["accepted_by"] = "Mallory"
+
+        code, out = self.run_register_diff(mutate, mutate_base=accept_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 accepted_by changed from 'Alice Example' "
+            "to 'Mallory'",
+            out,
+        )
+
+    def test_residual_acceptance_record_removal_fails(self):
+        def accept_base(base):
+            residual = base["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Alice Example"
+            residual["accepted_at"] = "2026-01-01"
+            residual["acceptance_rationale"] = "Cost of mitigation exceeds exposure"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0].pop("acceptance_rationale")
+
+        code, out = self.run_register_diff(mutate, mutate_base=accept_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 acceptance_rationale changed from "
+            "'Cost of mitigation exceeds exposure' to None",
+            out,
+        )
+
+    # -- v0.3.2: defeater terminal dispositions ----------------------------
+
+    def test_defeater_mitigated_to_resolved_fails(self):
+        # MITIGATED = risk reduced but not eliminated; RESOLVED asserts it
+        # is gone. Upgrading the disposition is not a lateral move inside
+        # one closed class.
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(
+                status="MITIGATED", resolution="A guard was added on the fork path"
+            )
+
+        def mutate(head):
+            defeater = head["defeaters"]["defeaters"][0]
+            defeater["status"] = "RESOLVED"
+            defeater["resolution"] = "The bypass was removed entirely"
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "defeater DEF-CORE-001 disposition changed (MITIGATED to RESOLVED)", out
+        )
+
+    def test_defeater_mitigated_to_withdrawn_fails(self):
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(
+                status="MITIGATED", resolution="A guard was added on the fork path"
+            )
+
+        def mutate(head):
+            defeater = head["defeaters"]["defeaters"][0]
+            defeater["status"] = "WITHDRAWN"
+            defeater["resolution"] = "Recorded in error; out of scope"
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "defeater DEF-CORE-001 disposition changed (MITIGATED to WITHDRAWN)", out
+        )
+
+    def test_defeater_resolved_to_withdrawn_not_flagged(self):
+        # Both are terminal "not active" dispositions; the lateral move is
+        # deliberately not gated.
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(
+                status="RESOLVED", resolution="The bypass was removed entirely"
+            )
+
+        def mutate(head):
+            head["defeaters"]["defeaters"][0]["status"] = "WITHDRAWN"
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_defeater_mitigated_to_open_not_flagged(self):
+        # Reopening restores scrutiny; never a weakening.
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(
+                status="MITIGATED", resolution="A guard was added on the fork path"
+            )
+
+        def mutate(head):
+            defeater = head["defeaters"]["defeaters"][0]
+            defeater["status"] = "OPEN"
+            defeater.pop("resolution", None)
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: review_after is a kept commitment -------------------------
+
+    def test_residual_review_after_removed_fails(self):
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2026-12-31"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0].pop("review_after")
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 review_after removed (was 2026-12-31)", out
+        )
+
+    def test_defeater_overdue_review_after_postponed_fails(self):
+        # Pushing out a date that has already passed is the re-review
+        # being evaded rather than done — and it is how a live overdue
+        # warning would otherwise be cleared.
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(review_after="2020-01-01")
+
+        def mutate(head):
+            head["defeaters"]["defeaters"][0]["review_after"] = "2021-01-01"
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "defeater DEF-CORE-001 review_after postponed from 2020-01-01 "
+            "to 2021-01-01, after the scheduled date had passed",
+            out,
+        )
+
+    def test_future_review_after_rescheduled_not_flagged(self):
+        # Completing a review and setting the next date is the act the
+        # schedule exists to produce; a red check here would teach
+        # adopters to ignore the check.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "2099-06-30"
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_residual_review_after_unparsable_fails(self):
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2026-12-31"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "someday"
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 review_after replaced with an unparsable "
+            "value ('someday'; was 2026-12-31)",
+            out,
+        )
+
+    def test_residual_review_after_brought_forward_not_flagged(self):
+        # Moving a re-review earlier strengthens scrutiny.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2026-12-31"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "2026-10-01"
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_residual_review_after_added_not_flagged(self):
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "2026-12-31"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: uncertainty is the second assessment axis -----------------
+
+    def test_residual_uncertainty_downgrade_fails(self):
+        def raise_base(base):
+            base["residuals"]["residuals"][0]["uncertainty"] = "critical"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["uncertainty"] = "low"
+
+        code, out = self.run_register_diff(mutate, mutate_base=raise_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 uncertainty downgraded from critical to low", out
+        )
+
+    def test_residual_uncertainty_raised_not_flagged(self):
+        # Recording more uncertainty is the conservative direction.
+        def mutate(head):
+            head["residuals"]["residuals"][0]["uncertainty"] = "critical"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: accountability and disclosure -----------------------------
+
+    def test_owner_change_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["owner"] = "Mallory"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "invariant INV-CORE-001 owner changed from 'Alice Example' "
+            "to 'Mallory'",
+            out,
+        )
+
+    def test_disclosure_reclassified_not_flagged(self):
+        # Disclosure is not a strength axis, the risky direction on a
+        # public repository is already an error at CONFORMANT, and
+        # reclassifying during triage is routine — so the policy diff
+        # deliberately leaves it alone.
+        def mutate(head):
+            head["claims"]["claims"][0]["disclosure"] = "RESTRICTED"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: assurance-graph relationship lists ------------------------
+
+    def test_claim_relationship_links_removed_fails(self):
+        # A claim's defeaters/residuals lists say why it could be wrong and
+        # what uncertainty remains; severing those edges is not a wording
+        # change.
+        def link_base(base):
+            claim = base["claims"]["claims"][0]
+            claim["defeaters"] = ["DEF-CORE-001"]
+            claim["residuals"] = ["RES-CORE-001"]
+
+        def mutate(head):
+            claim = head["claims"]["claims"][0]
+            claim.pop("defeaters")
+            claim.pop("residuals")
+
+        code, out = self.run_register_diff(mutate, mutate_base=link_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "claim CLAIM-CORE-001: defeaters item(s) removed: DEF-CORE-001", out
+        )
+        self.assertIn(
+            "claim CLAIM-CORE-001: residuals item(s) removed: RES-CORE-001", out
+        )
+
+    def test_low_invariant_relationship_links_removed_fails(self):
+        # Relationship edges are protected at EVERY severity — unlike the
+        # enforcement/verification/evidence lists, whose high/critical gate
+        # is exercised above. Graph structure is not evidence volume.
+        def link_base(base):
+            invariant = base["invariants"]["invariants"][1]
+            invariant["assumptions"] = ["Single-tenant deployment"]
+            invariant["defeaters"] = ["DEF-CORE-001"]
+
+        def mutate(head):
+            invariant = head["invariants"]["invariants"][1]
+            invariant.pop("assumptions")
+            invariant.pop("defeaters")
+
+        code, out = self.run_register_diff(mutate, mutate_base=link_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "invariant INV-CORE-002: assumptions item(s) removed: "
+            "Single-tenant deployment",
+            out,
+        )
+        self.assertIn(
+            "invariant INV-CORE-002: defeaters item(s) removed: DEF-CORE-001", out
+        )
+
+    def test_defeater_affected_claims_removed_fails(self):
+        def add_defeaters(base):
+            base["defeaters"] = drift_defeaters_document(
+                affected_claims=["CLAIM-CORE-001"]
+            )
+
+        def mutate(head):
+            head["defeaters"]["defeaters"][0]["affected_claims"] = []
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "defeater DEF-CORE-001: affected_claims item(s) removed: "
+            "CLAIM-CORE-001",
+            out,
+        )
+
+    def test_residual_mitigation_removed_fails(self):
+        def mitigate_base(base):
+            base["residuals"]["residuals"][0]["mitigation"] = [
+                "Rate limiting on the export endpoint"
+            ]
+
+        def mutate(head):
+            head["residuals"]["residuals"][0].pop("mitigation")
+
+        code, out = self.run_register_diff(mutate, mutate_base=mitigate_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001: mitigation item(s) removed: "
+            "Rate limiting on the export endpoint",
+            out,
+        )
+
+    # -- v0.3.2: intent moves off INTENDED ---------------------------------
+
+    def test_invariant_intent_deprecated_fails(self):
+        # INTENDED is the recorded human commitment; DEPRECATED (and
+        # COMPATIBILITY) rewrite that decision just as UNKNOWN/ACCIDENTAL do.
+        def mutate(head):
+            head["invariants"]["invariants"][0]["intent"]["classification"] = (
+                "DEPRECATED"
+            )
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("intent reclassified from INTENDED to DEPRECATED", out)
+
+    def test_invariant_intent_removed_fails(self):
+        # Deleting the whole intent mapping would otherwise be the free
+        # first hop: the reclassification table is pair-keyed, so a later
+        # change could record any classification with no finding.
+        def mutate(head):
+            head["invariants"]["invariants"][0].pop("intent")
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "invariant INV-CORE-001 intent.classification removed, emptied, "
+            "or replaced with a non-string value (was INTENDED; now None)",
+            out,
+        )
+
+    def test_invariant_intent_classification_emptied_fails(self):
+        def mutate(head):
+            head["invariants"]["invariants"][0]["intent"]["classification"] = ""
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn("intent.classification removed, emptied, or replaced", out)
+
+    def test_invariant_without_recorded_intent_not_flagged(self):
+        # A base entry that never carried a commitment has nothing to
+        # unset: the low-severity fixture invariant has no intent block.
+        def mutate(head):
+            head["invariants"]["invariants"][1]["title"] = "Low invariant (renamed)"
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: duplicate head IDs fail closed ----------------------------
+
+    def test_duplicate_head_ids_fail_closed(self):
+        # by_id() is last-one-wins, so a shadow entry under a duplicated ID
+        # would be invisible to the diff; the structural checks flag
+        # duplicates too, but this check must not depend on a sibling job
+        # being a required check. The weak copy is appended LAST so that,
+        # were the per-entry diff to run on the last-one-wins view, it
+        # would report a severity downgrade — asserting its absence pins
+        # the fail-closed skip, not just the extra finding.
+        def mutate(head):
+            entries = head["invariants"]["invariants"]
+            shadow = copy.deepcopy(entries[0])
+            shadow["severity"] = "low"
+            shadow["status"] = "UNKNOWN"
+            entries.append(shadow)
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "invariants register has duplicate ids on the head branch "
+            "(INV-CORE-001)",
+            out,
+        )
+        self.assertNotIn("severity downgraded", out)
+
+    # -- v0.3.2: a disposition cannot be silently unset --------------------
+
+    def test_status_removed_fails(self):
+        # Deleting `status` would otherwise be a free first hop: the gated
+        # transition checks would lose their baseline, and a later change
+        # could arrive at ACCEPTED or a closed status with no finding on
+        # either step.
+        def mutate(head):
+            head["residuals"]["residuals"][0].pop("status")
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 status removed, emptied, or replaced "
+            "with a non-string value (was OPEN; now None)",
+            out,
+        )
+
+    def test_status_emptied_fails(self):
+        # An empty (or whitespace-only) status is a string, but it records
+        # no disposition: it must count as unset, or it becomes the free
+        # first hop the check exists to close.
+        def mutate(head):
+            head["claims"]["claims"][0]["status"] = "   "
+
+        code, out = self.run_register_diff(mutate)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "claim CLAIM-CORE-001 status removed, emptied, or replaced with "
+            "a non-string value (was VERIFIED; now '   ')",
+            out,
+        )
+
+    def test_claim_status_weakened_from_emptied_base_fails(self):
+        # The second hop for claims/invariants: their weakening gate is
+        # pair-keyed on a recorded base string, so the first hop must be
+        # what catches an emptied status — verify the pair is closed.
+        def empty_base_status(base):
+            base["claims"]["claims"][0]["status"] = ""
+
+        def mutate(head):
+            head["claims"]["claims"][0]["status"] = "UNKNOWN"
+
+        code, out = self.run_register_diff(mutate, mutate_base=empty_base_status)
+        # The base recorded no disposition, so there is nothing to weaken
+        # from; the hop that emptied it was itself the finding.
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_contradiction_cleared_by_unsetting_reports_once(self):
+        # Clearing a contradiction by deleting the status is one edit: it
+        # must not be reported by both the unset check and the
+        # contradiction-cleared gate.
+        def contradict_base(base):
+            base["claims"]["claims"][0]["status"] = "CONTRADICTED"
+
+        def mutate(head):
+            head["claims"]["claims"][0].pop("status")
+
+        code, out = self.run_register_diff(mutate, mutate_base=contradict_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn("status removed, emptied, or replaced", out)
+        self.assertNotIn("recorded contradiction cleared", out)
+
+    def test_ordinal_judgement_values_unset_fails(self):
+        # severity/proof_tier/impact/uncertainty are compared by rank, and
+        # a rank comparison needs both sides: unsetting one would be the
+        # same free first hop the status check closes. severity carries a
+        # second channel — the critical/high evidence gate keys on it.
+        for kind, index, field, was in (
+            ("invariants", 0, "severity", "critical"),
+            ("claims", 0, "proof_tier", "INDEPENDENTLY_VERIFIABLE"),
+            ("residuals", 0, "impact", "critical"),
+            ("residuals", 0, "uncertainty", "low"),
+        ):
+            with self.subTest(field=field):
+                def mutate(head, kind=kind, index=index, field=field):
+                    head[kind][kind][index].pop(field)
+
+                code, out = self.run_register_diff(mutate)
+                self.assertEqual(code, 1, out)
+                self.assertIn(
+                    f"{field} removed, emptied, or replaced with a "
+                    f"non-string value (was {was}; now None)",
+                    out,
+                )
+
+    def test_weaker_value_after_unset_base_not_double_reported(self):
+        # The pair-keyed rank check stays silent when the base has no
+        # value — that hop was already reported when the value was unset,
+        # so one edit never yields two findings.
+        def unset_base(base):
+            base["invariants"]["invariants"][0].pop("severity")
+
+        def mutate(head):
+            head["invariants"]["invariants"][0]["severity"] = "low"
+
+        code, out = self.run_register_diff(mutate, mutate_base=unset_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_accepted_from_missing_base_status_fails(self):
+        # The second hop of that laundering path: the base status is absent
+        # (or malformed), so a gate keyed on the base value would stay
+        # silent. Arriving at ACCEPTED is the reviewed event regardless of
+        # what the base recorded.
+        def strip_base_status(base):
+            base["residuals"]["residuals"][0].pop("status")
+
+        def mutate(head):
+            residual = head["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "agent-bot"
+            residual["accepted_at"] = "2026-07-01"
+            residual["acceptance_rationale"] = "Fabricated by an agent"
+
+        code, out = self.run_register_diff(mutate, mutate_base=strip_base_status)
+        self.assertEqual(code, 1, out)
+        self.assertIn("residual RES-CORE-001 accepted (None to ACCEPTED)", out)
+
+    def test_defeater_closed_from_non_string_base_status_fails(self):
+        def add_defeaters(base):
+            document = drift_defeaters_document()
+            document["defeaters"][0]["status"] = ["MITIGATED"]
+            base["defeaters"] = document
+
+        def mutate(head):
+            defeater = head["defeaters"]["defeaters"][0]
+            defeater["status"] = "RESOLVED"
+            defeater["resolution"] = "The bypass was removed entirely"
+
+        code, out = self.run_register_diff(mutate, mutate_base=add_defeaters)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "defeater DEF-CORE-001 closed (['MITIGATED'] to RESOLVED)", out
+        )
+
+    def test_unparsable_base_review_after_removal_fails(self):
+        # An unparsable base value is still a recorded commitment (it can
+        # predate the stricter schema, or have been pushed directly to the
+        # default branch): dropping it must not fail toward silence.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "2026-09-01T00:00:00"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0].pop("review_after")
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 review_after removed "
+            "(was '2026-09-01T00:00:00')",
+            out,
+        )
+
+    def test_unparsable_base_review_after_swapped_fails(self):
+        # Swapping one unparsable value for another is not a repair: the
+        # commitment stays unreadable to the overdue check.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "soonish"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "eventually"
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "residual RES-CORE-001 review_after replaced with an unparsable "
+            "value ('eventually'; was 'soonish')",
+            out,
+        )
+
+    def test_unchanged_unparsable_review_after_not_flagged(self):
+        # An unparsable value carried through untouched is not a new
+        # weakening; the structural checks are where it gets reported.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "soonish"
+
+        code, out = self.run_register_diff(lambda head: None, mutate_base=schedule_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_unparsable_base_review_after_repaired_not_flagged(self):
+        # Repairing garbage into a real date re-enables the overdue check.
+        def schedule_base(base):
+            base["residuals"]["residuals"][0]["review_after"] = "soonish"
+
+        def mutate(head):
+            head["residuals"]["residuals"][0]["review_after"] = "2026-12-31"
+
+        code, out = self.run_register_diff(mutate, mutate_base=schedule_base)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    # -- v0.3.2: no false positives on a fully populated register ----------
+
+    def test_identical_rich_registers_report_no_regression(self):
+        # Every field the v0.3.2 checks compare, populated and unchanged:
+        # the diff must stay silent. Guards the new checks against firing
+        # on ordinary pull requests that touch nothing they protect.
+        def enrich(registers):
+            claim = registers["claims"]["claims"][0]
+            claim["evidence"] = ["evidence/claim-1.txt"]
+            claim["invariants"] = ["INV-CORE-001"]
+            claim["limitations"] = ["Only covers the happy path"]
+            claim["defeaters"] = ["DEF-CORE-001"]
+            claim["residuals"] = ["RES-CORE-001"]
+            invariant = registers["invariants"]["invariants"][0]
+            invariant["assumptions"] = ["Single-tenant deployment"]
+            invariant["limitations"] = ["Not verified under partition"]
+            invariant["defeaters"] = ["DEF-CORE-001"]
+            invariant["residuals"] = ["RES-CORE-001"]
+            residual = registers["residuals"]["residuals"][0]
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Alice Example"
+            residual["accepted_at"] = "2026-01-01"
+            residual["acceptance_rationale"] = "Cost exceeds exposure"
+            residual["mitigation"] = ["Rate limiting on the export endpoint"]
+            residual["affected_claims"] = ["CLAIM-CORE-001"]
+            residual["affected_invariants"] = ["INV-CORE-001"]
+            residual["review_after"] = "2026-12-31"
+            registers["defeaters"] = drift_defeaters_document(
+                status="MITIGATED",
+                resolution="A guard was added on the fork path",
+                affected_claims=["CLAIM-CORE-001"],
+                affected_invariants=["INV-CORE-001"],
+                evidence=["evidence/defeater-1.txt"],
+                review_after="2026-12-31",
+            )
+
+        code, out = self.run_register_diff(lambda head: None, mutate_base=enrich)
+        self.assertEqual(code, 0, out)
+        self.assertIn("no assurance policy regression", out)
+
+    def test_new_finding_kinds_acknowledged_draft_base_warn(self):
+        # The new finding kinds ride the existing stage-proportional ladder:
+        # a DRAFT base plus the acknowledgment line downgrades them all.
+        def enrich(registers):
+            registers["residuals"]["residuals"][0]["review_after"] = "2020-01-01"
+
+        def mutate(head):
+            residual = head["residuals"]["residuals"][0]
+            residual["owner"] = "Bob Example"
+            residual["uncertainty"] = "unknown"
+            residual["review_after"] = "2021-01-01"
+            residual["status"] = "ACCEPTED"
+            residual["accepted_by"] = "Bob Example"
+            residual["accepted_at"] = "2026-07-01"
+            residual["acceptance_rationale"] = "Accepted after re-triage"
+
+        code, out = self.run_register_diff(
+            mutate,
+            body="Assurance policy change: risk re-triaged with the owner\n",
+            mutate_base=enrich,
+        )
+        self.assertEqual(code, 0, out)
+        self.assertIn("WARN:", out)
+        self.assertNotIn("ERROR:", out)
+        for fragment in (
+            "owner changed from 'Alice Example' to 'Bob Example'",
+            "uncertainty downgraded from low to unknown",
+            "review_after postponed from 2020-01-01 to 2021-01-01",
+            "accepted (OPEN to ACCEPTED)",
+        ):
+            self.assertIn(fragment, out)
+
+    # -- v0.3.2: unusable base registers fail closed -----------------------
+
+    def test_base_register_not_a_mapping_fails_closed(self):
+        # A base register that parses cleanly but is not a mapping with the
+        # register's list — exactly what `git show` used to materialize for
+        # a symlinked register (the target-path string) — must be a hard
+        # error, not a silent skip of the whole register's diff.
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        base_registers = drift_register_fixture()
+        base_registers["invariants"] = "../elsewhere/INVARIANTS.yaml"
+        head_registers = drift_register_fixture()
+        code, out = self.run_drift(
+            head,
+            changed=(),
+            base_adoption=base,
+            base_registers=base_registers,
+            head_registers=head_registers,
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("base register", out)
+        self.assertIn("not a mapping with a 'invariants' list", out)
+
+    def test_base_register_directory_fails_closed(self):
+        # A directory (or a broken symlink) at the register's path is not
+        # "absent": the register exists in some form and cannot be read, so
+        # its entries must not drop silently out of the comparison.
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        registers = drift_register_fixture()
+        root = self.make_tmp()
+        base_root = root / "base-root"
+        for kind in ("claims", "residuals"):
+            write_yaml(base_root / REGISTER_FILES[kind], registers[kind])
+        (base_root / REGISTER_FILES["invariants"]).mkdir(parents=True)
+        head_root = root / "head-root"
+        for kind, document in registers.items():
+            write_yaml(head_root / REGISTER_FILES[kind], document)
+        write_yaml(root / "adoption.yaml", head)
+        write_yaml(root / "base-adoption.yaml", base)
+        (root / "changed.txt").write_text("", encoding="utf-8")
+        code, out = run_validator(
+            [
+                "drift",
+                "--adoption",
+                str(root / "adoption.yaml"),
+                "--changed-files",
+                str(root / "changed.txt"),
+                "--pr-body",
+                str(root / "missing-body.txt"),
+                "--base-adoption",
+                str(root / "base-adoption.yaml"),
+                "--base-registers-root",
+                str(base_root),
+                "--project-root",
+                str(head_root),
+            ]
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("base register", out)
+        self.assertIn("exists but is not a readable file", out)
+
+    def test_base_register_broken_symlink_fails_closed(self):
+        # A dangling symlink does not satisfy exists(); without the
+        # is_symlink() branch it would read as "register absent" and its
+        # entries would drop silently out of the comparison.
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        registers = drift_register_fixture()
+        root = self.make_tmp()
+        base_root = root / "base-root"
+        for kind in ("claims", "residuals"):
+            write_yaml(base_root / REGISTER_FILES[kind], registers[kind])
+        link = base_root / REGISTER_FILES["invariants"]
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(Path("gone") / "INVARIANTS.yaml")
+        head_root = root / "head-root"
+        for kind, document in registers.items():
+            write_yaml(head_root / REGISTER_FILES[kind], document)
+        write_yaml(root / "adoption.yaml", head)
+        write_yaml(root / "base-adoption.yaml", base)
+        (root / "changed.txt").write_text("", encoding="utf-8")
+        code, out = run_validator(
+            [
+                "drift",
+                "--adoption",
+                str(root / "adoption.yaml"),
+                "--changed-files",
+                str(root / "changed.txt"),
+                "--pr-body",
+                str(root / "missing-body.txt"),
+                "--base-adoption",
+                str(root / "base-adoption.yaml"),
+                "--base-registers-root",
+                str(base_root),
+                "--project-root",
+                str(head_root),
+            ]
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("base register", out)
+        self.assertIn("exists but is not a readable file", out)
+
+    def test_lite_base_section_not_a_list_fails_closed(self):
+        # The lite layout carries the registers as sections of one file; a
+        # section that is not a list is as unusable as a malformed register
+        # file and must be reported, not skipped.
+        base = baseline_adoption()
+        base["layout"] = "lite"
+        head = copy.deepcopy(base)
+        root = self.make_tmp()
+        base_root = root / "base-root"
+        write_yaml(
+            base_root / ".agentic-assurance" / "assurance.yaml",
+            {"version": 1, "residuals": "see the other document"},
+        )
+        head_root = root / "head-root"
+        write_yaml(
+            head_root / ".agentic-assurance" / "assurance.yaml",
+            {"version": 1, "residuals": [baseline_residual()]},
+        )
+        write_yaml(root / "adoption.yaml", head)
+        write_yaml(root / "base-adoption.yaml", base)
+        (root / "changed.txt").write_text("", encoding="utf-8")
+        code, out = run_validator(
+            [
+                "drift",
+                "--adoption",
+                str(root / "adoption.yaml"),
+                "--changed-files",
+                str(root / "changed.txt"),
+                "--pr-body",
+                str(root / "missing-body.txt"),
+                "--base-adoption",
+                str(root / "base-adoption.yaml"),
+                "--base-registers-root",
+                str(base_root),
+                "--project-root",
+                str(head_root),
+            ]
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("section 'residuals' is not a list", out)
+
+    def test_symlinked_base_register_compared(self):
+        # The workflow materializes the base side as a git worktree, so a
+        # register that is an in-tree symlink arrives as a symlink and must
+        # be read through — the validator's containment check permits
+        # in-root targets, and the diff must still see the base entries.
+        base = baseline_adoption()
+        head = copy.deepcopy(base)
+        registers = drift_register_fixture()
+        root = self.make_tmp()
+        base_root = root / "base-root"
+        write_yaml(base_root / "real" / "INVARIANTS.yaml", registers["invariants"])
+        link = base_root / REGISTER_FILES["invariants"]
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(Path("..") / "real" / "INVARIANTS.yaml")
+        for kind in ("claims", "residuals"):
+            write_yaml(base_root / REGISTER_FILES[kind], registers[kind])
+        head_registers = copy.deepcopy(registers)
+        head_registers["invariants"]["invariants"] = []
+        head_root = root / "head-root"
+        for kind, document in head_registers.items():
+            write_yaml(head_root / REGISTER_FILES[kind], document)
+        write_yaml(root / "adoption.yaml", head)
+        write_yaml(root / "base-adoption.yaml", base)
+        (root / "changed.txt").write_text("", encoding="utf-8")
+        code, out = run_validator(
+            [
+                "drift",
+                "--adoption",
+                str(root / "adoption.yaml"),
+                "--changed-files",
+                str(root / "changed.txt"),
+                "--pr-body",
+                str(root / "missing-body.txt"),
+                "--base-adoption",
+                str(root / "base-adoption.yaml"),
+                "--base-registers-root",
+                str(base_root),
+                "--project-root",
+                str(head_root),
+            ]
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("invariants entry INV-CORE-001 deleted", out)
 
     def test_unhashable_status_does_not_crash(self):
         # The register files are loaded without schema validation (a base

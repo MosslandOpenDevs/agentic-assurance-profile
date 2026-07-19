@@ -184,14 +184,52 @@ PROOF_TIER_ORDER = (
 # separately (clearing a contradiction is a disposition that needs review),
 # so CONTRADICTED is not a key here.
 STATUS_WEAKENINGS = {"VERIFIED": ("INFERRED", "UNKNOWN"), "INFERRED": ("UNKNOWN",)}
-# Intent reclassifications that weaken a recorded human decision.
-INTENT_WEAKENINGS = {"INTENDED": ("UNKNOWN", "ACCIDENTAL")}
+# Intent reclassifications that move away from a recorded INTENDED decision.
+# INTENDED is the strong recorded human commitment; any move off it rewrites
+# that decision and needs review (the other classifications are starting
+# points, not commitments, so they are not keys here). Unsetting INTENDED
+# altogether is handled alongside, in the diff.
+INTENT_WEAKENINGS = {
+    "INTENDED": ("UNKNOWN", "ACCIDENTAL", "COMPATIBILITY", "DEPRECATED")
+}
 # Evidence-bearing list fields whose shrinkage is a weakening on
 # high/critical invariants.
 INVARIANT_EVIDENCE_LISTS = ("enforcement", "verification", "evidence")
-# Claim list fields whose shrinkage removes assurance basis (evidence,
-# supporting invariants) or a stated caveat (limitations).
-CLAIM_BASIS_LISTS = ("evidence", "invariants", "limitations")
+# Relationship and basis list fields protected per register kind: removing
+# an item severs an assurance-graph edge (what could defeat a claim, what a
+# defeater affects) or drops a stated caveat, mitigation, or assumption.
+# Compared as string sets, so editing a prose item reads as removing it —
+# these lists record commitments item by item, unlike the free-text
+# statement/summary fields the diff leaves to human review. Protected at
+# every severity: they are graph structure, not evidence volume
+# (INVARIANT_EVIDENCE_LISTS keeps its high/critical gate for the latter).
+PROTECTED_LIST_FIELDS = {
+    "claims": ("evidence", "invariants", "limitations", "defeaters", "residuals"),
+    "invariants": ("assumptions", "limitations", "defeaters", "residuals"),
+    "defeaters": ("affected_claims", "affected_invariants", "evidence"),
+    "residuals": ("affected_claims", "affected_invariants", "mitigation"),
+}
+# Recorded judgement values whose comparison is pair-keyed: the weakening
+# checks need a meaningful value on both sides, so unsetting one on the head
+# is itself a finding (see the diff). All are schema-required fields;
+# `intent.classification` follows the same rule but is nested, so it is
+# handled alongside the intent comparison rather than listed here.
+GATED_VALUE_FIELDS = {
+    "claims": ("status", "proof_tier"),
+    "invariants": ("status", "severity"),
+    "defeaters": ("status",),
+    "residuals": ("status", "impact", "uncertainty"),
+}
+# Singular nouns used in policy-diff finding messages.
+REGISTER_NOUNS = {
+    "claims": "claim",
+    "invariants": "invariant",
+    "defeaters": "defeater",
+    "residuals": "residual",
+}
+# Residual acceptance record: rewriting who accepted a risk, when, or why is
+# a change to a recorded human decision, not housekeeping.
+RESIDUAL_ACCEPTANCE_FIELDS = ("accepted_by", "accepted_at", "acceptance_rationale")
 # Register statuses that mean "closed / no longer a live, tracked concern".
 # Moving an entry into one of these dispositions removes it from active
 # scrutiny without deleting its ID, so it needs the same acknowledgment as a
@@ -1632,12 +1670,17 @@ def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]
     """Assurance-significant changes of the head declaration vs the base one.
 
     Returns ``(kind, finding)`` pairs. Kind ``"weakened"``: stage downgrade,
-    profile removal, layout change, component removal, and removal of a
+    profile removal, layout change, component removal, removal of a
     component's path globs or invariant IDs (editing a glob counts — the old
-    glob disappears). Kind ``"pin"``: any change to the upstream pin — not a
-    weakening per se (upgrades move it forward), but PROFILE.md section 16
-    requires a pin move to be an explicit, dedicated change, so it demands
-    the same acknowledgment. Additions are not findings.
+    glob disappears), a changed ``project.human_owner``, and a changed
+    ``human_review.reviewer``/``human_review.record`` (rewriting who
+    reviewed, or where the durable record lives, mutates the provenance the
+    declared stage rests on; ``human_review.date`` is deliberately not
+    compared — advancing it is the normal re-review act). Kind ``"pin"``:
+    any change to the upstream pin — not a weakening per se (upgrades move
+    it forward), but PROFILE.md section 16 requires a pin move to be an
+    explicit, dedicated change, so it demands the same acknowledgment.
+    Additions are not findings.
     """
     findings: list[tuple[str, str]] = []
 
@@ -1690,6 +1733,18 @@ def adoption_policy_regressions(base: dict, head: dict) -> list[tuple[str, str]]
                 f"to {head_project.get('human_owner')!r}",
             )
         )
+
+    base_review = base.get("human_review") if isinstance(base.get("human_review"), dict) else {}
+    head_review = head.get("human_review") if isinstance(head.get("human_review"), dict) else {}
+    for key in ("reviewer", "record"):
+        before, after = base_review.get(key), head_review.get(key)
+        if nonempty_string(before) and after != before:
+            findings.append(
+                (
+                    "weakened",
+                    f"human_review.{key} changed from {before!r} to {after!r}",
+                )
+            )
 
     # A moved artifact path can point the validator at a different (possibly
     # freshly emptied) file, and a moved public_assurance_root changes what
@@ -1749,6 +1804,7 @@ def order_index(order: tuple, value: object) -> int | None:
 def register_policy_regressions(
     base_registers: dict[str, list | None],
     head_registers: dict[str, list | None],
+    today: datetime.date | None = None,
 ) -> list[tuple[str, str]]:
     """Weakenings of the head registers versus the base registers.
 
@@ -1756,28 +1812,55 @@ def register_policy_regressions(
     on the base but absent on the head is a whole-register removal finding
     (listing the former IDs) — an optional register such as invariants under
     the core profile could otherwise be deleted wholesale with no finding;
-    an unreadable head register fails closed (the diff cannot be trusted). A
-    register absent on the base, or unusable on the base, is skipped (its
-    own errors are reported elsewhere).
+    an unreadable head register, or a head register with duplicate IDs
+    (last-one-wins would hide a weaker shadow entry), fails closed (the
+    diff cannot be trusted). A register absent on the base, or unusable on
+    the base, is skipped (its own errors are reported elsewhere).
 
-    Detected weakenings, by stable ID:
-    - any register: entry deletion; whole-register removal.
+    Detected findings, by stable ID:
+    - any register: entry deletion; whole-register removal; owner change
+      (accountability transfer); a recorded judgement value unset —
+      removed, emptied, or replaced with a non-string value
+      (GATED_VALUE_FIELDS: status everywhere, plus severity, proof_tier,
+      impact, uncertainty; unsetting one would otherwise be the free
+      first hop of a laundered change); removal of items from the kind's
+      protected relationship/basis lists (PROTECTED_LIST_FIELDS).
     - invariants: severity downgrade; conclusion-status weakening
-      (VERIFIED/INFERRED toward UNKNOWN); INTENDED intent reclassified as
-      UNKNOWN/ACCIDENTAL; enforcement/verification/evidence items removed
-      from a high/critical invariant.
-    - claims: status weakening; proof-tier downgrade; evidence, supporting
-      invariant, or limitation items removed.
+      (VERIFIED/INFERRED toward UNKNOWN); INTENDED intent reclassified,
+      or unset (same first-hop reasoning as status);
+      enforcement/verification/evidence items removed from a high/critical
+      invariant.
+    - claims: status weakening; proof-tier downgrade.
     - invariants and claims: a recorded CONTRADICTED status cleared
       (moving to CONTRADICTED is an honesty upgrade and is never flagged;
       moving away from it is a reviewed disposition).
-    - residuals: impact downgrade; closing (status -> RESOLVED).
-    - defeaters: closing (status -> MITIGATED/RESOLVED/WITHDRAWN).
+    - residuals: impact or uncertainty downgrade; closing (status ->
+      RESOLVED); acceptance (status -> ACCEPTED — accepting a risk is a
+      human decision, PROFILE.md sections 3 and 12); rewriting the
+      acceptance record (accepted_by/accepted_at/acceptance_rationale).
+    - defeaters: closing (status -> MITIGATED/RESOLVED/WITHDRAWN); a
+      MITIGATED defeater moved to a terminal disposition
+      (RESOLVED/WITHDRAWN).
+    - defeaters and residuals: review_after removed, replaced with an
+      unparsable value, or pushed out after the recorded date had
+      already passed. Rescheduling a date still in the future is the
+      normal outcome of doing the review, and is not flagged; nor is
+      moving it earlier, adding one, or repairing an unparsable base
+      value into a real date.
+
+    The residual and defeater *disposition* gates (arrival at a closed or
+    ACCEPTED status) fire regardless of the base value's type, so a
+    missing or malformed base status fails toward a finding. Every other
+    weakening check is pair-keyed on a meaningful value being recorded on
+    both sides; for those, an unset base value is caught one hop earlier,
+    when the value was removed.
 
     Claim/statement wording changes are deliberately not compared — that is
     the human review's terrain. Re-opening a closed residual/defeater, or
     recording a new contradiction, is never a weakening.
     """
+    if today is None:
+        today = datetime.date.today()
     findings: list[tuple[str, str]] = []
 
     def by_id(entries: list | None) -> dict[str, dict]:
@@ -1786,6 +1869,19 @@ def register_policy_regressions(
             for entry in (entries or [])
             if isinstance(entry, dict) and nonempty_string(entry.get("id"))
         }
+
+    def duplicate_ids(entries: list | None) -> list[str]:
+        """IDs that appear more than once in a register, sorted."""
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for entry in entries or []:
+            if not (isinstance(entry, dict) and nonempty_string(entry.get("id"))):
+                continue
+            entry_id = entry["id"]
+            if entry_id in seen:
+                duplicates.add(entry_id)
+            seen.add(entry_id)
+        return sorted(duplicates)
 
     def weakened(order: tuple, before: object, after: object) -> bool:
         b, a = order_index(order, before), order_index(order, after)
@@ -1801,6 +1897,16 @@ def register_policy_regressions(
         a key, so it can never name a weakening.
         """
         return isinstance(before, str) and after in table.get(before, ())
+
+    def shown(value: object) -> str:
+        """A status/field value rendered for a finding message.
+
+        Meaningful strings render bare (matching the historical message
+        format); anything else — None, a list, a bool, and an empty or
+        whitespace-only string — renders as its repr, so a missing or
+        malformed value never collapses into blank space in the message.
+        """
+        return value if nonempty_string(value) else repr(value)
 
     def str_items(entry: dict, field: str) -> set[str]:
         """The string items of a list-valued register field, else empty.
@@ -1847,12 +1953,91 @@ def register_policy_regressions(
                 )
             )
             continue
+        # Duplicate IDs on the head would make by_id() keep only the last
+        # entry, hiding a weaker shadow entry under the same ID from this
+        # diff (the structural checks flag duplicates too, but this check
+        # must not depend on a sibling job being required). Fail closed.
+        # Base-side duplicates are left last-one-wins: the base branch was
+        # merged under its own checks, and flagging them here would punish
+        # the head for cleaning them up.
+        head_duplicates = duplicate_ids(head_registers[kind])
+        if head_duplicates:
+            findings.append(
+                (
+                    "weakened",
+                    f"{kind} register has duplicate ids on the head branch "
+                    f"({', '.join(head_duplicates)}) — the policy diff "
+                    "compares by stable id and cannot be trusted; "
+                    "deduplicate the ids",
+                )
+            )
+            continue
         head_by_id = by_id(head_registers[kind])
+        noun = REGISTER_NOUNS[kind]
         for entry_id in sorted(base_by_id):
             if entry_id not in head_by_id:
                 findings.append(("weakened", f"{kind} entry {entry_id} deleted"))
                 continue
             base_entry, head_entry = base_by_id[entry_id], head_by_id[entry_id]
+
+            # Accountability, shared by every kind. An owner change is
+            # flagged in both directions — neither is a "weakening" per se,
+            # but both rewrite who answers for the entry, and nothing else
+            # in the profile guards that field. `disclosure` is deliberately
+            # NOT compared: it is not a strength axis, the risky direction
+            # on a public repository is already an error at CONFORMANT, and
+            # reclassifying during triage is routine.
+            before, after = base_entry.get("owner"), head_entry.get("owner")
+            if nonempty_string(before) and after != before:
+                findings.append(
+                    (
+                        "weakened",
+                        f"{noun} {entry_id} owner changed from {before!r} "
+                        f"to {after!r} — an accountability transfer needs review",
+                    )
+                )
+            # A recorded judgement value cannot be silently UNSET. Every
+            # check that gates a weakening below is pair-keyed — it needs a
+            # meaningful value on BOTH sides — so dropping one would
+            # otherwise be a free first hop: delete the value in one change
+            # (nothing to compare, silent) and record a weaker one in the
+            # next (no baseline, silent), while the one-step version of the
+            # same edit is a finding. All of these fields are schema-
+            # required, so this also keeps the diff from depending on the
+            # structural checks being configured as a required check.
+            #
+            # Scope, stated honestly: this closes the *unset* shape of that
+            # first hop, not every shape. Overwriting a value with an
+            # unrecognized string (`VERIFIED` -> `verified`) is pair-keyed
+            # the same way and is left to the schema's enum check, which
+            # rejects it in the adopter job. Closing it here would mean
+            # flagging a recognized value replaced by an unrecognized one,
+            # which must not fire when an adopter repairs a legacy value
+            # that predates the stricter schema.
+            for field in GATED_VALUE_FIELDS[kind]:
+                before, after = base_entry.get(field), head_entry.get(field)
+                if nonempty_string(before) and not nonempty_string(after):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"{noun} {entry_id} {field} removed, emptied, or "
+                            f"replaced with a non-string value (was {before}; "
+                            f"now {shown(after)})",
+                        )
+                    )
+            # Severed assurance-graph edges and removed caveats.
+            for field in PROTECTED_LIST_FIELDS[kind]:
+                removed = sorted(
+                    str_items(base_entry, field) - str_items(head_entry, field)
+                )
+                if removed:
+                    findings.append(
+                        (
+                            "weakened",
+                            f"{noun} {entry_id}: {field} item(s) removed: "
+                            f"{', '.join(removed)}",
+                        )
+                    )
 
             if kind == "invariants":
                 if weakened(
@@ -1867,17 +2052,41 @@ def register_policy_regressions(
                     )
                 base_intent = base_entry.get("intent") or {}
                 head_intent = head_entry.get("intent") or {}
-                if isinstance(base_intent, dict) and isinstance(head_intent, dict):
-                    before = base_intent.get("classification")
-                    after = head_intent.get("classification")
-                    if reclassified(INTENT_WEAKENINGS, before, after):
-                        findings.append(
-                            (
-                                "weakened",
-                                f"invariant {entry_id} intent reclassified from "
-                                f"{before} to {after}",
-                            )
+                before = (
+                    base_intent.get("classification")
+                    if isinstance(base_intent, dict)
+                    else None
+                )
+                after = (
+                    head_intent.get("classification")
+                    if isinstance(head_intent, dict)
+                    else None
+                )
+                if reclassified(INTENT_WEAKENINGS, before, after):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"invariant {entry_id} intent reclassified from "
+                            f"{before} to {after}",
                         )
+                    )
+                # Unsetting the recorded intent — deleting the key, the whole
+                # intent mapping, or blanking the value — is the same free
+                # first hop the status check above closes: the reclassified()
+                # table is pair-keyed, so without this the commitment could be
+                # dropped in one change and replaced in the next, both silent.
+                # Keyed on INTENDED alone: the other classifications are
+                # starting points, not commitments.
+                elif before == "INTENDED" and not nonempty_string(after):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"invariant {entry_id} intent.classification "
+                            "removed, emptied, or replaced with a non-string "
+                            f"value (was INTENDED; now {shown(after)}) — "
+                            "unsetting a recorded intent decision needs review",
+                        )
+                    )
                 if base_entry.get("severity") in ("critical", "high"):
                     for field in INVARIANT_EVIDENCE_LISTS:
                         removed = sorted(
@@ -1894,7 +2103,6 @@ def register_policy_regressions(
 
             if kind in ("invariants", "claims"):
                 before, after = base_entry.get("status"), head_entry.get("status")
-                noun = "invariant" if kind == "invariants" else "claim"
                 if reclassified(STATUS_WEAKENINGS, before, after):
                     findings.append(
                         (
@@ -1904,8 +2112,15 @@ def register_policy_regressions(
                     )
                 # Clearing a recorded contradiction (moving away from
                 # CONTRADICTED) removes a known problem from the record; it
-                # must be a reviewed disposition, not a silent edit.
-                elif before == "CONTRADICTED" and after != "CONTRADICTED":
+                # must be a reviewed disposition, not a silent edit. Only
+                # meaningful head strings land here: an unset status is
+                # already reported by the status check above, and reporting
+                # both would double-count one edit.
+                elif (
+                    before == "CONTRADICTED"
+                    and nonempty_string(after)
+                    and after != "CONTRADICTED"
+                ):
                     findings.append(
                         (
                             "weakened",
@@ -1928,64 +2143,165 @@ def register_policy_regressions(
                             f"{base_entry.get('proof_tier')} to {head_entry.get('proof_tier')}",
                         )
                     )
-                # Removing evidence, supporting invariants, or stated
-                # limitations strips a claim's assurance basis without
-                # touching its wording — a mechanism change, not a wording one.
-                for field in CLAIM_BASIS_LISTS:
-                    removed = sorted(
-                        str_items(base_entry, field) - str_items(head_entry, field)
-                    )
-                    if removed:
+            if kind == "residuals":
+                # Impact and uncertainty are the residual's two independent
+                # assessment axes (PROFILE.md section 12); lowering either
+                # reduces the recorded risk or claims more confidence than
+                # the base branch had agreed to.
+                for axis in ("impact", "uncertainty"):
+                    if weakened(
+                        IMPACT_ORDER, base_entry.get(axis), head_entry.get(axis)
+                    ):
                         findings.append(
                             (
                                 "weakened",
-                                f"claim {entry_id}: {field} item(s) removed: "
-                                f"{', '.join(removed)}",
+                                f"residual {entry_id} {axis} downgraded from "
+                                f"{base_entry.get(axis)} to {head_entry.get(axis)}",
                             )
                         )
-
-            if kind == "residuals":
-                if weakened(
-                    IMPACT_ORDER, base_entry.get("impact"), head_entry.get("impact")
-                ):
-                    findings.append(
-                        (
-                            "weakened",
-                            f"residual {entry_id} impact downgraded from "
-                            f"{base_entry.get('impact')} to {head_entry.get('impact')}",
-                        )
-                    )
                 # Closing a residual (to RESOLVED) removes a tracked risk from
                 # active scrutiny. resolution_note being non-empty is a schema
                 # matter; whether the closure is justified is a review matter.
+                # No isinstance guard on the base status: what matters is
+                # the head ARRIVING at a gated disposition. A missing or
+                # non-string base value must fail toward a finding, not
+                # toward silence (it would otherwise be the second hop of a
+                # laundered transition).
                 before, after = base_entry.get("status"), head_entry.get("status")
                 if (
-                    isinstance(before, str)
-                    and before not in RESIDUAL_CLOSED_STATUSES
+                    before not in RESIDUAL_CLOSED_STATUSES
                     and after in RESIDUAL_CLOSED_STATUSES
                 ):
                     findings.append(
                         (
                             "weakened",
-                            f"residual {entry_id} closed ({before} to {after}) "
-                            "— closing a tracked residual needs review",
+                            f"residual {entry_id} closed ({shown(before)} to "
+                            f"{after}) — closing a tracked residual needs review",
                         )
                     )
+                # Accepting a residual risk is an explicit human decision
+                # (PROFILE.md sections 3 and 12: critical residuals need
+                # explicit human acceptance, and an agent must not accept one
+                # for the human owner). The acceptance fields themselves are
+                # trivially fabricatable strings, so the transition must
+                # route through the same review gate as a closure.
+                if before != "ACCEPTED" and after == "ACCEPTED":
+                    findings.append(
+                        (
+                            "weakened",
+                            f"residual {entry_id} accepted ({shown(before)} to "
+                            "ACCEPTED) — accepting a residual risk is a "
+                            "human decision that needs review",
+                        )
+                    )
+                for field in RESIDUAL_ACCEPTANCE_FIELDS:
+                    before, after = base_entry.get(field), head_entry.get(field)
+                    if nonempty_string(before) and after != before:
+                        findings.append(
+                            (
+                                "weakened",
+                                f"residual {entry_id} {field} changed from "
+                                f"{before!r} to {after!r} — rewriting a "
+                                "recorded acceptance needs review",
+                            )
+                        )
 
             if kind == "defeaters":
+                # Same rationale as the residual gates: no isinstance guard
+                # on the base status — arriving at a closed disposition from
+                # ANY non-closed base value (including a missing or
+                # malformed one) is the reviewed event.
                 before, after = base_entry.get("status"), head_entry.get("status")
                 if (
-                    isinstance(before, str)
-                    and before not in DEFEATER_CLOSED_STATUSES
+                    before not in DEFEATER_CLOSED_STATUSES
                     and after in DEFEATER_CLOSED_STATUSES
                 ):
                     findings.append(
                         (
                             "weakened",
-                            f"defeater {entry_id} closed ({before} to {after}) "
-                            "— closing a defeater needs review",
+                            f"defeater {entry_id} closed ({shown(before)} to "
+                            f"{after}) — closing a defeater needs review",
                         )
                     )
+                # MITIGATED means the risk is reduced but not eliminated
+                # (defeaters.schema.json); RESOLVED and WITHDRAWN assert it
+                # is gone or was never real. Upgrading a mitigation to a
+                # terminal disposition is a materially stronger statement,
+                # not a lateral move inside one "closed" class. Kept as an
+                # extra edge on the set condition above (not a strict
+                # transition table): an out-of-schema base status must keep
+                # failing toward a finding, not toward silence.
+                elif before == "MITIGATED" and after in ("RESOLVED", "WITHDRAWN"):
+                    findings.append(
+                        (
+                            "weakened",
+                            f"defeater {entry_id} disposition changed "
+                            f"(MITIGATED to {after}) — closing out a "
+                            "mitigated defeater needs review",
+                        )
+                    )
+
+            if kind in ("defeaters", "residuals"):
+                # A re-review commitment (review_after) can be kept, brought
+                # forward, or rescheduled while it is still in the future —
+                # completing a scheduled review and setting the next date is
+                # the healthy path, and making it a finding would put a red
+                # check on the one act the schedule exists to produce.
+                # What cannot happen silently: dropping the commitment,
+                # replacing it with a value the overdue check cannot parse,
+                # or pushing out a date that has ALREADY passed — the last
+                # is the review being evaded rather than done, and it is
+                # exactly how a live overdue warning would be cleared.
+                # Additions (no base value) are never findings. An
+                # UNPARSABLE base value still counts as a recorded
+                # commitment: removing it, or swapping it for different
+                # garbage, is a finding; repairing it into a real date
+                # re-enables the overdue check and is not.
+                base_raw = base_entry.get("review_after")
+                if base_raw is not None:
+                    base_review = coerce_date(base_raw)
+                    was = (
+                        base_review.isoformat()
+                        if base_review is not None
+                        else repr(base_raw)
+                    )
+                    head_raw = head_entry.get("review_after")
+                    head_review = coerce_date(head_raw)
+                    if head_raw is None:
+                        findings.append(
+                            (
+                                "weakened",
+                                f"{noun} {entry_id} review_after removed "
+                                f"(was {was}) — dropping a re-review "
+                                "commitment needs review",
+                            )
+                        )
+                    elif head_raw == base_raw:
+                        pass  # unchanged, in whatever form it was recorded
+                    elif head_review is None:
+                        findings.append(
+                            (
+                                "weakened",
+                                f"{noun} {entry_id} review_after replaced "
+                                f"with an unparsable value ({head_raw!r}; "
+                                f"was {was})",
+                            )
+                        )
+                    elif (
+                        base_review is not None
+                        and head_review > base_review
+                        and base_review < today
+                    ):
+                        findings.append(
+                            (
+                                "weakened",
+                                f"{noun} {entry_id} review_after postponed "
+                                f"from {base_review.isoformat()} to "
+                                f"{head_review.isoformat()}, after the "
+                                "scheduled date had passed — an overdue "
+                                "re-review is done, not deferred",
+                            )
+                        )
     return findings
 
 
@@ -1995,10 +2311,14 @@ def load_registers_from_root(
     """Load the registers of an adoption declaration from a directory root.
 
     Used by the policy diff for both sides: the CI caller materializes the
-    base branch's register files under a temporary root, and the head side
-    reads from the adopting repository. Mirrors the head-side loading
-    semantics: absent file = register absent; unreadable = None (reported);
-    lite layout reads the single assurance file's sections.
+    base branch's tree under a temporary root, and the head side reads from
+    the adopting repository. Mirrors the head-side loading semantics:
+    absent file = register absent; unreadable OR structurally unusable (the
+    document is not a mapping carrying the register's list — e.g. a file
+    that parses to a bare string) = None, and both are reported as errors —
+    a register that exists but cannot be compared must never silently drop
+    out of the policy diff. Lite layout reads the single assurance file's
+    sections under the same rules.
 
     The declared ``paths:`` come from a pull-request-controlled adoption
     file, so they are run through ``check_declared_paths`` first — an
@@ -2010,17 +2330,33 @@ def load_registers_from_root(
         # Fixed constant path, not adopter-controlled — no containment needed.
         path = root / LITE_ASSURANCE_PATH
         if not path.is_file():
+            # Something that is not a readable regular file (a directory, a
+            # broken symlink) is not "absent": fail closed, don't skip.
+            if path.is_symlink() or path.exists():
+                report.error(
+                    f"{label} ({LITE_ASSURANCE_PATH}): exists but is not "
+                    "a readable file"
+                )
+                return {kind: None for kind in LITE_SECTION_KINDS}
             return registers
         document, error = load_yaml(path)
         if error is not None:
             report.error(f"{label}: {error}")
             return {kind: None for kind in LITE_SECTION_KINDS}
-        if isinstance(document, dict):
-            for kind in LITE_SECTION_KINDS:
-                if kind in document:
-                    registers[kind] = register_entries(
-                        {"version": 1, kind: document[kind]}, kind
+        if not isinstance(document, dict):
+            report.error(
+                f"{label} ({LITE_ASSURANCE_PATH}): top level is not a mapping"
+            )
+            return {kind: None for kind in LITE_SECTION_KINDS}
+        for kind in LITE_SECTION_KINDS:
+            if kind in document:
+                entries = register_entries({"version": 1, kind: document[kind]}, kind)
+                if entries is None:
+                    report.error(
+                        f"{label} ({LITE_ASSURANCE_PATH}): section "
+                        f"'{kind}' is not a list"
                     )
+                registers[kind] = entries
         return registers
     paths = check_declared_paths(root, resolve_paths(adoption), report)
     for kind in REGISTER_KINDS:
@@ -2029,13 +2365,27 @@ def load_registers_from_root(
             continue
         path = root / relative
         if not path.is_file():
+            # A directory or broken symlink at the register's path is not
+            # "absent": the register exists in some form and cannot be
+            # compared — fail closed rather than dropping it from the diff.
+            if path.is_symlink() or path.exists():
+                report.error(
+                    f"{label} ({relative}): exists but is not a readable file"
+                )
+                registers[kind] = None
             continue
         document, error = load_yaml(path)
         if error is not None:
             report.error(f"{label} ({relative}): {error}")
             registers[kind] = None
             continue
-        registers[kind] = register_entries(substitute_placeholders(document), kind)
+        entries = register_entries(substitute_placeholders(document), kind)
+        if entries is None:
+            report.error(
+                f"{label} ({relative}): not a mapping with a '{kind}' list "
+                "— the register cannot be compared"
+            )
+        registers[kind] = entries
     return registers
 
 

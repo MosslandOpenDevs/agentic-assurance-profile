@@ -30,6 +30,7 @@ Adopters may pin only commits whose `VERSION` content equals their declared `ups
    - moves the `## Unreleased` content of [CHANGELOG.md](CHANGELOG.md) into a new section for the release, including an **Adopter impact / upgrade actions** subsection that states what an adopting repository must do when upgrading (state "none" explicitly when nothing is required);
    - sets `VERSION` to the exact tag string;
    - states the release's semver classification per PROFILE.md §16;
+   - states the release's review class per [GOVERNANCE.md](GOVERNANCE.md) §2 (currently `SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED` until a second active maintainer exists), citing any external technical reviews the release incorporates — the class is a fact about the record, stated per release, not inherited silently from the standing default;
    - is reviewed per [GOVERNANCE.md](GOVERNANCE.md) — a major release requires explicit governing-body approval recorded in this pull request.
 2. **Merge.** The merge commit on `main` is the release commit.
 3. **Tag.** Create the tag (for example `v0.1.0`) on the merge commit. The tag string must equal the `VERSION` content at that commit. Note that the release pull request's branch commit also carries the same `VERSION` content and remains reachable as the merge's second parent — **the tag commit is the canonical adopter pin**, and the `adopter-validate` workflow rejects a release pin whose commit is not the one the tag points to.
