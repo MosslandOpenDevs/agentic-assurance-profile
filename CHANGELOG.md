@@ -6,8 +6,8 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 A usability-focused minor: makes adoption harder to get wrong at the
 entry point, turns the invariant register into a `core` obligation, and
-hardens the `archived` profile (exclusivity + a required system
-description; full §6.6 field enforcement tracked in #40).
+hardens the `archived` profile (exclusivity + a required mapped system
+artifact; full §6.6 field enforcement tracked in #40).
 
 - **Profile classification is now an explicit first step of adoption.**
   `docs/ADOPTION.md` §4.0 ("Classify the profile first") makes profile
@@ -21,6 +21,20 @@ description; full §6.6 field enforcement tracked in #40).
   this profile" prompt into classify-first; and `PROFILE.md` §5
   clarifies that the smallest applicable set covers the system's actual
   nature. Documentation only — no schema or validator change.
+- **Profile composition is now explicit and aligned with validation.**
+  Every non-`archived` specialized profile implicitly inherits §6.1
+  `core` obligations. For an active adopter, the canonical smallest
+  declaration is `[core]` when no specialized trigger fires; otherwise it
+  lists every fired specialized profile and omits `core` (an explicit
+  `core` remains allowed and changes no obligation). `archived` is
+  normatively exclusive, replaces §6.1–§6.5 active obligations while
+  retaining the pin and root agent instructions, and records its four §6.6
+  facts in the system artifact resolved from `paths.system` (default
+  `assurance/SYSTEM.md`). This closes the gap where the validator enforced
+  exclusivity and artifact placement more strongly than the authoritative
+  profile text. Content-level checking of those four facts remains deferred
+  to #40; the owner review guide and system template now provide the explicit
+  human backstop in the meantime.
 - **At least one invariant is now required at `core`** (previously an
   obligation only from `service`). `PROFILE.md` §6.1, the lite envelope
   schema (`invariants` now required), and the split-layout file-presence
@@ -29,8 +43,9 @@ description; full §6.6 field enforcement tracked in #40).
 - **A minimal lite template** (`templates/assurance.minimal.yaml`) ships
   the required-minimum `core` adoption — purpose, non-goals, system, one
   invariant, one residual — with only the fields an adopter must fill, so
-  the full `templates/assurance.yaml` no longer doubles as the starting
-  point. The self-check validates both templates, so neither can drift.
+  the full `templates/assurance.yaml` is now the expanded alternative rather
+  than the default minimal starting point. The self-check validates both
+  templates, so neither can drift.
 - **The adoption template no longer defaults to `core`.**
   `templates/adoption.yaml` (and the copy example in
   `AGENTIC_ASSURANCE.md`) ship a `REPLACE_WITH_CLASSIFIED_PROFILE`
@@ -51,8 +66,11 @@ description; full §6.6 field enforcement tracked in #40).
   `service` was previously conforming. Add at least one invariant (the
   properties that must remain true). Both pilot adoptions already carry
   invariants, so no live adopter is affected. **Owner-classified as
-  minor** per §16's pre-`v1.0.0` rule (a new obligation before the first
-  stable release), recorded on approval of this change — not a patch.
+  minor** per §16's existing pre-`v1.0.0` operating rule (a new
+  obligation before the first stable release) — not a patch. That rule
+  records the governing owner's interpretation of SemVer's `0.x`
+  initial-development latitude for this project; it does not claim that
+  SemVer universally assigns every such change to a minor release.
 - `layout: lite` is now **`core`-only**; `archived` (and every other
   non-`core` profile) uses the split layout. The lite envelope's
   required fields (purpose, non-goals, invariants, residuals) are shaped
@@ -63,15 +81,19 @@ description; full §6.6 field enforcement tracked in #40).
 - **The `archived` profile is now partially enforced** (previously a
   no-op). `archived` must be declared **exclusively** — `[core, archived]`
   and any other active-plus-archived set is now an error, since a
-  repository that is no longer operated cannot also carry an active
-  obligation. An `archived` adoption must also carry a `system`
-  description; this is a **file-existence guard**, not full §6.6
-  enforcement — a present-but-empty `SYSTEM.md` still passes, and the
-  four §6.6 statements (not-operated, historical purpose, known
-  limitations, last supported revision) are **not yet mechanically
-  checked**. Selecting `archived` now also emits a warning that these
-  four statements need human confirmation. Structured, field-level
-  enforcement is tracked in #40.
+  repository with no active operation, maintenance, or feature development
+  cannot also carry an active obligation. An `archived` adoption must also
+  carry the mapped `system` artifact; this is a **file-existence guard**,
+  not full §6.6 enforcement — a present-but-empty `SYSTEM.md` still passes,
+  and the four §6.6 statements (no active operation, maintenance, or feature
+  development; historical purpose; known limitations; last supported revision
+  or release, or explicit none) are **not yet mechanically checked**.
+  Selecting `archived` now also emits a warning that these four
+  statements need human confirmation. Structured, field-level enforcement
+  is tracked in #40. `docs/REVIEW-GUIDE.md` now makes the four confirmations
+  and `paths.system` resolution an owner checklist, and
+  `templates/SYSTEM.md` exposes four archived-only prompts while telling
+  active adopters to remove that section.
 - **Date placeholders are caught at `HUMAN_REVIEWED`.** An unfilled
   `review_after: REPLACE_WITH_REVIEW_AFTER_DATE` in a register now fails
   from `HUMAN_REVIEWED` on, like every other `REPLACE_WITH_` token. The
@@ -80,7 +102,33 @@ description; full §6.6 field enforcement tracked in #40).
   entries, while `HUMAN_REVIEWED` rejects it. A literal `YYYY-MM-DD`
   elsewhere remains ordinary adopter data. The policy diff preserves both
   sentinels as raw values, so a real re-review date cannot silently regress
-  back to an unfilled placeholder.
+  back to an unfilled placeholder. The two official sentinel spellings are
+  treated as aliases during policy comparison: migration in either direction
+  is neutral, while replacing a real date with either sentinel remains a
+  weakening finding in split and lite layouts.
+- **All seven v0.3.x prose starter prompts are stage-compatible without
+  becoming false-green.** The exact legacy strings with the `Replace with`
+  prefix in claim `text`/`scope`, invariant `title`/`statement`/`scope`, defeater
+  `statement`, and residual `summary` remain tolerated at `DRAFT` but
+  fail at `HUMAN_REVIEWED` and `CONFORMANT`. Matching is scoped to those
+  original register fields, so identical literal adopter data elsewhere
+  is not reclassified as a placeholder.
+- **Split-template self-check now enforces profile obligations as well as
+  entry semantics.** Empty split invariant or residual starter registers
+  can no longer leave the central self-check green; they are checked with
+  the same non-empty `core` obligations as adopter validation and the lite
+  templates.
+- **The copied root-agent instruction block is now drift-guarded.** Central
+  self-check extracts the normative §11 Markdown block from
+  `templates/AGENTIC_ASSURANCE.md` and exact-compares it with the standalone
+  `templates/AGENTS.md` copy, failing closed when markers are missing or
+  duplicated. A prose-only edit can no longer invalidate the template's
+  “copied verbatim” promise while leaving self-check green.
+- **The expanded lite reference is complete for its documented standard
+  surface without claiming to enumerate local extensions.** It now shows
+  the optional defeater `resolution` field and top-level `extensions`
+  namespace. Template and adoption prose call it an expanded standard-field
+  reference rather than “every field.”
 
 ## v0.3.2 — 2026-07-19
 

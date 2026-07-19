@@ -12,9 +12,10 @@
 #
 # When to graduate: the lite layout is valid only for the `core` profile.
 # Any other profile — `service`, `trust-critical`, `data-curation`,
-# `agent-runtime`, or `archived` — requires the split layout. Split-out preserves IDs — move
-# the section arrays into assurance/INVARIANTS.yaml, assurance/RESIDUALS.yaml,
-# and assurance/DEFEATERS.yaml unchanged, and drop `layout: lite`.
+# `agent-runtime`, or `archived` — requires the split layout. Split-out
+# preserves IDs: move the section arrays into assurance/INVARIANTS.yaml,
+# assurance/RESIDUALS.yaml, and assurance/DEFEATERS.yaml unchanged, and drop
+# `layout: lite`.
 #
 # Section items use exactly the same shapes as the split register templates
 # (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml, templates/DEFEATERS.yaml).
@@ -30,11 +31,12 @@ purpose: REPLACE_WITH_ONE_PARAGRAPH_PURPOSE
 non_goals:
   - REPLACE_WITH_A_DELIBERATE_NON_GOAL
 
-# Optional: a short as-built system description (PROFILE.md section 6.1).
-# Either uncomment and fill this in, OR keep a separate SYSTEM.md at the path
-# declared in adoption.yaml `paths.system`. One of the two must exist.
-# system: |
-#   REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
+# A short as-built system description (PROFILE.md section 6.1). This shipped
+# reference keeps the four-file lite path complete. An adopter may instead
+# delete this field and keep a separate SYSTEM.md at adoption.yaml
+# `paths.system`; one of the two must exist.
+system: |
+  REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
 
 # Required at core (at least one; 5-15 typical); same fields as
 # assurance/INVARIANTS.yaml — graduating to split is a copy.
@@ -88,6 +90,12 @@ residuals:
 #     affected_invariants: []
 #     evidence: []
 #     status: OPEN
+#     # Optional when the defeater is closed:
+#     # resolution: REPLACE_WITH_HOW_THE_DEFEATER_WAS_RESOLVED_MITIGATED_OR_WITHDRAWN
 #     disclosure: PUBLIC
 #     owner: REPLACE_WITH_OWNER
 #     review_after: REPLACE_WITH_REVIEW_AFTER_DATE
+
+# Optional: the only namespace for adopter-specific top-level keys. Register
+# entries may also carry local fields allowed by their register schemas.
+extensions: {}

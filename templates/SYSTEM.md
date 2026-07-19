@@ -1,14 +1,25 @@
 # As-built system description
 
-> **Placement:** Copy this file to `assurance/SYSTEM.md` in the adopting repository, or to the path recorded under `paths.system` in `.agentic-assurance/adoption.yaml`. Replace every `REPLACE_WITH_` placeholder.
+> **Placement:** Copy this file to `assurance/SYSTEM.md` in the adopting repository, or to the path recorded under `paths.system` in `.agentic-assurance/adoption.yaml`. Replace every `REPLACE_WITH_` placeholder in the sections that apply, and delete inapplicable prompt sections.
 >
 > **Evidence rule:** Every material conclusion in this document that is not classified `UNKNOWN` must cite concrete evidence: file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric. An AI-generated narrative is not evidence by itself. When evidence is insufficient, record `UNKNOWN` rather than invent confidence.
 >
 > **Paths note:** Sibling artifact references below use the default `assurance/` paths; if your repository remaps artifacts, substitute the paths recorded under `paths:` in `.agentic-assurance/adoption.yaml`.
 >
-> **Archived adopters:** for the `archived` profile (PROFILE.md §6.6), this file is where the four required statements are recorded — that the repository is no longer actively operated or maintained, its historical purpose, its known material limitations, and the last supported revision or release.
+> **Profile-specific use:** `archived` adopters MUST complete §0 below. For non-`archived` adopters, delete §0 and complete §§1–10. An `archived` adopter MAY retain any of §§1–10 that provide useful historical context, but those sections do not replace any §0 statement.
 
 ---
+
+## 0. Archived declaration (`archived` profile only)
+
+Delete this section for every non-`archived` adoption. For an `archived` adoption, replace all four prompts; do not infer any answer merely from inactivity or repository age.
+
+- **No active operation, maintenance, or feature development:** REPLACE_WITH_ARCHIVED_OPERATION_MAINTENANCE_AND_FEATURE_DEVELOPMENT_STATUS
+- **Historical purpose:** REPLACE_WITH_ARCHIVED_HISTORICAL_PURPOSE
+- **Known material limitations:** REPLACE_WITH_ARCHIVED_MATERIAL_LIMITATIONS
+- **Last supported revision or release:** REPLACE_WITH_ARCHIVED_LAST_SUPPORTED_REVISION_OR_RELEASE_OR_EXPLICIT_NONE
+
+The human owner must confirm all four statements and the `paths.system` mapping during adoption review. The current validator checks that this artifact exists but does not parse these statements; structured enforcement is deferred to [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), so this explicit review is the content backstop until then.
 
 ## 1. Purpose and users
 

@@ -12,25 +12,34 @@ You are the named human owner of a repository — the person the profile's autho
 
 ## What arrives
 
-At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**. For a small `core` repository the whole draft may be a single file — `.agentic-assurance/assurance.yaml`, the lite layout of [ADOPTION.md §3.0](ADOPTION.md) — and the same four decision families below apply however many files carry them.
+At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**. For a small active `core` repository the whole draft may be a single file — `.agentic-assurance/assurance.yaml`, the lite layout of [ADOPTION.md §3.0](ADOPTION.md) — and the four active-adoption decision families below apply however many files carry them. An `archived` adoption takes the separate, narrower path in decision 1; it does not pretend that the other three active-system decisions apply.
 
 **Nothing in that proposal is decided yet, and the pull request must not be merged until you have answered the decisions below — merging the pull request IS your act of acceptance.** ([ADOPTION.md §4.3](ADOPTION.md))
 
 One phrasing deserves special warning, because it has caused a real misreading. When your agent says something like *"everything is settled, commit this on a branch"* or *"task complete"*, it is talking about **its drafting work** — the documents are written, the branch is ready. It is never talking about **your decisions**, which no agent can make for you ([PROFILE.md §15](../PROFILE.md)). "The draft is done" and "this is approved" look similar in a chat window and are entirely different events. If you are unsure which one you are looking at, ask: *"is anything in here waiting on a decision from me?"*
 
-## The four decision families
+## The owner decisions
 
-Everything the proposal asks you reduces to four kinds of decision. For each: what the question really means, what a good answer looks like, and what happens with your answer.
+For an active repository, the proposal reduces to four kinds of decision. For an `archived` repository, confirm the archived scope and four required historical facts under decision 1, then skip active-system decisions that genuinely do not apply. For each: what the question really means, what a good answer looks like, and what happens with your answer.
 
 ### 1. Profile scope
 
 **The real question:** how much of the rulebook applies to this repository?
 
-The profile comes in layers — `core`, `service`, `trust-critical`, and others ([PROFILE.md §5](../PROFILE.md)). Your agent proposes a set; you confirm or trim it.
+The profile has an active baseline (`core`), specialized active profiles (`service`, `trust-critical`, `data-curation`, and `agent-runtime`), and the exclusive `archived` alternative ([PROFILE.md §5](../PROFILE.md)). Your agent proposes a set; you confirm or trim it.
 
-**A good answer** is the smallest set that covers what the repository *genuinely is* — often `core` alone, but `service` if it operates a deployed service, `trust-critical` if it makes security, identity, or governance claims, and so on. The agent should have proposed this set from evidence, not defaulted to `core` ([ADOPTION.md §4.0](ADOPTION.md)); your job is to confirm the triggers it fired and trim any the evidence does not support. This is not modesty for its own sake: every profile adds obligations the validator enforces on every future push ([ADOPTION.md §3.6](ADOPTION.md)). Selecting `trust-critical` "to be safe" when the repository makes no such claim adds mandatory claims you may not want — but *under*-selecting a repository that genuinely is trust-critical is the more dangerous error, because it quietly turns off the checks that repository needs. Trim what the evidence does not support; keep what it does.
+**A good answer for an active repository** is the smallest set that covers what the repository *genuinely is* — `[core]` if no specialized trigger fires; otherwise every fired specialized profile. Specialized profiles inherit all `core` obligations even when `core` is omitted, so `[service]` is the canonical declaration for a service-only trigger; adding `core` is permitted but changes no obligation. The agent should have proposed this set from evidence, not defaulted to `core` ([ADOPTION.md §4.0](ADOPTION.md)); your job is to confirm the triggers it fired and trim any the evidence does not support. This is not modesty for its own sake: every profile adds obligations the validator enforces on every future push ([ADOPTION.md §3.6](ADOPTION.md)). Selecting `trust-critical` "to be safe" when the repository makes no such claim adds mandatory claims you may not want — but *under*-selecting a repository that genuinely is trust-critical is the more dangerous error, because it quietly turns off the checks that repository needs. Trim what the evidence does not support; keep what it does.
 
-**With your answer,** the agent records the profile list in `.agentic-assurance/adoption.yaml`, and continuous validation holds the repository to exactly that set.
+**If the proposal says `archived`, use this checklist instead.** `archived` must be the only declared profile. Open the system artifact resolved from `.agentic-assurance/adoption.yaml`'s `paths.system` mapping (default `assurance/SYSTEM.md`) and personally confirm that it records all four facts:
+
+- the repository has no active operation, maintenance, or feature development;
+- its historical purpose;
+- its known material limitations;
+- its last supported revision or release, or an explicit statement that none exists.
+
+The current validator checks that `archived` is exclusive and that the system artifact exists, then warns for human confirmation; it does **not** yet determine whether these four statements are present or truthful. Until structured content enforcement lands in [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), this checklist and your recorded review are the content backstop. If the repository is still operated, maintained, or receiving feature development, reject `archived` and classify the active profiles instead.
+
+**With your answer,** the agent records the profile list in `.agentic-assurance/adoption.yaml`; for `archived`, it also records the four confirmed facts in the mapped system artifact. Continuous validation holds the repository to the declared shape, while your review supplies the archived content confirmation that validation does not yet perform.
 
 ### 2. Intent confirmation of critical invariants
 

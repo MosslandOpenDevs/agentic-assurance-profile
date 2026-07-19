@@ -64,7 +64,7 @@
     },
     "profiles": {
       "type": "array",
-      "description": "Selected adoption profiles (PROFILE.md section 5). Use the smallest applicable set.",
+      "description": "Selected adoption profiles (PROFILE.md section 5). Use the smallest applicable set. Every non-archived specialized profile (`service`, `trust-critical`, `data-curation`, `agent-runtime`) implicitly inherits all core obligations whether or not `core` is listed. For an active adopter, canonically declare `[core]` when no specialized profile applies; otherwise list every applicable specialized profile and omit `core` (explicitly including it is permitted but changes no obligation). `archived` is exclusive, must be declared alone, and applies only with no active operation, maintenance, or feature development.",
       "minItems": 1,
       "uniqueItems": true,
       "items": {
@@ -79,7 +79,7 @@
       }
     },
     "adoption_stage": {
-      "description": "Self-declared adoption stage; absent means DRAFT. Stages are self-binding: the validator enforces the declared stage's requirements as errors, so declaring a stage the artifacts do not meet fails validation. DRAFT adds no requirements (placeholders and UNKNOWN classifications are allowed in the assurance registers; the adoption declaration itself must be complete at every stage — validation always errors on an unfilled placeholder in adoption.yaml). HUMAN_REVIEWED requires no unfilled REPLACE_WITH_ placeholder anywhere in the adoption file or any loaded register, nor the legacy v0.3.x YYYY-MM-DD sentinel at a residual/defeater review_after path, and a `human_review` block with non-empty `date`, `reviewer`, and `record`. CONFORMANT additionally requires that passed `review_after` dates are treated as errors, that every severity-critical invariant has a decided (non-UNKNOWN) `intent.classification`, and that `human_review.approvals` carries at least one attributable entry (`approver`, `review_url`, `at`).",
+      "description": "Self-declared adoption stage; absent means DRAFT. Stages are self-binding: the validator enforces the declared stage's requirements as errors, so declaring a stage the artifacts do not meet fails validation. DRAFT adds no requirements (placeholders and UNKNOWN classifications are allowed in the assurance registers; the adoption declaration itself must be complete at every stage — validation always errors on an unfilled placeholder in adoption.yaml). HUMAN_REVIEWED requires no unfilled REPLACE_WITH_ placeholder anywhere in the adoption file or any loaded register. It also rejects the path-scoped v0.3.x compatibility placeholders: YYYY-MM-DD at residual/defeater review_after, and the seven exact legacy starter strings with the `Replace with` prefix at their original claim, invariant, defeater, and residual fields; the same literal text elsewhere remains ordinary adopter data. HUMAN_REVIEWED also requires a `human_review` block with non-empty `date`, `reviewer`, and `record`. CONFORMANT additionally requires that passed `review_after` dates are treated as errors, that every severity-critical invariant has a decided (non-UNKNOWN) `intent.classification`, and that `human_review.approvals` carries at least one attributable entry (`approver`, `review_url`, `at`).",
       "enum": [
         "DRAFT",
         "HUMAN_REVIEWED",
@@ -87,7 +87,7 @@
       ]
     },
     "layout": {
-      "description": "Assurance artifact layout. Absent or `split` (the default): one register file per artifact at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only with the core profile (archived and every other profile use the split layout). Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
+      "description": "Assurance artifact layout. Absent or `split` (the default): one file per applicable artifact, with register files at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only when `core` is the sole declared profile. Every specialized profile and the exclusive `archived` profile use the split layout. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
       "enum": [
         "split",
         "lite"
@@ -95,7 +95,7 @@
     },
     "human_review": {
       "type": "object",
-      "description": "Pointer to the most recent completed human review (PROFILE.md section 4.3) and its durable record. Additional keys are permitted for local review conventions.",
+      "description": "Pointer to the most recent completed human review (docs/ADOPTION.md section 4.3; normative authority and review requirements are in PROFILE.md sections 3 and 7) and its durable record. Additional keys are permitted for local review conventions.",
       "additionalProperties": true,
       "properties": {
         "date": {
@@ -182,10 +182,11 @@
     },
     "paths": {
       "type": "object",
-      "description": "Mappings from profile artifacts to repository-relative paths. Omitted keys use the default `assurance/` layout. Additional mappings are permitted (see docs/MAPPINGS.md).",
+      "description": "Mappings from profile artifacts to repository-relative paths. Omitted keys use the default `assurance/` layout. For the archived profile, the resolved `system` artifact must contain all four PROFILE.md section 6.6 facts. Additional mappings are permitted (see docs/MAPPINGS.md).",
       "properties": {
         "system": {
-          "type": "string"
+          "type": "string",
+          "description": "Repository-relative system artifact path (default `assurance/SYSTEM.md`). Under the exclusive archived profile, this artifact is the required location for the four PROFILE.md section 6.6 facts."
         },
         "invariants": {
           "type": "string"

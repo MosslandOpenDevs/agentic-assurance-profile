@@ -233,7 +233,7 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 ## Adoption model
 
-**Adoption begins by classifying the profile, not by copying files.** Which of `core`, `service`, `trust-critical`, `data-curation`, and `agent-runtime` apply is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). The layout follows from that classification — never from the repository's size.
+**Adoption begins by classifying the profile, not by copying files.** Which active profiles apply — or whether the exclusive `archived` profile applies instead — is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). Every specialized active profile inherits the `core` obligations: for an active adopter, declare `[core]` when none applies; otherwise canonically list the fired specialized profiles without `core`. The layout follows from that classification — never from the repository's size.
 
 At `core` alone, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content (purpose, non-goals, at least one invariant, and at least one residual) in a single `assurance.yaml`:
 
@@ -245,7 +245,7 @@ AGENTIC_ASSURANCE.md
 └── assurance.yaml
 ```
 
-From `service` upward (or at `core` by preference), the split layout gives each register its own file:
+For any specialized active profile (or at `core` by preference), the split layout gives each active register its own file:
 
 ```text
 AGENTS.md
@@ -257,6 +257,8 @@ assurance/
 ├── INVARIANTS.yaml
 └── RESIDUALS.yaml
 ```
+
+`archived` also uses split-path conventions, but it does not inherit active-register obligations: its assurance minimum is the system artifact containing the four §6.6 historical facts, alongside the root adoption and agent-instruction files.
 
 Additional artifacts are introduced only when applicable:
 
@@ -281,13 +283,15 @@ The upstream profile must be pinned by version and full commit SHA. An adopting 
 | `trust-critical` | Identity, authorization, privacy, security, financial, governance, or public-verifiability claims |
 | `data-curation` | Externally sourced, editorial, scored, classified, or recommended data |
 | `agent-runtime` | Model-driven agents or workflows operating in production |
-| `archived` | Reference-only repositories with no active operation or feature development |
+| `archived` | Reference-only repositories with no active operation, maintenance, or feature development |
+
+`service`, `trust-critical`, `data-curation`, and `agent-runtime` inherit all `core` obligations even when `core` is omitted from `profiles:`. `archived` is declared alone and records its four required historical facts in the system artifact mapped by `paths.system` (default `assurance/SYSTEM.md`).
 
 ### Brownfield adoption sequence
 
-For an existing repository:
+For an existing repository, start here and continue through step 8 only if classification confirms an active profile:
 
-1. classify the profile from what the repository is and promises — escalate on any `service` / `trust-critical` / `data-curation` / `agent-runtime` trigger, with `file:line` evidence, and do not assume `core` ([§4.0](docs/ADOPTION.md));
+1. classify the profile from what the repository is and promises — collect any `service` / `trust-critical` / `data-curation` / `agent-runtime` trigger with `file:line` evidence and declare `[core]` only when none fires and the `archived` criteria do not apply; if the evidence instead supports `archived`, stop and use the short path below ([§4.0](docs/ADOPTION.md));
 2. inspect existing specifications, tests, workflows, policies, and release controls;
 3. reconstruct the as-built system without changing functional code;
 4. classify conclusions as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED`;
@@ -296,9 +300,17 @@ For an existing repository:
 7. remediate through separate, scoped Issues and pull requests;
 8. bind evidence to a commit, artifact digest, release, or deployment identifier.
 
+For a candidate `archived` repository, use this narrower path instead:
+
+1. collect evidence that the repository has no active operation, maintenance, or feature development;
+2. declare `[archived]` alone and record all four §6.6 facts in the system artifact mapped by `paths.system`: no active operation, maintenance, or feature development; historical purpose; known material limitations; and the last supported revision or release (or explicitly that none exists);
+3. obtain the human owner's confirmation of the archived eligibility, the artifact mapping, and each of the four facts using [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md).
+
+The active path's as-built reconstruction, behavior classification, active claim/invariant/residual registers, and remediation plan do not apply to an `archived` adoption. Do not create empty active artifacts as stand-ins.
+
 Creating the files alone is not adoption.
 
-**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), and do not assume `core`; (3) then follow the brownfield sequence in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
+**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), declaring `[core]` only for an active classification with no specialized trigger and selecting `archived` only as an exclusive alternative when evidence shows no active operation, maintenance, or feature development; (3) then follow the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
 
 See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
@@ -384,7 +396,7 @@ The profile should use semantic versioning and publish tagged releases.
 - **Minor:** adds backward-compatible requirements, profiles, or fields.
 - **Patch:** clarifies wording or fixes schemas without changing intended obligations.
 
-Before `v1.0.0` the profile is under active development: adding or tightening an obligation is a minor change (and may require new content from a previously conforming adoption), called out in the changelog with its adopter impact. From `v1.0.0`, materially changing an obligation is major.
+Before `v1.0.0` the profile is under active development. Under this project's governing interpretation of semantic versioning's initial-development latitude, adding or tightening an obligation is a minor change (and may require new content from a previously conforming adoption), called out in the changelog with its adopter impact. This is the profile's stated `0.x` operating policy, not a universal SemVer rule. From `v1.0.0`, materially changing an obligation is major.
 
 Adopting repositories pin both the human-readable version and the exact commit SHA. Upgrades are explicit project changes with impact review.
 

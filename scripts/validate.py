@@ -71,11 +71,37 @@ FORBIDDEN_VERSION_STRING = "v0.1.0" + "-draft"
 VERSION_FILE_RE = re.compile(r"^(unreleased|v\d+\.\d+\.\d+(-rc\.\d+)?(-dev)?)$")
 
 PLACEHOLDER_RE = re.compile(r"^REPLACE_WITH_[A-Z0-9_]+$")
-# v0.3.x register templates used this bare sentinel in ``review_after``.
-# Keep it as a path-scoped compatibility alias for copied DRAFT registers;
-# unlike a REPLACE_WITH_ token, it must never be treated as a placeholder in
-# arbitrary adopter data such as ``extensions.date_format``.
+# Official review-date sentinels. v0.3.x used the bare value; v0.4.0 uses the
+# detectable REPLACE_WITH_ value. Keep both as path-scoped aliases for copied
+# DRAFT registers. Neither may make a real date disappear silently in a policy
+# diff, and the bare alias must never be treated as a placeholder in arbitrary
+# adopter data such as ``extensions.date_format``.
+CURRENT_REVIEW_DATE_PLACEHOLDER = "REPLACE_WITH_REVIEW_AFTER_DATE"
 LEGACY_REVIEW_DATE_PLACEHOLDER = "YYYY-MM-DD"
+REVIEW_DATE_PLACEHOLDERS = frozenset(
+    (CURRENT_REVIEW_DATE_PLACEHOLDER, LEGACY_REVIEW_DATE_PLACEHOLDER)
+)
+
+# Exact bare prompts shipped in the v0.3.x register templates. They are
+# placeholders only at the direct entry fields where those templates placed
+# them. The same prose in extensions or other local metadata is adopter data.
+LEGACY_REGISTER_FIELD_PLACEHOLDERS = {
+    "claims": {
+        "text": "Replace with the exact user-facing or operator-facing claim.",
+        "scope": "Replace with bounded system and version scope.",
+    },
+    "invariants": {
+        "title": "Replace with a precise invariant title",
+        "statement": "Replace with a proposition that must remain true.",
+        "scope": "Replace with bounded system scope.",
+    },
+    "defeaters": {
+        "statement": "Replace with a concrete reason a claim may be false or incomplete.",
+    },
+    "residuals": {
+        "summary": "Replace with a safe summary of remaining uncertainty.",
+    },
+}
 # A far-future date: a substituted template review_after must not trip the
 # expired-review semantic check (a template is not an overdue review).
 DATE_SUBSTITUTION = "2999-01-01"
@@ -89,7 +115,7 @@ PLACEHOLDER_SUBSTITUTIONS = {
     "REPLACE_WITH_CLASSIFIED_PROFILE": "core",
     # The register templates ship this in `review_after`; self-check
     # substitutes a far-future date, but an adopter must fill a real one.
-    "REPLACE_WITH_REVIEW_AFTER_DATE": DATE_SUBSTITUTION,
+    CURRENT_REVIEW_DATE_PLACEHOLDER: DATE_SUBSTITUTION,
 }
 DEFAULT_PLACEHOLDER_SUBSTITUTION = "placeholder"
 
@@ -126,6 +152,7 @@ SPLIT_ONLY_PROFILES = (
     "agent-runtime",
     "archived",
 )
+KNOWN_PROFILES = LITE_PROFILES + SPLIT_ONLY_PROFILES
 
 # Artifact kind -> (schema file, default repository-relative path).
 ARTIFACT_KINDS = {
@@ -341,6 +368,11 @@ def substitute_placeholders(node: object) -> object:
     return node
 
 
+def is_review_date_placeholder(value: object) -> bool:
+    """Whether ``value`` is one of the two official review-date sentinels."""
+    return isinstance(value, str) and value in REVIEW_DATE_PLACEHOLDERS
+
+
 def substitute_register_placeholders(
     node: object, *, preserve_review_date_placeholders: bool = False
 ) -> object:
@@ -368,12 +400,8 @@ def substitute_register_placeholders(
             if not isinstance(source_entry, dict) or not isinstance(target_entry, dict):
                 continue
             review_after = source_entry.get("review_after")
-            is_current_placeholder = isinstance(
-                review_after, str
-            ) and PLACEHOLDER_RE.fullmatch(review_after)
-            if preserve_review_date_placeholders and (
-                review_after == LEGACY_REVIEW_DATE_PLACEHOLDER
-                or is_current_placeholder
+            if preserve_review_date_placeholders and is_review_date_placeholder(
+                review_after
             ):
                 target_entry["review_after"] = review_after
             elif review_after == LEGACY_REVIEW_DATE_PLACEHOLDER:
@@ -400,22 +428,34 @@ def find_placeholder_strings(node: object, path: str = "$") -> list[tuple[str, s
 
 
 def find_register_placeholder_strings(node: object) -> list[tuple[str, str]]:
-    """Find current and legacy placeholders in a register-shaped document."""
+    """Find current and path-scoped legacy register placeholders.
+
+    Besides generic ``REPLACE_WITH_`` tokens, this recognizes the v0.3.x
+    review-date sentinel and seven bare prose prompts only at the register
+    kind/direct-field paths where the released templates placed them.
+    """
     found = find_placeholder_strings(node)
     if not isinstance(node, dict):
         return found
-    for kind in ("defeaters", "residuals"):
+    for kind, field_placeholders in LEGACY_REGISTER_FIELD_PLACEHOLDERS.items():
         entries = node.get(kind)
         if not isinstance(entries, list):
             continue
         for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                continue
+            review_after = entry.get("review_after")
             if (
-                isinstance(entry, dict)
-                and entry.get("review_after") == LEGACY_REVIEW_DATE_PLACEHOLDER
+                kind in ("defeaters", "residuals")
+                and is_review_date_placeholder(review_after)
+                and review_after != CURRENT_REVIEW_DATE_PLACEHOLDER
             ):
                 found.append(
                     (f"$.{kind}[{index}].review_after", LEGACY_REVIEW_DATE_PLACEHOLDER)
                 )
+            for field, placeholder in field_placeholders.items():
+                if entry.get(field) == placeholder:
+                    found.append((f"$.{kind}[{index}].{field}", placeholder))
     return found
 
 
@@ -940,6 +980,15 @@ def check_lite_template(
             f"{label} validates against schemas/{LITE_SCHEMA_FILE} "
             "(placeholders substituted)"
         )
+    if template in (LITE_TEMPLATE, LITE_MINIMAL_TEMPLATE) and not (
+        isinstance(substituted, dict)
+        and nonempty_string(substituted.get("system"))
+    ):
+        report.error(
+            f"{label}: shipped lite template must include a non-empty "
+            "'system' section to remain a complete four-file starting path; "
+            "an adopter may delete it only when adding an external SYSTEM.md"
+        )
     registers = check_lite_sections(
         substituted, label, schemas, report, schema_label_prefix="schemas/"
     )
@@ -978,6 +1027,81 @@ def check_forbidden_string(repo_root: Path, report: Report) -> None:
         )
 
 
+def check_agent_instruction_template_sync(repo_root: Path, report: Report) -> None:
+    """Keep the standalone AGENTS template equal to its normative §11 copy.
+
+    ``templates/AGENTS.md`` promises that its OpenDevs block is copied
+    verbatim from ``templates/AGENTIC_ASSURANCE.md``. Treat that promise as a
+    mechanical contract: missing or duplicated extraction markers fail closed,
+    and the extracted blocks must match exactly apart from trailing newlines.
+    """
+    authority_path = repo_root / "templates" / "AGENTIC_ASSURANCE.md"
+    standalone_path = repo_root / "templates" / "AGENTS.md"
+    try:
+        authority_text = authority_path.read_text(encoding="utf-8")
+        standalone_text = standalone_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        report.error(f"agent-instruction template sync: cannot read templates: {exc}")
+        return
+
+    section_marker = "## 11. Root `AGENTS.md` integration\n"
+    fence_open = "```markdown\n"
+    fence_close = "\n```"
+    block_marker = "## OpenDevs Agentic Assurance\n"
+    block_close = "\n---\n"
+
+    if authority_text.count(section_marker) != 1:
+        report.error(
+            "templates/AGENTIC_ASSURANCE.md: expected exactly one §11 "
+            "AGENTS integration section"
+        )
+        return
+    authority_section = authority_text.split(section_marker, 1)[1]
+    if authority_section.count(fence_open) != 1:
+        report.error(
+            "templates/AGENTIC_ASSURANCE.md §11: expected exactly one "
+            "```markdown block"
+        )
+        return
+    fenced_tail = authority_section.split(fence_open, 1)[1]
+    if fenced_tail.count(fence_close) != 1:
+        report.error(
+            "templates/AGENTIC_ASSURANCE.md §11: expected exactly one closing "
+            "fence for the AGENTS block"
+        )
+        return
+    authoritative_block = fenced_tail.split(fence_close, 1)[0].rstrip("\n")
+
+    if standalone_text.count(block_marker) != 1:
+        report.error(
+            "templates/AGENTS.md: expected exactly one OpenDevs Agentic "
+            "Assurance block"
+        )
+        return
+    standalone_tail = standalone_text.split(block_marker, 1)[1]
+    if standalone_tail.count(block_close) != 1:
+        report.error(
+            "templates/AGENTS.md: expected exactly one separator after the "
+            "OpenDevs Agentic Assurance block"
+        )
+        return
+    standalone_block = (
+        block_marker + standalone_tail.split(block_close, 1)[0]
+    ).rstrip("\n")
+
+    if standalone_block != authoritative_block:
+        report.error(
+            "templates/AGENTS.md: OpenDevs Agentic Assurance block differs "
+            "from the normative verbatim block in "
+            "templates/AGENTIC_ASSURANCE.md §11"
+        )
+    else:
+        report.ok(
+            "templates/AGENTS.md OpenDevs block matches the normative "
+            "templates/AGENTIC_ASSURANCE.md §11 copy"
+        )
+
+
 def run_self_check(args: argparse.Namespace) -> int:
     report = Report()
     if args.repo_root is not None:
@@ -1003,8 +1127,10 @@ def run_self_check(args: argparse.Namespace) -> int:
     # existing; template drift is caught by the same semantic checks that
     # adopter registers face.
     check_semantics(registers, report)
+    check_register_obligations(["core"], registers, report)
     check_lite_template(repo_root, schemas, report)
     check_lite_template(repo_root, schemas, report, LITE_MINIMAL_TEMPLATE)
+    check_agent_instruction_template_sync(repo_root, report)
     check_forbidden_string(repo_root, report)
 
     return report.emit("self-check", args.json)
@@ -1145,9 +1271,9 @@ def check_required_files(
         else:
             report.error(f"{relative} missing (paths.{key}, required for {reason})")
 
-    # Every adopter needs a system description — for an `archived` repository
-    # this is where PROFILE.md section 6.6's historical purpose, known
-    # limitations, and last supported revision are recorded.
+    # Every adopter needs the mapped system artifact. For an active repository
+    # it is the system description; for `archived`, it carries all four
+    # PROFILE.md section 6.6 historical facts.
     require("system", "all adopters")
     if any(profile != "archived" for profile in profiles):
         require("residuals", "non-archived profiles")
@@ -1215,25 +1341,52 @@ def check_adopter_warnings(project_root: Path, profiles: list[str], report: Repo
     if "archived" in profiles:
         report.warn(
             "profile 'archived': PROFILE.md section 6.6's four statements "
-            "(not operated, historical purpose, known limitations, last "
-            "supported revision) are not mechanically verified — human review "
-            "must confirm them in the system description "
+            "(no active operation, maintenance, or feature development; "
+            "historical purpose; known limitations; last supported revision "
+            "or release, or explicit none) "
+            "are not mechanically verified — human review "
+            "must confirm them in the mapped system artifact "
             "(tracked: MosslandOpenDevs/agentic-assurance-profile#40)"
         )
 
 
-def check_profile_exclusivity(profiles: list[str], report: Report) -> None:
-    """`archived` is exclusive: a repository that is no longer operated cannot
-    also declare an active profile (PROFILE.md sections 5 and 6.6 — `archived`
-    replaces the others)."""
+def validated_profile_declaration(declared_profiles: object) -> list[str] | None:
+    """Return a profile list only when its complete declaration is valid.
+
+    The adoption schema owns malformed, empty, unknown, and duplicate profile
+    diagnostics. Profile-dependent checks must stay silent for those inputs so
+    they never emit a success verdict (or a contradictory derived error) from
+    a filtered subset of an invalid declaration.
+    """
+    if (
+        not isinstance(declared_profiles, list)
+        or not declared_profiles
+        or any(not isinstance(profile, str) for profile in declared_profiles)
+        or len(set(declared_profiles)) != len(declared_profiles)
+        or any(profile not in KNOWN_PROFILES for profile in declared_profiles)
+    ):
+        return None
+    return declared_profiles
+
+
+def check_profile_exclusivity(declared_profiles: object, report: Report) -> None:
+    """`archived` is exclusive and cannot coexist with an active profile.
+
+    PROFILE.md sections 5 and 6.6 reserve it for a repository with no active
+    operation, maintenance, or feature development; it replaces the others.
+    """
+    profiles = validated_profile_declaration(declared_profiles)
+    if profiles is None:
+        return
     if "archived" not in profiles:
         return
     if len(profiles) > 1:
         others = ", ".join(f"'{p}'" for p in profiles if p != "archived")
         report.error(
             f"profile 'archived' cannot be combined with an active profile "
-            f"({others}) — archived means the repository is no longer operated, "
-            "which contradicts any active obligation; declare 'archived' alone "
+            f"({others}) — archived means the repository has no active operation, "
+            "maintenance, or feature development, which contradicts any active "
+            "obligation; declare 'archived' alone "
             "or drop it"
         )
     else:
@@ -1245,18 +1398,9 @@ def check_lite_profiles(declared_profiles: object, report: Report) -> None:
     # The adoption schema reports malformed/unknown/duplicate declarations.
     # Do not layer a contradictory layout verdict on top of that error: only
     # classify a declaration whose shape and values are independently valid.
-    if (
-        not isinstance(declared_profiles, list)
-        or not declared_profiles
-        or any(not isinstance(profile, str) for profile in declared_profiles)
-        or len(set(declared_profiles)) != len(declared_profiles)
-        or any(
-            profile not in LITE_PROFILES + SPLIT_ONLY_PROFILES
-            for profile in declared_profiles
-        )
-    ):
+    profiles = validated_profile_declaration(declared_profiles)
+    if profiles is None:
         return
-    profiles = declared_profiles
     beyond_core = [profile for profile in profiles if profile in SPLIT_ONLY_PROFILES]
     if beyond_core:
         listed = ", ".join(f"'{profile}'" for profile in beyond_core)
@@ -1434,11 +1578,13 @@ def check_adoption_stage(
     rung of the ladder it actually falls off.
 
     HUMAN_REVIEWED: no unfilled ``REPLACE_WITH_`` placeholder anywhere in
-    the adoption file or any loaded register, and no legacy v0.3.x
-    ``YYYY-MM-DD`` sentinel at a register ``review_after`` path (the raw,
-    unsubstituted documents are re-scanned — the split registers that exist,
-    or the lite assurance file). A ``human_review`` block with non-empty
-    ``date``, ``reviewer``, and ``record`` is also required.
+    the adoption file or any loaded register, and no path-scoped v0.3.x
+    compatibility placeholder in a loaded register: the legacy ``YYYY-MM-DD``
+    ``review_after`` sentinel or any of the seven exact bare prose starter
+    prompts at their original direct fields. The raw, unsubstituted documents
+    are re-scanned — the split registers that exist, or the lite assurance
+    file. A ``human_review`` block with non-empty ``date``, ``reviewer``, and
+    ``record`` is also required.
 
     CONFORMANT: additionally, every severity-critical invariant has a
     decided (non-UNKNOWN) ``intent.classification``, and
@@ -1705,7 +1851,7 @@ def run_adopter(args: argparse.Namespace) -> int:
         for profile in (declared_profiles if isinstance(declared_profiles, list) else [])
         if isinstance(profile, str)
     ]
-    check_profile_exclusivity(profiles, report)
+    check_profile_exclusivity(declared_profiles, report)
 
     # Stage enforcement (unless --ignore-stage). Stage CONFORMANT turns
     # passed review_after dates into errors, as if --strict-review-dates had
@@ -2432,6 +2578,15 @@ def register_policy_regressions(
                         )
                     elif head_raw == base_raw:
                         pass  # unchanged, in whatever form it was recorded
+                    elif is_review_date_placeholder(
+                        base_raw
+                    ) and is_review_date_placeholder(head_raw):
+                        # The v0.3.x and v0.4.0 sentinels are aliases for the
+                        # same unfilled DRAFT commitment. Migrating between
+                        # them changes representation, not policy. A real
+                        # date replaced by either sentinel still reaches the
+                        # unparsable-value finding below.
+                        pass
                     elif head_review is None:
                         findings.append(
                             (

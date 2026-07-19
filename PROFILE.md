@@ -120,13 +120,19 @@ Use the smallest applicable set. The smallest applicable set is the smallest tha
 | `trust-critical` | Security, privacy, identity, authorization, financial, governance, or public-verifiability claims |
 | `data-curation` | Externally sourced, editorial, scored, classified, or recommended data |
 | `agent-runtime` | Model-driven agents or workflows operating in production |
-| `archived` | Reference-only repositories without active operation or feature development |
+| `archived` | Reference-only repositories without active operation, maintenance, or feature development |
+
+Every applicable non-`archived` specialized profile (`service`, `trust-critical`, `data-curation`, or `agent-runtime`) inherits all `core` obligations in §6.1, whether or not `core` is written in the adoption declaration. When one or more specialized profiles apply, the canonical smallest declaration lists every applicable specialized profile and omits `core`; an adopter MAY also list `core` explicitly, but doing so neither adds nor removes an obligation. For an active adopter to which no specialized profile applies, the declaration is `[core]`.
+
+The `archived` profile is exclusive: it MUST be declared alone and replaces, rather than inherits or combines with, all active profiles including `core` and their §6.1–§6.5 obligations.
 
 The `agent-runtime` profile is provisional until exercised by a real adopter; while marked provisional, changes to its obligations are classified as minor. The `data-curation` profile was promoted from provisional in v0.2.0 after a public adopter exercised every §6.4 obligation and dispositioned the resulting gaps.
 
 A project MAY define local extensions. Local extensions MUST NOT silently weaken the pinned upstream profile.
 
 ## 6. Required local artifacts
+
+Except for the exclusive `archived` profile, the obligations in this section are cumulative: every specialized profile includes §6.1 and adds its own subsection, regardless of whether `core` is explicit in the declaration.
 
 ### 6.1 Core
 
@@ -179,18 +185,24 @@ An `agent-runtime` adopter MUST additionally have:
 
 ### 6.6 Archived
 
-An `archived` adopter MUST state:
+An adopter selecting `archived` MUST declare it exclusively; `archived` replaces all active profiles and their §6.1–§6.5 obligations. It MUST still have:
 
-- that the repository is not actively operated or maintained;
+- an upstream adoption declaration pinned by version and full commit SHA;
+- a root `AGENTIC_ASSURANCE.md` adoption guide and an agent-visible reading order, normally through root `AGENTS.md`;
+- a system artifact resolved from the adoption declaration's `paths.system` mapping (default: `assurance/SYSTEM.md`).
+
+That system artifact MUST state:
+
+- that the repository is not actively operated, maintained, or receiving feature development;
 - its historical purpose;
 - known material limitations;
-- the last supported revision or release, if any.
+- the last supported revision or release, or explicitly that none exists.
 
 ## 7. Brownfield adoption
 
 Initial adoption of an existing repository MUST begin as a read-only archaeology task before broad remediation.
 
-The adoption assessment SHOULD reconstruct:
+For a non-`archived` adopter, the adoption assessment SHOULD reconstruct:
 
 1. purpose, users, scope, and non-goals;
 2. domain entities, identifiers, and state transitions;
@@ -203,18 +215,22 @@ The adoption assessment SHOULD reconstruct:
 9. defeaters, limitations, and residuals;
 10. conformance gaps.
 
+For an `archived` adopter, that active-system reconstruction is replaced by a narrower read-only assessment. It MUST establish evidence that the repository has no active operation, maintenance, or feature development; reconstruct the four §6.6 historical facts; and record them in the mapped system artifact. It MAY preserve additional historical context, but it MUST NOT fabricate active claims, invariants, defeaters, or residuals merely to imitate an active adoption.
+
 Each non-`UNKNOWN` material conclusion SHOULD cite concrete evidence such as file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric.
 
 An AI-generated explanation is not evidence by itself.
 
 This rule extends to committed prose. A comment, document, or note is not evidence of human intent merely because it is committed; when its authorship is agent-assisted — for example, an agent co-authorship trailer on the introducing commit — it remains an agent narrative under this section. The provenance of prose cited as intent authority SHOULD be checked against commit authorship. The check is one-directional: an agent marker disqualifies prose as intent authority, but the absence of one establishes nothing — many agents leave no marker, and a human may commit agent-written text under their own name. Prose whose human authorship cannot be positively established is provenance-uncertain and MUST NOT be promoted to human authority by that absence alone. Authority comes from a human act, not from who typed the text: an agent-drafted record of an explicit human decision, anchored by the human's own approval act such as a reviewed merge or a recorded review outcome, is human authority; committed prose without such an act is not, and the affected intent classification remains `UNKNOWN` until the human review settles it.
 
-Before broad remediation, a human owner MUST review:
+Before broad remediation, a human owner of a non-`archived` adoption MUST review:
 
 - purpose and non-goals;
 - critical claims and invariants;
 - behavior classified as intended, accidental, compatibility, unknown, or deprecated;
 - critical residuals and public claim limitations.
+
+For an `archived` adoption, that active-system review is replaced by the owner's confirmation that the repository satisfies the exclusive archived classification and that each of the four §6.6 facts in the mapped system artifact is accurate. This confirmation MUST occur before the archived adoption is accepted.
 
 ## 8. Claims and invariants
 
@@ -248,7 +264,9 @@ Claim wording MUST NOT exceed the support of its evidence tier.
 
 A material change affects externally visible behavior, persistent data, authentication, authorization, privacy, security, billing, governance, recommendations, classification, migration, deployment, public claims, or critical dependencies.
 
-Before implementation, the project's change workflow MUST state:
+An `archived` project MUST be reclassified under every applicable active profile before any material change above or any renewed operation, maintenance, or feature development. A correction limited to the archived classification or four §6.6 facts remains an archival-record correction rather than an active material change, but it requires the owner confirmation in §7.
+
+For a non-`archived` project, before implementation, the project's change workflow MUST state:
 
 - intent and non-goals;
 - affected claims and invariants;
@@ -378,7 +396,7 @@ The profile uses semantic versioning.
 - **Minor:** adds backward-compatible requirements, profiles, or fields;
 - **Patch:** clarifies wording or repairs validation without changing intended obligations.
 
-Before the first stable release (`v1.0.0`), the profile is under active development: adding a new obligation, or tightening an existing one, is a **minor** change, and MAY cause a previously conforming adoption to require new content. Such changes are called out in the changelog with their adopter impact. From `v1.0.0`, materially changing an obligation is major.
+Before the first stable release (`v1.0.0`), the profile is under active development: under this project's governing interpretation of semantic versioning's initial-development latitude, adding a new obligation, or tightening an existing one, is a **minor** change, and MAY cause a previously conforming adoption to require new content. Such changes are called out in the changelog with their adopter impact. This rule is the profile's stated `0.x` operating policy, not a claim that semantic versioning universally requires that classification. From `v1.0.0`, materially changing an obligation is major.
 
 Release identifiers MUST use the form `vMAJOR.MINOR.PATCH`. Pre-releases MUST use the form `vMAJOR.MINOR.PATCH-rc.N`.
 
@@ -399,7 +417,7 @@ Profile upgrades MUST occur through explicit project change review.
 
 ## 17. Conformance statement
 
-A project MAY describe a bounded revision or release as conforming only when:
+A non-`archived` project MAY describe a bounded revision or release as conforming only when:
 
 - required profile artifacts or approved mappings exist;
 - the profile version and commit are pinned;
@@ -410,6 +428,16 @@ A project MAY describe a bounded revision or release as conforming only when:
 - critical residuals are explicitly accepted;
 - public artifacts exclude restricted and embargoed material.
 
+An `archived` project MAY describe a bounded revision as conforming only when:
+
+- the §6.6 adoption, root instruction, and mapped system artifacts exist;
+- the profile version and commit are pinned;
+- the human owner has confirmed that the repository has no active operation, maintenance, or feature development;
+- the human owner has confirmed all four §6.6 facts in the mapped system artifact, with that review bound to the bounded revision;
+- public artifacts exclude restricted and embargoed material.
+
+These archived conditions replace the active-system purpose, claim, invariant, deployment-evidence, and residual conditions above; they do not waive the common stage, pinning, or disclosure rules.
+
 A project MAY declare an adoption stage (`DRAFT`, `HUMAN_REVIEWED`, `CONFORMANT`) in its adoption declaration. A declared stage binds: conformance checking MUST fail when the declared stage's requirements are not met, and advancing the stage is a human-owner act.
 
-Conformance means that the project's contracts, controls, evidence, counterarguments, and remaining uncertainty are represented according to this profile. It does not mean the project is universally secure or bug-free.
+For a non-`archived` project, conformance means that its contracts, controls, evidence, counterarguments, and remaining uncertainty are represented according to this profile. For an `archived` project, it means that the bounded inactive classification and required historical facts are represented and owner-confirmed; it does not assert current operational assurance. Neither statement means the project is universally secure or bug-free.

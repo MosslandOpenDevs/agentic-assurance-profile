@@ -15,13 +15,19 @@ This is an existing repository, so follow the brownfield sequence in §4:
 1. Classify the profile from evidence (§4.0) — determine which §5
    profiles apply from what this repository is and promises; do not
    assume `core`, and cite file:line for each trigger that fires.
-2. Perform the read-only archaeology (§4.1) and behavior
-   classification (§4.2) without changing any functional code.
+2. If the classification is active, perform the read-only archaeology
+   (§4.1) and behavior classification (§4.2) without changing any
+   functional code. If it is `archived`, follow §4.1's narrower path:
+   establish with evidence that there is no active operation,
+   maintenance, or feature development and reconstruct only the four
+   §6.6 historical facts;
+   do not fabricate active registers.
 3. Copy the templates and draft the artifacts for the classified
    profile(s) and layout (§3).
 4. Finish with a written proposal listing everything that requires
-   human review under §4.3 — starting with the profile set and
-   layout. Do not declare adoption complete; approval decisions
+   human review under §4.3 — the active-system decisions for an
+   active profile, or the exclusive classification and four facts for
+   `archived`. Do not declare adoption complete; approval decisions
    belong to the human owner.
 5. Keep all changes on a branch and open a draft pull request;
    do not merge to the default branch — merging is the human
@@ -40,9 +46,9 @@ The agent drafts; the human owner approves (§4.3, §6). The expected shape of t
 
 Before creating any file, confirm:
 
-1. **A named human owner or governing body exists.** The profile requires a human authority over purpose, critical claims and invariants, public claim wording, control weakening, and residual acceptance ([PROFILE.md §3](../PROFILE.md)). Adoption cannot proceed without one.
-2. **Profiles are chosen by classification, not by default.** Determine the profile set from what the repository is and promises, per §4.0 — the smallest set that *covers every trigger that fires*, which is not the same as starting at `core` and escalating later. An agent may propose the set, with `file:line` evidence for each fired trigger; the selection remains provisional until the human owner reviews it (§4.3).
-3. **The existing change workflow is identified.** OpenSpec, Spec Kit, ADR/RFC, an issue-driven process, or a minimal one — the profile reuses it rather than replacing it. This becomes the `specification_workflow` entry in the adoption file.
+1. **A named human owner or governing body exists.** For an active adoption, the profile requires human authority over purpose, critical claims and invariants, public claim wording, control weakening, and residual acceptance; for `archived`, the owner confirms the exclusive inactive classification and four historical facts ([PROFILE.md §3](../PROFILE.md), [§7](../PROFILE.md)). Adoption cannot proceed without one.
+2. **Profiles are chosen by classification, not by default.** Determine the profile set from what the repository is and promises, per §4.0 — the smallest set that *covers every trigger that fires*, which is not the same as starting at `core` and escalating later. Active specialized profiles inherit `core` obligations without needing `core` in the declaration: for an active classification, declare `[core]` only when no specialized trigger fires; otherwise list the fired specialized profiles. `archived` is the exclusive alternative. An agent may propose the set, with `file:line` evidence for each fired trigger; the selection remains provisional until the human owner reviews it (§4.3).
+3. **For an active adoption, the existing change workflow is identified.** OpenSpec, Spec Kit, ADR/RFC, an issue-driven process, or a minimal one — the profile reuses it rather than replacing it. This becomes the `specification_workflow` entry in the adoption file. An `archived` adopter MAY omit that optional block when no archival-record workflow exists; it must not invent an active workflow merely to fill the template.
 4. **Public repositories have private security intake.** A `SECURITY.md` and GitHub Private Vulnerability Reporting (or an equivalent restricted channel) should exist before assurance artifacts are published; see [../SECURITY.md](../SECURITY.md) and [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md).
 
 ## 2. Pinning: version and commit
@@ -86,7 +92,7 @@ A repository adopting `core` only does not need the full split layout that the r
 | [templates/adoption.yaml](../templates/adoption.yaml) | `.agentic-assurance/adoption.yaml`, adding `layout: lite` |
 | [templates/assurance.minimal.yaml](../templates/assurance.minimal.yaml) | `.agentic-assurance/assurance.yaml` — the required-minimum starting point (purpose, non-goals, system, one invariant, one residual) |
 
-For the full field set, the optional `defeaters` section, and inline documentation on every field, copy [templates/assurance.yaml](../templates/assurance.yaml) instead — it is the same lite file with everything shown. Both validate identically; the minimal template exists so a fresh `core` adoption sees only what it must fill in.
+For an expanded reference showing the standard optional fields, the optional `defeaters` section, and the local `extensions` namespace, copy [templates/assurance.yaml](../templates/assurance.yaml) instead. Both shipped templates include an inline `system` value, so either is a complete four-file starting path and both face the same adopter schema and semantic checks after copying. If you delete that optional field, add a separate system artifact at `paths.system`. The minimal template exists so a fresh `core` adoption sees only what it must fill in. Register schemas permit some project-local entry fields, so the expanded reference is intentionally not a catalogue of every possible extension.
 
 `assurance.yaml` starts with `version: 1` and carries the `core` obligations of [PROFILE.md §6.1](../PROFILE.md) as sections:
 
@@ -94,15 +100,15 @@ For the full field set, the optional `defeaters` section, and inline documentati
 - `system` (string, optional) — a short as-built description satisfying §6.1's "current system description or mapping to an existing equivalent". When omitted, keep a separate system description at the `paths.system` location instead (`assurance/SYSTEM.md` by default); one of the two must exist;
 - `invariants` (required at `core` — at least one; it anchors the regression protection), `residuals` (required), and `defeaters` (optional) — arrays whose entries have exactly the same shape as in the split register files. The item schemas are not forked: the validator checks each present section against the corresponding register schema and runs the same semantic checks over the combined result, so lite and split registers are interchangeable content.
 
-**Lite is core-only.** Declaring `layout: lite` together with any profile beyond `core` — `service`, `trust-critical`, `data-curation`, `agent-runtime`, or `archived` — is a validation error. The graduation path preserves every ID: move the section arrays into `assurance/INVARIANTS.yaml`, `assurance/RESIDUALS.yaml`, and `assurance/DEFEATERS.yaml`, move the `system` text into `assurance/SYSTEM.md`, and drop `layout: lite`. The validator enforces the split layout from `service` upward.
+**Lite is core-only.** Declaring `layout: lite` together with any profile beyond `core` — `service`, `trust-critical`, `data-curation`, `agent-runtime`, or `archived` — is a validation error. The graduation path preserves every ID: move the section arrays into `assurance/INVARIANTS.yaml`, `assurance/RESIDUALS.yaml`, and `assurance/DEFEATERS.yaml`, move the `system` text into `assurance/SYSTEM.md`, and drop `layout: lite`. The validator enforces the split layout for every specialized or `archived` profile.
 
 At `core`, the [templates/github/](../templates/github/) issue-template bundle (§3.5) and `CODEOWNERS` are optional rather than part of the minimum: copy the bundle when the repository takes external contributions — recommended in that case, and copy it whole, since the shadowing warning of §3.5 applies — and `CODEOWNERS` remains recommended wherever a second maintainer exists to review.
 
-§3.1–§3.5 describe the split layout, used from `service` upward or at `core` by preference. Local validation for both layouts is §3.6.
+§3.1–§3.5 describe the split layout, used for every specialized or `archived` profile, or at `core` by preference. Local validation for both layouts is §3.6.
 
 ### 3.1 Copy the templates
 
-This and the following subsections describe the split layout — one register per file — used from `service` upward, or at `core` by preference (§3.0 covers the lite alternative). Everything under [../templates/](../templates/) is published under CC0-1.0: copy it into your repository freely, with no attribution obligation.
+This and the following subsections describe the split layout — one file per applicable artifact, including one file per active register — used for every specialized or `archived` profile, or at `core` by preference (§3.0 covers the lite alternative). Everything under [../templates/](../templates/) is published under CC0-1.0: copy it into your repository freely, with no attribution obligation.
 
 | Copy from | To (adopting repository) |
 |---|---|
@@ -110,14 +116,14 @@ This and the following subsections describe the split layout — one register pe
 | [templates/AGENTS.md](../templates/AGENTS.md) | `AGENTS.md` (merge if one exists; see §3.3) |
 | [templates/adoption.yaml](../templates/adoption.yaml) | `.agentic-assurance/adoption.yaml` |
 | [templates/SYSTEM.md](../templates/SYSTEM.md) | `assurance/SYSTEM.md` |
-| [templates/INVARIANTS.yaml](../templates/INVARIANTS.yaml) | `assurance/INVARIANTS.yaml` (required at `core`; at least one entry) |
-| [templates/RESIDUALS.yaml](../templates/RESIDUALS.yaml) | `assurance/RESIDUALS.yaml` |
-| [templates/CLAIMS.yaml](../templates/CLAIMS.yaml) | `assurance/CLAIMS.yaml` (when applicable) |
-| [templates/DEFEATERS.yaml](../templates/DEFEATERS.yaml) | `assurance/DEFEATERS.yaml` (when applicable) |
-| [templates/THREAT_MODEL.md](../templates/THREAT_MODEL.md) | `assurance/THREAT_MODEL.md` (when applicable) |
+| [templates/INVARIANTS.yaml](../templates/INVARIANTS.yaml) | `assurance/INVARIANTS.yaml` (required for every active profile; at least one entry; not required for `archived`) |
+| [templates/RESIDUALS.yaml](../templates/RESIDUALS.yaml) | `assurance/RESIDUALS.yaml` (required for every active profile; not required for `archived`) |
+| [templates/CLAIMS.yaml](../templates/CLAIMS.yaml) | `assurance/CLAIMS.yaml` (active `trust-critical` only) |
+| [templates/DEFEATERS.yaml](../templates/DEFEATERS.yaml) | `assurance/DEFEATERS.yaml` (active profiles, when applicable) |
+| [templates/THREAT_MODEL.md](../templates/THREAT_MODEL.md) | `assurance/THREAT_MODEL.md` (active `service` only) |
 | [templates/github/](../templates/github/) | `.github/` — copy the whole bundle; see §3.5 |
 
-The split-layout minimum matches [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) and PROFILE.md §6.1: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, `assurance/SYSTEM.md`, `assurance/INVARIANTS.yaml`, and `assurance/RESIDUALS.yaml`. `assurance/INVARIANTS.yaml` carries at least one invariant — the properties that must remain true; it anchors the regression protection, and is required from `core` (a repository with nothing that must stay true has not found its invariants yet). Optional additions: `assurance/CLAIMS.yaml`, `assurance/DEFEATERS.yaml`, `assurance/THREAT_MODEL.md`, `assurance/decisions/`, `assurance/reviews/`, and `assurance/evidence/`.
+For an active adopter, the split-layout minimum matches [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) and PROFILE.md §6.1: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, `assurance/SYSTEM.md`, `assurance/INVARIANTS.yaml`, and `assurance/RESIDUALS.yaml`. `assurance/INVARIANTS.yaml` carries at least one invariant — the properties that must remain true; it anchors the regression protection, and is required by the inherited `core` obligations (a repository with nothing that must stay true has not found its invariants yet). The exclusive `archived` profile does not inherit those active obligations: its split-layout assurance minimum is the system artifact containing §6.6's four facts; the root adoption and agent-instruction files remain required. Optional additions for active profiles: `assurance/CLAIMS.yaml`, `assurance/DEFEATERS.yaml`, `assurance/THREAT_MODEL.md`, `assurance/decisions/`, `assurance/reviews/`, and `assurance/evidence/`.
 
 These files must live in the adopting repository itself, never only in an organization-level `.github` repository: `AGENTS.md`, `AGENTIC_ASSURANCE.md`, `.agentic-assurance/adoption.yaml`, and everything under `assurance/` (including `DEFEATERS.yaml` when used). Organization defaults may host issue templates and a fallback `SECURITY.md`, but the assurance artifacts are project truth and belong in the project.
 
@@ -127,9 +133,9 @@ Replace every `REPLACE_WITH_` token — the validator treats a leftover token in
 
 - the `upstream` pin per §2;
 - `project` name, repository slug, and `human_owner`;
-- the `profiles` list (from the §4.0 classification — the smallest set covering every fired trigger);
+- the `profiles` list (from the §4.0 classification — for an active adopter, `[core]` when no specialized trigger fires, otherwise the fired specialized profiles, which inherit `core`; or `[archived]` alone);
 - `layout: lite` when using the single-file layout of §3.0 (the field is optional; absent means the split layout);
-- the `specification_workflow` you identified in §1;
+- for an active adoption, the `specification_workflow` identified in §1; for `archived`, keep it only when a real archival-record workflow applies, otherwise delete the optional template block;
 - `paths` mappings when reusing existing conventions ([MAPPINGS.md](MAPPINGS.md)); the defaults are fine for a fresh layout.
 
 ### 3.3 Integrate `AGENTS.md`
@@ -210,7 +216,7 @@ The validator strict-checks the adoption file against the pinned adoption schema
 
 | Selected profiles | Files that must exist |
 |---|---|
-| all adopters | `AGENTIC_ASSURANCE.md` and `AGENTS.md` at the project root, and the `system` artifact (for `archived`, this is where §6.6's facts are recorded) |
+| all adopters | `AGENTIC_ASSURANCE.md` and `AGENTS.md` at the project root, and the `system` artifact (for `archived`, the artifact resolved from `paths.system`, default `assurance/SYSTEM.md`, is where §6.6's four facts are recorded) |
 | non-`archived` profiles | additionally the `invariants` and `residuals` artifacts |
 | `service` | additionally the `threat_model` artifact |
 | `trust-critical` | additionally the `claims` artifact |
@@ -219,7 +225,7 @@ Presence is not enough where PROFILE.md mandates content: the `residuals` and `i
 
 Under `layout: lite` (§3.0) the same command applies, with two differences. `.agentic-assurance/assurance.yaml` is validated — the envelope against the lite schema, each present section against the corresponding register schema, and the combined content through the same semantic checks. And the split per-profile file checks are replaced by the lite rules: the file itself must exist, `invariants` and `residuals` must each be present and non-empty, either a `system` section or a file at `paths.system` must exist, and any profile beyond `core` is an error pointing to the graduation path of §3.0.
 
-It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); selection of the provisional `agent-runtime` profile; and selection of the `archived` profile (its §6.6 statements are recorded in the system description but are not mechanically verified — human review must confirm them).
+It also emits non-blocking warnings: `trust-critical` without a defeaters file; entries classified `RESTRICTED` or `EMBARGOED` (verify the file is not public); a local `.github/ISSUE_TEMPLATE/` without a `config.yml` (§3.5); selection of the provisional `agent-runtime` profile; and selection of the `archived` profile. For `archived`, validation enforces exclusive declaration and the presence of the system artifact, but does not yet parse its contents: until structured enforcement in [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), human review must confirm all four §6.6 facts in that artifact.
 
 Entries classified `RESTRICTED` may be committed to a private repository, but they bind its visibility: the repository must not be made public while `RESTRICTED` material is present. Before any publication, sanitize `RESTRICTED` entries to `SUMMARY_ONLY` or `PUBLIC`, or move them to the restricted record ([DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md)). The validator's `RESTRICTED` warnings exist to keep this constraint visible on every run.
 
@@ -313,7 +319,7 @@ Each stage includes every requirement of the stages below it:
 | Stage | Adds on top of the previous stage | Who advances it |
 |---|---|---|
 | `DRAFT` | Nothing — the ordinary validation of §3.6; unfilled placeholders and `UNKNOWN` are allowed in the local assurance registers. The adoption declaration itself (upstream pin, project identity, paths) must be complete at every stage: §3.6 always errors on an unfilled placeholder in `adoption.yaml`. | Nobody needs to; it is the default. |
-| `HUMAN_REVIEWED` | No unfilled `REPLACE_WITH_` placeholder in any loaded register (split sections or the lite file alike), nor the legacy v0.3.x `YYYY-MM-DD` sentinel at a residual/defeater `review_after` path; a `human_review` block with non-empty `date`, `reviewer`, and `record`. | The human owner, after completing the §4.3 review. |
+| `HUMAN_REVIEWED` | No unfilled `REPLACE_WITH_` placeholder in any loaded register (split sections or the lite file alike), nor any path-scoped v0.3.x compatibility placeholder: the legacy `YYYY-MM-DD` sentinel at a residual/defeater `review_after` path or any of the seven exact `Replace with ...` starter prompts in their original claim, invariant, defeater, and residual fields; a `human_review` block with non-empty `date`, `reviewer`, and `record`. | The human owner, after completing the applicable active or archived branch of §4.3. |
 | `CONFORMANT` | Passed `review_after` dates are errors (as with `--strict-review-dates`); every severity-`critical` invariant has a decided `intent.classification` — anything but `UNKNOWN`, so `ACCIDENTAL` or `DEPRECATED` counts as decided; at least one attributable entry in `human_review.approvals`. Additionally, the mechanically checkable subset of [PROFILE.md §17](../PROFILE.md): no `critical` residual left `OPEN` (accept it with rationale or resolve it), no `CONTRADICTED` claim, no `CONTRADICTED` critical invariant, every `VERIFIED` critical invariant carries non-empty `evidence`, and no register entry classified `RESTRICTED` or `EMBARGOED` in a public repository (the reusable workflow passes the repository's actual visibility; standalone runs declare it with `--repo-visibility`, and an undeclared visibility is treated as public, conservatively). In a private repository RESTRICTED entries stay the standing warning — §17 excludes restricted material from *public* artifacts, and §3.6's visibility binding already governs the private case. | The human owner, when standing behind the conformance statement of [PROFILE.md §17](../PROFILE.md). |
 
 Honest boundary: even at `CONFORMANT`, the validator checks what strings can carry. Whether evidence is bound to the revision it claims to cover, and whether claim wording stays within evidence strength, remain the §4.3 human review's responsibility — a green `declared-stage` check at `CONFORMANT` asserts the mechanical subset, not the whole of §17.
@@ -348,7 +354,7 @@ Locally, the §3.6 command enforces the declared stage by default and reports on
 
 ## 4. Brownfield adoption
 
-Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). Classify the profile first (§4.0) — a cheap pass that decides how deep everything after it must go — then work the four-stage sequence (§4.1–§4.4); do not compress the stages into one change, and do not mix archaeology with feature work, security audit, or broad refactoring.
+Most adoption is brownfield. Initial adoption of an existing repository must begin as a read-only archaeology task before broad remediation ([PROFILE.md §7](../PROFILE.md)). Classify the profile first (§4.0) — a cheap pass that decides how deep everything after it must go. An active adoption then follows §4.1–§4.4 without compressing archaeology, review, and remediation into one change. An `archived` adoption follows the narrower branches in §4.1 and §4.3: it establishes inactive eligibility and the four §6.6 facts, skips the active-system §4.2 and §4.4 work, and must be reclassified before any functional remediation or renewed operation, maintenance, or feature development.
 
 ### 4.0 Classify the profile first
 
@@ -363,7 +369,7 @@ For each escalation trigger, ask the disqualifying question and, when it fires, 
 | **data-curation** | it derives externally-sourced, editorial, scored, classified, or recommended data: embedding search or ranking, scoring, aggregated external feeds | `data-curation` |
 | **agent-runtime** | a model or agent **runs in this repository's production path** — an LLM SDK invoked in a request or worker, not merely a call to a backend that does | `agent-runtime` |
 
-`core` is the baseline every adopter carries; `archived` replaces the others for a repository that is no longer operated ([PROFILE.md §6.6](../PROFILE.md)). The result is the **smallest set that covers every trigger that fires** — that is what "smallest applicable set" means, not "the fewest profiles you can get away with."
+`core` is the obligation baseline for every active adopter, but specialized profiles inherit it implicitly: for an active adopter, when no specialized trigger fires, declare `[core]`; when any fire, the canonical smallest declaration lists all fired specialized profiles and omits `core`. Writing `core` alongside them is allowed but changes no obligation. `archived` is different: it is declared alone and replaces every active profile only when the repository has no active operation, maintenance, or feature development ([PROFILE.md §5](../PROFILE.md), [§6.6](../PROFILE.md)). The result is the **smallest set that covers every trigger that fires** — that is what "smallest applicable set" means, not "the fewest profiles you can get away with."
 
 **Bias toward escalation.** When a trigger's evidence is genuine but ambiguous in degree, fire it. Under-classification is the expensive mistake: a repository declared `core` gets only the `core` checks, so the claims, proof tiers, and defeaters a trust-critical repository needs are never required — and the run still passes green. Over-classification only costs some unused artifacts, which the owner can drop; under-classification silently turns off enforcement. The owner can de-escalate a conservatively-fired trigger in the §4.3 review with a recorded reason — there is no matching mechanism to catch a trigger that was never fired.
 
@@ -371,13 +377,15 @@ For each escalation trigger, ask the disqualifying question and, when it fires, 
 
 **Layout follows the profile, never the size.** `layout: lite` (§3.0) is valid only when the classification is `core` alone; any fired trigger means the split layout of §3.1. A large, sprawling repository with no external promises can be `core`; a two-hundred-line library that verifies auth tokens is `trust-critical`. Size is not a trigger.
 
-Declare the proposed profile set and layout in `adoption.yaml` itself — the enforced `profiles:` field, not only the handoff prose — and list them in the §4.3 handoff, each fired trigger with its evidence, for the owner to confirm or de-escalate. Leaving `profiles: [core]` in the file while noting the escalation only in prose is the common miss: the handoff is read once, but the `profiles:` field is what selects the checks. The selection stays provisional until the owner's review (§1).
+Declare the proposed profile set and layout in `adoption.yaml` itself — the enforced `profiles:` field, not only the handoff prose — and list them in the §4.3 handoff, each fired trigger with its evidence, for the owner to confirm or de-escalate. Leaving `profiles: [core]` in the file while noting specialized triggers only in prose is the common miss: the handoff is read once, but the `profiles:` field is what selects the checks. The selection stays provisional until the owner's review (§1).
 
-**Worked example.** A loan-underwriting backend that authenticates applicants, gates approval actions by reviewer role, scores each application against externally-sourced credit data, and drafts decision rationales with a production LLM is not `core`. It fires `service` (deployed API), `trust-critical` (identity + authorization + financial), `data-curation` (scored external data), and `agent-runtime` (a model runs in its request path): the honest set is `core + service + trust-critical + data-curation + agent-runtime`, split layout. Declaring it `core` (lite) would hide every claim, proof tier, and defeater it most needs — and pass green. Its separate frontend, which only *calls* that backend for the same LLM-drafted rationale, is `service + trust-critical + data-curation` but **not** `agent-runtime`: the model runs in the backend, not the client. The line is where the model actually executes, not which product it belongs to.
+**Worked example.** A loan-underwriting backend that authenticates applicants, gates approval actions by reviewer role, scores each application against externally-sourced credit data, and drafts decision rationales with a production LLM is not `core`-only. It fires `service` (deployed API), `trust-critical` (identity + authorization + financial), `data-curation` (scored external data), and `agent-runtime` (a model runs in its request path): the canonical declaration is `[service, trust-critical, data-curation, agent-runtime]`, split layout; §6.1 `core` obligations are inherited without listing `core`. Declaring it `[core]` (lite) would hide every claim, proof tier, and defeater it most needs — and pass green. Its separate frontend, which only *calls* that backend for the same LLM-drafted rationale, canonically declares `[service, trust-critical, data-curation]` but **not** `agent-runtime`: the model runs in the backend, not the client. The line is where the model actually executes, not which product it belongs to.
 
 ### 4.1 Read-only reconstruction
 
-Before changing any functional code, reconstruct the as-built system:
+For an `archived` classification, replace the active-system reconstruction below with a narrower read-only assessment: cite evidence that the repository has no active operation, maintenance, or feature development; reconstruct the historical purpose, known material limitations, and last supported revision or release (or explicitly that none exists); and record all four facts in the system artifact resolved from `paths.system`. Extra historical context is allowed, but do not invent empty active claims, invariants, defeaters, or residuals. After drafting those artifacts, skip §4.2 and use the archived owner-review branch in §4.3; §4.4 applies only if the repository is reclassified for renewed active work.
+
+For a non-`archived` classification, before changing any functional code, reconstruct the as-built system:
 
 1. purpose, users, scope, and non-goals;
 2. domain entities, identifiers, and state transitions;
@@ -393,23 +401,25 @@ Before changing any functional code, reconstruct the as-built system:
 Practical notes:
 
 - Start from what already exists: specifications, ADRs, tests, CI configuration, schemas and migrations, deployment records, and issue and pull-request history. Do not introduce a second specification framework when an adequate one exists.
-- Record the reconstruction in the system description; [templates/SYSTEM.md](../templates/SYSTEM.md) mirrors this list section by section.
+- For an active adoption, record the reconstruction in the system description; [templates/SYSTEM.md](../templates/SYSTEM.md) mirrors this list section by section. For `archived`, complete its §0 prompts instead.
 - Evidence discipline applies from the first line: each non-`UNKNOWN` material conclusion cites concrete evidence — file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric. An AI-generated explanation is not evidence by itself.
 - Check the provenance of prose evidence. In an agent-built repository most comments, READMEs, and notes are themselves agent-authored: before citing one as intent authority, `git blame` the lines and inspect the introducing commit's authorship (for example `Co-Authored-By:` trailers, bot committer identities, agent-session branch names). Agent-authored prose may be cited as a *description* of behavior, never as *human intent* — that classification stays `UNKNOWN` until the owner confirms it in the §4.3 review. The check only sorts prose into two bins — *disqualified* (an agent marker is present) and *provenance-uncertain* (no marker, which proves nothing: many agents leave none, and humans commit agent-written text under their own names). It never yields "definitely human"; provenance-uncertain prose is presented to the owner as a candidate, and the owner's §4.3 answer is what settles it. The line that matters is the human act, not the typist: an agent-drafted record of an explicit owner decision, anchored by the owner's reviewed merge, is valid authority (second-pilot lesson — an agent cited an agent-written comment as intent and caught its own circular reasoning). Machine-verifiable evidence (schema constraints, live response headers, command output, code behavior) is unaffected.
-- Keep the invariant register small: roughly 5–15 invariants per repository — the things that must never break, not the full specification. The real cost of an invariant is not writing it but re-examining it on every change that touches its scope; an exhaustive register stops being read and starts to rot. If the archaeology surfaces thirty candidates, that is a ranking exercise for the §4.3 review, not thirty register entries.
+- For an active adoption, keep the invariant register small: roughly 5–15 invariants per repository — the things that must never break, not the full specification. The real cost of an invariant is not writing it but re-examining it on every change that touches its scope; an exhaustive register stops being read and starts to rot. If the archaeology surfaces thirty candidates, that is a ranking exercise for the §4.3 review, not thirty register entries.
 
 ### 4.2 Behavior classification
 
-This is distinct from the profile classification of §4.0: that decides *which profiles apply*; this classifies *observed behavior*. Classify observed behavior as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`, and each conclusion about the system as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED` ([PROFILE.md §4](../PROFILE.md)). `UNKNOWN` is a first-class result: recording uncertainty is correct; inventing confidence is prohibited. Current production behavior is evidence of current behavior, not automatic proof of intended behavior.
+For a non-`archived` adoption, this is distinct from the profile classification of §4.0: that decides *which profiles apply*; this classifies *observed behavior*. Classify observed behavior as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`, and each conclusion about the system as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED` ([PROFILE.md §4](../PROFILE.md)). `UNKNOWN` is a first-class result: recording uncertainty is correct; inventing confidence is prohibited. Current production behavior is evidence of current behavior, not automatic proof of intended behavior. An `archived` adoption does not perform this separate active-system step solely to create registers; its §4.1 conclusions still use honest evidence classifications where recorded.
 
 ### 4.3 Human intent review
 
-Before broad remediation, the human owner reviews:
+For a non-`archived` adoption, before broad remediation the human owner reviews:
 
 - purpose and non-goals;
 - critical claims and invariants;
 - the behavior classification from §4.2;
 - critical residuals and public claim limitations.
+
+For an `archived` adoption, the owner instead confirms that the repository has no active operation, maintenance, or feature development; that `archived` is declared alone; that the mapped system artifact is the intended record; and that each of its four §6.6 facts is accurate. These confirmations replace the active-system decisions above; [REVIEW-GUIDE.md](REVIEW-GUIDE.md) provides the checklist.
 
 An agent may draft all of this; it may approve none of it.
 
@@ -417,13 +427,15 @@ The adoption draft should arrive as an open pull request and stay unmerged until
 
 ### 4.4 Staged remediation
 
-After the intent review:
+For a non-`archived` adoption, after the intent review:
 
 - record conformance gaps and residuals in the durable artifacts first;
 - remediate through separate, scoped issues and pull requests — the `conformance-gap` and `evidence-gap` forms from the adopter bundle (§3.5) exist for exactly this;
 - bind new evidence to a commit, artifact digest, release, or deployment identifier;
 - map existing conventions instead of duplicating them ([MAPPINGS.md](MAPPINGS.md));
 - for critical security, privacy, authorization, financial, governance, or data-integrity work, keep audit and remediation in separate contexts ([PROFILE.md §10](../PROFILE.md)).
+
+An `archived` adoption has no active remediation stage. Correct gaps in the inactive classification or four historical facts before acceptance. If functional remediation, operation, maintenance, or feature development resumes, reclassify the repository under the applicable active profiles first.
 
 ## 5. Pilot guidance
 
@@ -436,7 +448,7 @@ For the initial pilot adoptions of this profile (Passport-class projects):
 
 ## 6. What adoption is not
 
-Creating the files is not adopting the profile. A repository containing `AGENTIC_ASSURANCE.md`, an adoption file, and freshly copied templates has declared an intention — nothing more. Per [templates/AGENTIC_ASSURANCE.md §12](../templates/AGENTIC_ASSURANCE.md), adoption is complete only when:
+Creating the files is not adopting the profile. A repository containing `AGENTIC_ASSURANCE.md`, an adoption file, and freshly copied templates has declared an intention — nothing more. Per [templates/AGENTIC_ASSURANCE.md §12](../templates/AGENTIC_ASSURANCE.md), an active adoption is complete only when:
 
 - the upstream pin resolves to a real version and commit per §2;
 - human-approved purpose and non-goals are recorded;
@@ -444,7 +456,9 @@ Creating the files is not adopting the profile. A repository containing `AGENTIC
 - the residual register is active and owned;
 - the material-change workflow references the assurance artifacts in normal review.
 
-A green validator run checks structure, presence, and pin consistency — not the truth of the claims. And conformance itself is bounded: it means the project's promises, controls, evidence, and remaining doubt are represented according to the pinned profile, not that the project is secure or bug-free ([PROFILE.md §17](../PROFILE.md)).
+The exclusive `archived` path substitutes its narrower §6.6 contract for those active-system bullets: adoption is complete only when the owner confirms that the repository has no active operation, maintenance, or feature development and confirms all four facts in the system artifact resolved from `paths.system`. File existence alone is not that confirmation; until [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), use the checklist in [REVIEW-GUIDE.md](REVIEW-GUIDE.md).
+
+A green validator run checks structure, presence, and pin consistency — not the truth of the claims. Conformance is bounded: for an active project, it means the project's promises, controls, evidence, and remaining doubt are represented according to the pinned profile; for `archived`, it means the bounded inactive classification and required historical facts are owner-confirmed, not that current operational assurance exists. Neither means the project is secure or bug-free ([PROFILE.md §17](../PROFILE.md)).
 
 ## Related documents
 

@@ -12,18 +12,20 @@
 
 This repository adopts the **OpenDevs Agentic Assurance Profile** for software produced or maintained substantially by AI agents.
 
-The profile complements—not replaces—the repository's existing mechanisms:
+For an active adoption, the profile complements—not replaces—the repository's existing mechanisms, where applicable:
 
 - `AGENTS.md` for persistent agent instructions;
 - OpenSpec, Spec Kit, ADR/RFC, issues, or another established change workflow;
 - tests, static analysis, CI, deployment controls, and runtime monitoring;
 - project-specific security, privacy, data-governance, and operational policies.
 
-The working chain is:
+The active working chain is:
 
 ```text
 Intent → Claims → Invariants → Enforcement → Evidence → Residuals
 ```
+
+The exclusive `archived` path does not fabricate that active chain. It retains the pin and root agent instructions, then records the four PROFILE.md §6.6 historical facts in the mapped system artifact for owner confirmation.
 
 The pinned upstream profile defines the terms and generic obligations. This file defines how this repository adopts and applies them.
 
@@ -49,18 +51,21 @@ profiles:
   - REPLACE_WITH_CLASSIFIED_PROFILE
   # Classify from what the repository IS and promises (docs/ADOPTION.md §4.0);
   # replace the placeholder above with the classified set — validation fails
-  # until it is filled. Add each fired profile:
+  # until it is filled. For an active adopter, use `core` only when no
+  # specialized trigger fires. If any fire, list all fired specialized profiles
+  # and normally omit `core`; they inherit all core obligations whether or not
+  # `core` is written:
   # - service
   # - trust-critical
   # - data-curation
   # - agent-runtime
-  # - archived
+  # - archived  # exclusive alternative — declare alone
 
 # layout: lite
 # (single-file core layout — put purpose/non-goals/invariants/residuals in
 #  .agentic-assurance/assurance.yaml; start from templates/assurance.minimal.yaml
-#  (full reference: templates/assurance.yaml). Selecting
-#  profiles beyond core requires the default split layout.)
+#  (expanded standard-field reference: templates/assurance.yaml). Any profile
+#  other than core requires the default split layout.)
 
 # components:
 #   authentication:
@@ -80,6 +85,9 @@ profiles:
 #  Absent means DRAFT; declaring a stage you do not meet fails validation;
 #  see docs/ADOPTION.md §3.8.)
 
+# Required by every active profile. Under `archived`, keep this optional block
+# only when a real archival-record workflow applies; otherwise delete it rather
+# than inventing an active change workflow.
 specification_workflow:
   system: existing
   # Examples: openspec, spec-kit, adr-rfc, existing, minimal
@@ -129,7 +137,7 @@ Only a named human owner or governing body may approve:
 
 ## 4. Required local artifacts
 
-Keep generic rules upstream and project truth local. Two layouts satisfy PROFILE.md §6.1.
+Keep generic rules upstream and project truth local. Active adopters use the two layouts below to satisfy PROFILE.md §6.1; the exclusive `archived` profile uses the split layout for §6.6.
 
 **Lite layout** — the minimum for `core`. Declare it with `layout: lite` in `adoption.yaml`:
 
@@ -141,9 +149,9 @@ AGENTIC_ASSURANCE.md
 └── assurance.yaml    # purpose, non-goals, invariants, residuals in one file
 ```
 
-`assurance.yaml` (start from `templates/assurance.minimal.yaml` — the required minimum; `templates/assurance.yaml` is the same file with every field and the optional `defeaters` section shown) carries purpose, non-goals, invariants, and residuals — at least one invariant and one residual — and optionally defeaters. Its optional `system` section satisfies the system-description obligation; when absent, keep a separate `SYSTEM.md` at the path in `paths.system`. Section items use exactly the same shapes as the split registers, so graduating is a copy that preserves IDs. Selecting any profile beyond `core` requires the split layout.
+`assurance.yaml` (start from `templates/assurance.minimal.yaml` — the required minimum; `templates/assurance.yaml` is an expanded reference showing the standard optional fields, optional `defeaters`, and local `extensions` namespace) carries purpose, non-goals, invariants, and residuals — at least one invariant and one residual — and optionally defeaters. Its optional `system` section satisfies the system-description obligation; when absent, keep a separate `SYSTEM.md` at the path in `paths.system`. Register schemas permit project-local entry fields, so the expanded reference does not claim to enumerate every extension. Section items use exactly the same shapes as the split registers, so graduating is a copy that preserves IDs. Any profile other than `core` requires the split layout.
 
-**Split layout** — the default (no `layout` field), and required from `service` onward:
+**Split layout** — the default (no `layout` field), and required for every specialized or `archived` profile:
 
 ```text
 AGENTS.md
@@ -168,6 +176,8 @@ assurance/
 └── evidence/
 ```
 
+The exclusive `archived` profile also uses the split convention but does not inherit the active §6.1 invariant and residual obligations: keep the root files, adoption declaration, and the system artifact mapped by `paths.system`; complete the archived-only §0 prompts in `templates/SYSTEM.md`. Do not add empty active registers merely to imitate the tree above.
+
 An invariant register is what anchors the profile's regression protection, and is required from `core` — at least one invariant, the properties that must remain true (PROFILE.md §6.1). In the lite layout that register is the `invariants` section of `assurance.yaml`; in the split layout it is `assurance/INVARIANTS.yaml`.
 
 Existing repository conventions MAY be reused instead of these exact paths. Record the mapping in `adoption.yaml`.
@@ -187,15 +197,17 @@ Use the smallest applicable set:
 | `trust-critical` | Security, privacy, identity, authorization, financial, governance, or public-verifiability claims |
 | `data-curation` | Externally sourced, editorial, scored, classified, or recommended data |
 | `agent-runtime` | Model-driven agents or workflows executing in production |
-| `archived` | Reference-only repositories with no active operation or development |
+| `archived` | Reference-only repositories with no active operation, maintenance, or feature development |
 
 An agent may propose profiles, but the proposal remains provisional until reviewed by the human owner.
+
+Every active specialized profile inherits the `core` obligations in PROFILE.md §6.1. For an active classification, canonically declare `[core]` only when none applies; otherwise declare every fired specialized profile and omit `core` (listing it explicitly is allowed but changes no obligation). Declare `archived` alone: it replaces all active profiles, and its four §6.6 facts belong in the artifact mapped by `paths.system` (default `assurance/SYSTEM.md`).
 
 ---
 
 ## 6. First adoption workflow
 
-Initial adoption is a repository-archaeology task, not a feature task.
+Initial adoption is a repository-archaeology task, not a feature task. Active profiles follow the full workflow below; the exclusive `archived` profile follows the explicit narrower branches.
 
 ### 6.1 Discover before creating
 
@@ -208,9 +220,9 @@ Inspect and reuse existing:
 
 Do not introduce a second competing specification framework when an adequate one already exists.
 
-### 6.2 Reconstruct the as-built system read-only
+### 6.2 Reconstruct the applicable record read-only
 
-Before changing functional code, document:
+For an active profile, before changing functional code, document:
 
 1. purpose, users, scope, and non-goals;
 2. domain entities, identifiers, and state transitions;
@@ -221,6 +233,8 @@ Before changing functional code, document:
 7. current verification and runtime evidence;
 8. ambiguous or accidental behavior;
 9. counterevidence, limitations, and residual risks.
+
+For `archived`, replace that active-system list with evidence that there is no active operation, maintenance, or feature development and the four PROFILE.md §6.6 facts: that inactive status, historical purpose, known material limitations, and the last supported revision or release (or explicitly that none exists). Record them in the system artifact mapped by `paths.system`; do not fabricate active registers merely to fill the active template tree.
 
 Classify every material conclusion as:
 
@@ -233,9 +247,9 @@ Each non-`UNKNOWN` conclusion must cite concrete evidence: file and line, databa
 
 An AI-generated explanation is not evidence by itself. Committed prose inherits this rule when its authorship is agent-assisted (check the introducing commit's co-authorship trailers with `git blame`): cite such text as a description of behavior, never as human intent. The check is one-directional — an agent marker disqualifies; the absence of one proves nothing, since many agents leave no marker. Intent authority comes from a human act — a reviewed merge or a recorded review outcome — not from who typed the text.
 
-### 6.3 Human intent review
+### 6.3 Human owner review
 
-Before broad remediation or refactoring, obtain human review of:
+For an active profile, before broad remediation or refactoring, obtain human review of:
 
 - purpose and non-goals;
 - critical claims and invariants;
@@ -243,15 +257,21 @@ Before broad remediation or refactoring, obtain human review of:
 - public claim limitations;
 - critical residual acceptance.
 
+For `archived`, the owner instead confirms the exclusive classification, the mapped system artifact, and each of the four §6.6 facts. Those confirmations replace the active-system decisions above.
+
 ### 6.4 Remediate in scoped changes
 
-After intent review, address missing controls and evidence through separate, reviewable changes. Do not combine archaeology, feature work, security audit, broad refactoring, and remediation into one change unless explicitly scoped that way.
+For an active profile, after intent review, address missing controls and evidence through separate, reviewable changes. Do not combine archaeology, feature work, security audit, broad refactoring, and remediation into one change unless explicitly scoped that way.
+
+An `archived` adoption has no active remediation stage. Correct its inactive classification or historical facts before acceptance. Before renewed operation, maintenance, feature development, or functional remediation, reclassify the repository under every applicable active profile.
 
 ---
 
 ## 7. Material change workflow
 
 A material change affects externally visible behavior, persistent data, authentication, authorization, privacy, security, billing, governance, recommendations, classification, migrations, deployment, public claims, or critical dependencies.
+
+An `archived` repository MUST be reclassified under every applicable active profile before any such functional change or renewed operation, maintenance, or feature development. A correction limited to the archived classification or four §6.6 facts stays on the archived review path and requires owner confirmation.
 
 Before implementation, the active change artifact must state:
 
@@ -362,8 +382,8 @@ Before any material change, read:
 
 1. `AGENTIC_ASSURANCE.md`;
 2. `.agentic-assurance/adoption.yaml`;
-3. the project system specification and non-goals;
-4. affected claims, invariants, defeaters, and residuals;
+3. the project system artifact and applicable non-goals;
+4. affected claims, invariants, defeaters, and residuals, where applicable;
 5. the active change specification.
 
 Human-approved project intent governs project purpose. The pinned upstream
@@ -380,7 +400,7 @@ Nested `AGENTS.md` files may impose stricter local rules but must not weaken thi
 
 ## 12. Expected initial adoption output
 
-When first applying this file to an existing repository, produce a reviewable proposal containing:
+When first applying this file to an existing active repository, produce a reviewable proposal containing:
 
 1. proposed profiles and rationale;
 2. existing workflows and files to reuse;
@@ -394,8 +414,10 @@ When first applying this file to an existing repository, produce a reviewable pr
 10. exact files created or changed;
 11. a handoff summary for the human owner, in the owner's working language, that states nothing is decided, lists each pending decision in plain language, and instructs that the pull request must not be merged until those decisions are made.
 
+For the exclusive `archived` profile, produce the narrower reviewable proposal instead: evidence that the repository has no active operation, maintenance, or feature development; the exclusive profile declaration and artifact mapping; all four §6.6 facts in the mapped system artifact; the exact files changed; and a handoff asking the owner to confirm both the inactive classification and each fact using `docs/REVIEW-GUIDE.md`. Do not fabricate empty active claims, invariants, defeaters, or residuals for an archived repository.
+
 Do not describe adoption as complete merely because the documents were created. In the handoff summary, the drafting agent must not describe its result as "settled" or "complete" — completion language is reserved for the human owner's acceptance.
 
-Initial adoption is complete only when the upstream pin, human-approved intent, critical claims and invariants, evidence links, explicit unknowns, and residual ownership are all present in the repository's normal change process.
+An active initial adoption is complete only when the upstream pin, human-approved intent, critical claims and invariants, evidence links, explicit unknowns, and residual ownership are all present in the repository's normal change process. An `archived` initial adoption is complete only when the owner confirms the exclusive classification and all four §6.6 facts in the mapped system artifact; file existence alone is not completion while content enforcement remains deferred to [upstream issue #40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40).
 
 Completion means the system's promises, controls, evidence, and remaining doubt are inspectable. It does not mean the system is bug-free or universally secure.

@@ -13,10 +13,15 @@ project:
 # the trigger scan, escalate on any fired trigger with file:line evidence, and
 # replace the placeholder below with the classified set. This field selects the
 # checks, and validation fails until it is filled — inheriting a default is not
-# an option.
+# an option. For an active adopter, use `core` only when no specialized trigger
+# fires. If any fire, list all fired specialized profiles and normally omit
+# `core`; they inherit every core obligation whether or not it is written.
+# `archived` is the exclusive alternative and must appear alone.
 profiles:
   - REPLACE_WITH_CLASSIFIED_PROFILE
-  # add each fired profile, for example:
+  # active, with no specialized trigger:
+  # - core
+  # otherwise add each fired specialized profile, for example:
   # - service
   # - trust-critical
   # - data-curation
@@ -26,8 +31,8 @@ profiles:
 # layout: lite
 # (single-file core layout — put purpose/non-goals/invariants/residuals in
 #  .agentic-assurance/assurance.yaml; start from templates/assurance.minimal.yaml,
-#  or templates/assurance.yaml for the full field reference. Selecting
-#  profiles beyond core requires the default split layout. Under lite, also
+#  or templates/assurance.yaml for an expanded standard-field reference. Any
+#  profile other than core requires the default split layout. Under lite, also
 #  set security.public_assurance_root below to .agentic-assurance — the
 #  default 'assurance' names the split layout's directory.)
 
@@ -49,6 +54,9 @@ profiles:
 #  Absent means DRAFT; declaring a stage you do not meet fails validation;
 #  see docs/ADOPTION.md §3.8.)
 
+# Required by every active profile. Under `archived`, keep this optional block
+# only when a real archival-record workflow applies; otherwise delete it rather
+# than inventing an active change workflow.
 specification_workflow:
   system: existing
   # openspec | spec-kit | adr-rfc | existing | minimal
@@ -74,8 +82,9 @@ issue_integration:
   public_security_issues_allowed: false
   closing_requires_artifact_update: true
 
-# Optional pointer to the most recent completed human review (PROFILE.md section 4.3)
-# and its durable record. Additional keys are permitted for local review conventions.
+# Optional pointer to the most recent completed human review (docs/ADOPTION.md
+# section 4.3; normative authority/review rules are PROFILE.md sections 3 and 7)
+# and its durable record. Additional keys are permitted for local conventions.
 # human_review:
 #   date: YYYY-MM-DD
 #   reviewer: REPLACE_WITH_REVIEWER

@@ -1,6 +1,6 @@
 # Mapping Existing Conventions to Profile Artifacts
 
-An adopting repository frequently already has an architecture document, a threat model, an ADR directory, or an established specification workflow. The profile does not ask for parallel copies of any of these. [PROFILE.md §6](../PROFILE.md) requires "a current system description or mapping to an existing equivalent", and [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) states that existing repository conventions may be reused when the mapping is recorded in the adoption file. This document explains how.
+An adopting repository frequently already has an architecture document, a threat model, an ADR directory, or an established specification workflow. The profile does not ask for parallel copies of any of these. For active adopters, [PROFILE.md §6.1](../PROFILE.md) requires "a current system description or mapping to an existing equivalent"; for the exclusive `archived` profile, §6.6 uses the same mapped system artifact for its four required historical facts. [templates/AGENTIC_ASSURANCE.md §4](../templates/AGENTIC_ASSURANCE.md) states that existing repository conventions may be reused when the mapping is recorded in the adoption file. This document explains how.
 
 For the full adoption sequence, see [ADOPTION.md](ADOPTION.md).
 
@@ -10,7 +10,7 @@ The `paths:` object in `.agentic-assurance/adoption.yaml` maps the profile's art
 
 | Key | Default | Artifact role |
 |---|---|---|
-| `system` | `assurance/SYSTEM.md` | as-built system description |
+| `system` | `assurance/SYSTEM.md` | active as-built system description, or the four §6.6 historical facts under `archived` |
 | `invariants` | `assurance/INVARIANTS.yaml` | invariant register |
 | `claims` | `assurance/CLAIMS.yaml` | claim register |
 | `defeaters` | `assurance/DEFEATERS.yaml` | defeater register |
@@ -27,7 +27,7 @@ The validator resolves these mappings before doing anything else: schema validat
 Three rules govern every mapping. All are consequences of [PROFILE.md](../PROFILE.md) §6 and §15.
 
 1. **Record the mapping in `adoption.yaml`.** A reuse that lives only in a maintainer's head is not a mapping. If `docs/architecture.md` serves as the system description, `paths.system` must say so — otherwise agents, reviewers, and the validator look at the default location, report the artifact missing, and sooner or later a second competing copy appears there.
-2. **A mapped artifact must satisfy the same obligations.** Mapping changes where an artifact lives, not what it must contain. A `paths.system` entry pointing at an existing architecture document is adequate only if that document — possibly after extension — covers what a system description must cover: purpose and non-goals, entities and state transitions, trust boundaries, public claims, enforcement and verification inventory, behavior classification, and known unknowns ([PROFILE.md §7](../PROFILE.md); [templates/SYSTEM.md](../templates/SYSTEM.md) shows the expected shape). If the existing document cannot reasonably absorb that content, keep the default artifact and cross-link the two instead.
+2. **A mapped artifact must satisfy the same obligations.** Mapping changes where an artifact lives, not what it must contain. For an active adoption, a `paths.system` entry pointing at an existing architecture document is adequate only if that document — possibly after extension — covers what a current system description must cover: purpose and non-goals, entities and state transitions, trust boundaries, public claims, enforcement and verification inventory, behavior classification, and known unknowns ([PROFILE.md §7](../PROFILE.md); [templates/SYSTEM.md](../templates/SYSTEM.md) shows the expected shape). For an `archived` adoption, the mapped system artifact instead MUST state all four §6.6 facts: no active operation, maintenance, or feature development; historical purpose; known material limitations; and the last supported revision or release (or explicitly that none exists). If the existing document cannot reasonably absorb the applicable content, keep the default artifact and cross-link the two instead.
 3. **YAML artifacts must remain schema-valid wherever they live.** The claim, invariant, defeater, and residual registers must validate against the pinned upstream schemas ([../schemas/](../schemas/)) regardless of location. Relocation via `paths:` changes the file path only. Renaming fields, restructuring entries, or embedding the register in a different format is not a mapping — it is a local fork of the artifact format (see §4).
 
 ## 3. Worked examples

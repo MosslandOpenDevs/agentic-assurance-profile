@@ -1,6 +1,7 @@
 """Regression tests for scripts/validate.py (self-check, adopter, drift).
 
-Standard library only (unittest, tempfile, pathlib, subprocess, json, copy).
+Standard library only (unittest, tempfile, pathlib, subprocess, json, copy,
+shutil).
 The validator itself needs pyyaml + jsonschema, so every test invokes it as a
 subprocess through the same interpreter that runs this suite
 (``sys.executable``), asserting on exit codes and output substrings — the
@@ -39,6 +40,7 @@ v0.3.0 additions:
 import copy
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -53,6 +55,31 @@ SCHEMAS_DIR = REPO_ROOT / "schemas"
 # expired ones. Tests must never depend on what today's date happens to be.
 FUTURE_DATE = "2999-01-01"
 PAST_DATE = "2000-01-01"
+
+CURRENT_REVIEW_DATE_PLACEHOLDER = "REPLACE_WITH_REVIEW_AFTER_DATE"
+LEGACY_REVIEW_DATE_PLACEHOLDER = "YYYY-MM-DD"
+REVIEW_DATE_PLACEHOLDERS = (
+    CURRENT_REVIEW_DATE_PLACEHOLDER,
+    LEGACY_REVIEW_DATE_PLACEHOLDER,
+)
+
+LEGACY_REGISTER_FIELD_PLACEHOLDERS = {
+    "claims": {
+        "text": "Replace with the exact user-facing or operator-facing claim.",
+        "scope": "Replace with bounded system and version scope.",
+    },
+    "invariants": {
+        "title": "Replace with a precise invariant title",
+        "statement": "Replace with a proposition that must remain true.",
+        "scope": "Replace with bounded system scope.",
+    },
+    "defeaters": {
+        "statement": "Replace with a concrete reason a claim may be false or incomplete.",
+    },
+    "residuals": {
+        "summary": "Replace with a safe summary of remaining uncertainty.",
+    },
+}
 
 
 def clean_env(extra=None):
@@ -238,6 +265,33 @@ def conformant_fixture():
     return adoption, registers
 
 
+def registers_with_legacy_bare_prompts():
+    """All seven direct-field prompts copied from the v0.3.x templates."""
+    _adoption, registers = conformant_fixture()
+    for kind, fields in LEGACY_REGISTER_FIELD_PLACEHOLDERS.items():
+        registers[kind][kind][0].update(fields)
+    return registers
+
+
+def lite_assurance_with_legacy_bare_prompts():
+    """The five v0.3.x prompts representable in the lite layout."""
+    assurance = baseline_lite_assurance()
+    for kind in ("invariants", "residuals"):
+        assurance[kind][0].update(LEGACY_REGISTER_FIELD_PLACEHOLDERS[kind])
+    assurance["defeaters"] = [
+        {
+            "id": "DEF-CORE-001",
+            "statement": LEGACY_REGISTER_FIELD_PLACEHOLDERS["defeaters"][
+                "statement"
+            ],
+            "status": "OPEN",
+            "disclosure": "PUBLIC",
+            "owner": "Alice Example",
+        }
+    ]
+    return assurance
+
+
 REGISTER_FILES = {
     "claims": "assurance/CLAIMS.yaml",
     "invariants": "assurance/INVARIANTS.yaml",
@@ -286,6 +340,14 @@ def baseline_lite_adoption():
     adoption = baseline_adoption()
     adoption["layout"] = "lite"
     return adoption
+
+
+def copy_self_check_fixture(root):
+    """Copy only the inputs consumed by the central self-check."""
+    root = Path(root)
+    shutil.copy2(REPO_ROOT / "VERSION", root / "VERSION")
+    shutil.copytree(REPO_ROOT / "schemas", root / "schemas")
+    shutil.copytree(REPO_ROOT / "templates", root / "templates")
 
 
 class ValidatorTestCase(unittest.TestCase):
@@ -386,6 +448,85 @@ class TestSelfCheck(ValidatorTestCase):
         code, out = run_validator(["self-check", "--repo-root", str(REPO_ROOT)])
         self.assertEqual(code, 0, out)
         self.assertNotIn("ERROR:", out)
+
+    def test_empty_mandatory_split_register_templates_fail(self):
+        # Split templates are shipped as one core starter set. Schema and
+        # per-entry semantics alone accept an empty list, so self-check must
+        # apply the same non-vacuity obligations as adopter mode.
+        for kind, filename in (
+            ("invariants", "INVARIANTS.yaml"),
+            ("residuals", "RESIDUALS.yaml"),
+        ):
+            with self.subTest(kind=kind):
+                root = self.make_tmp()
+                copy_self_check_fixture(root)
+                write_yaml(
+                    root / "templates" / filename,
+                    {"version": 1, kind: []},
+                )
+                code, out = run_validator(["self-check", "--repo-root", str(root)])
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"{kind} register is empty", out)
+
+    def test_shipped_lite_templates_without_inline_system_fail(self):
+        # Both files are advertised as complete four-file starting paths. The
+        # schema permits an external SYSTEM.md, but the shipped copies must not
+        # silently require a fifth file.
+        system_block = (
+            "system: |\n"
+            "  REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION\n"
+        )
+        for filename in ("assurance.minimal.yaml", "assurance.yaml"):
+            with self.subTest(filename=filename):
+                root = self.make_tmp()
+                copy_self_check_fixture(root)
+                path = root / "templates" / filename
+                text = path.read_text(encoding="utf-8")
+                self.assertIn(system_block, text)
+                path.write_text(text.replace(system_block, "", 1), encoding="utf-8")
+                code, out = run_validator(
+                    ["self-check", "--repo-root", str(root)]
+                )
+                self.assertEqual(code, 1, out)
+                self.assertIn(
+                    "shipped lite template must include a non-empty "
+                    "'system' section",
+                    out,
+                )
+
+    def test_expanded_lite_template_keeps_documented_optional_surface(self):
+        # `resolution` is a comment-only prompt and `extensions` is optional in
+        # the schema, so the ordinary YAML self-check cannot pin either one.
+        text = (REPO_ROOT / "templates" / "assurance.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "#     # resolution: "
+            "REPLACE_WITH_HOW_THE_DEFEATER_WAS_RESOLVED_MITIGATED_OR_WITHDRAWN",
+            text,
+        )
+        self.assertIn("\nextensions: {}\n", text)
+
+    def test_standalone_agents_block_must_match_normative_copy(self):
+        # templates/AGENTS.md explicitly promises a verbatim copy of §11.
+        # A prose-only change can otherwise drift without schema coverage.
+        root = self.make_tmp()
+        copy_self_check_fixture(root)
+        path = root / "templates" / "AGENTS.md"
+        text = path.read_text(encoding="utf-8")
+        text = text.replace(
+            "affected claims, invariants, defeaters, and residuals",
+            "all claims, invariants, defeaters, and residuals",
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        code, out = run_validator(["self-check", "--repo-root", str(root)])
+        self.assertEqual(code, 1, out)
+        self.assertIn(
+            "OpenDevs Agentic Assurance block differs from the normative "
+            "verbatim block",
+            out,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -516,6 +657,75 @@ class TestAdopterPlaceholders(ValidatorTestCase):
                 }
                 code, out = self.run_split(adoption, registers)
                 self.assertEqual(code, 0, out)
+
+    def test_v03_bare_prompts_split_pass_draft_but_fail_human_reviewed(self):
+        registers = registers_with_legacy_bare_prompts()
+        code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 0, out)
+
+        adoption = baseline_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        code, out = self.run_split(adoption, registers)
+        self.assertEqual(code, 1, out)
+        for kind, fields in LEGACY_REGISTER_FIELD_PLACEHOLDERS.items():
+            for field, prompt in fields.items():
+                with self.subTest(kind=kind, field=field):
+                    self.assertIn(
+                        f"unfilled placeholder {prompt!r}",
+                        out,
+                    )
+                    self.assertIn(f"$.{kind}[0].{field}", out)
+
+    def test_v03_bare_prompts_lite_pass_draft_but_fail_human_reviewed(self):
+        assurance = lite_assurance_with_legacy_bare_prompts()
+        code, out = self.run_lite(baseline_lite_adoption(), assurance)
+        self.assertEqual(code, 0, out)
+
+        adoption = baseline_lite_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        code, out = self.run_lite(adoption, assurance)
+        self.assertEqual(code, 1, out)
+        for kind in ("invariants", "defeaters", "residuals"):
+            for field, prompt in LEGACY_REGISTER_FIELD_PLACEHOLDERS[kind].items():
+                with self.subTest(kind=kind, field=field):
+                    self.assertIn(f"unfilled placeholder {prompt!r}", out)
+                    self.assertIn(f"$.{kind}[0].{field}", out)
+
+    def test_v03_bare_prompts_fail_a_fully_conformant_fixture(self):
+        adoption, _registers = conformant_fixture()
+        registers = registers_with_legacy_bare_prompts()
+        code, out = self.run_split(adoption, registers)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(
+            out.count("stage HUMAN_REVIEWED: unfilled placeholder 'Replace with"),
+            7,
+            out,
+        )
+        self.assertNotIn("stage CONFORMANT: requirements satisfied", out)
+
+    def test_v03_bare_prompt_text_in_local_metadata_is_not_a_placeholder(self):
+        # Exact legacy text is data everywhere except the seven released
+        # register kind/direct-field paths.
+        adoption = baseline_adoption()
+        adoption["adoption_stage"] = "HUMAN_REVIEWED"
+        adoption["human_review"] = human_review_block()
+        all_prompts = [
+            prompt
+            for fields in LEGACY_REGISTER_FIELD_PLACEHOLDERS.values()
+            for prompt in fields.values()
+        ]
+        adoption["extensions"] = {"legacy_prompt_examples": all_prompts}
+        registers = baseline_registers()
+        registers["residuals"]["residuals"][0]["local_metadata"] = {
+            "legacy_prompt_examples": all_prompts,
+            # Even a nested key matching a released direct field is local data.
+            "summary": LEGACY_REGISTER_FIELD_PLACEHOLDERS["residuals"]["summary"],
+        }
+        code, out = self.run_split(adoption, registers)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("unfilled placeholder 'Replace with", out)
 
 
 # ---------------------------------------------------------------------------
@@ -759,8 +969,8 @@ class TestRegisterObligations(ValidatorTestCase):
 
     def test_archived_only_adoption_exempt_from_invariants_and_residuals(self):
         # An archived-only adopter (PROFILE.md section 6.6) is exempt from the
-        # invariant and residual obligations (but still needs a system
-        # description) — pins the `any(profile != "archived")` scoping so a
+        # invariant and residual obligations (but still needs the mapped system
+        # artifact) — pins the `any(profile != "archived")` scoping so a
         # mis-guard that demanded registers everywhere would be caught.
         adoption = baseline_adoption()
         adoption["profiles"] = ["archived"]
@@ -771,8 +981,7 @@ class TestRegisterObligations(ValidatorTestCase):
 
     def test_archived_without_system_fails(self):
         # Archived is exempt from invariants and residuals, but still needs a
-        # system description — where section 6.6's historical purpose, known
-        # limitations, and last supported revision are recorded.
+        # mapped system artifact carrying all four section 6.6 facts.
         adoption = baseline_adoption()
         adoption["profiles"] = ["archived"]
         root = self.make_tmp()
@@ -783,13 +992,32 @@ class TestRegisterObligations(ValidatorTestCase):
         self.assertIn("SYSTEM.md missing", out)
 
     def test_archived_combined_with_active_profile_fails(self):
-        # `archived` is exclusive: a repository that is no longer operated
-        # cannot also declare an active profile.
+        # `archived` is exclusive: a repository with no active operation,
+        # maintenance, or feature development cannot also declare an active
+        # profile.
         adoption = baseline_adoption()
         adoption["profiles"] = ["core", "archived"]
         code, out = self.run_split(adoption, baseline_registers())
         self.assertEqual(code, 1, out)
         self.assertIn("'archived' cannot be combined", out)
+
+    def test_invalid_archived_declarations_have_no_exclusivity_verdict(self):
+        # The schema owns invalid declaration diagnostics. Exclusivity must
+        # inspect the raw declaration, not a strings-only subset that could
+        # turn [archived, 7] into a false success or duplicates into a derived
+        # contradiction.
+        for profiles in (
+            ["archived", 7],
+            ["archived", "archived"],
+            ["archived", "not-a-profile"],
+        ):
+            with self.subTest(profiles=profiles):
+                adoption = baseline_adoption()
+                adoption["profiles"] = profiles
+                code, out = self.run_split(adoption, {})
+                self.assertEqual(code, 1, out)
+                self.assertNotIn("profile 'archived' is declared exclusively", out)
+                self.assertNotIn("'archived' cannot be combined", out)
 
 
 # ---------------------------------------------------------------------------
@@ -1471,6 +1699,47 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
             head_registers=head_registers,
         )
 
+    def run_lite_review_date_diff(self, before, after):
+        """Run the public drift CLI with both register roots in lite layout."""
+        root = self.make_tmp()
+        base_adoption = baseline_lite_adoption()
+        head_adoption = copy.deepcopy(base_adoption)
+        write_yaml(root / "adoption.yaml", head_adoption)
+        write_yaml(root / "base-adoption.yaml", base_adoption)
+        (root / "changed.txt").write_text("", encoding="utf-8")
+
+        base_assurance = baseline_lite_assurance()
+        base_assurance["residuals"][0]["review_after"] = before
+        head_assurance = copy.deepcopy(base_assurance)
+        head_assurance["residuals"][0]["review_after"] = after
+        base_root = root / "base-root"
+        head_root = root / "head-root"
+        write_yaml(
+            base_root / ".agentic-assurance" / "assurance.yaml",
+            base_assurance,
+        )
+        write_yaml(
+            head_root / ".agentic-assurance" / "assurance.yaml",
+            head_assurance,
+        )
+        return run_validator(
+            [
+                "drift",
+                "--adoption",
+                str(root / "adoption.yaml"),
+                "--changed-files",
+                str(root / "changed.txt"),
+                "--pr-body",
+                str(root / "missing-body.txt"),
+                "--base-adoption",
+                str(root / "base-adoption.yaml"),
+                "--base-registers-root",
+                str(base_root),
+                "--project-root",
+                str(head_root),
+            ]
+        )
+
     def test_unchanged_registers_report_no_regression(self):
         code, out = self.run_register_diff(lambda head: None)
         self.assertEqual(code, 0, out)
@@ -2136,7 +2405,7 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
         def schedule_base(base):
             base["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
 
-        for sentinel in ("REPLACE_WITH_REVIEW_AFTER_DATE", "YYYY-MM-DD"):
+        for sentinel in REVIEW_DATE_PLACEHOLDERS:
             with self.subTest(sentinel=sentinel):
                 def mutate(head):
                     head["residuals"]["residuals"][0]["review_after"] = sentinel
@@ -2151,19 +2420,41 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
                     out,
                 )
 
-    def test_legacy_review_after_repaired_to_real_date_not_flagged(self):
-        def placeholder_base(base):
-            base["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+    def test_review_after_sentinels_repaired_to_real_date_not_flagged(self):
+        for sentinel in REVIEW_DATE_PLACEHOLDERS:
+            with self.subTest(sentinel=sentinel):
+                def placeholder_base(base):
+                    base["residuals"]["residuals"][0]["review_after"] = sentinel
 
-        def mutate(head):
-            head["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
+                def mutate(head):
+                    head["residuals"]["residuals"][0]["review_after"] = "2099-01-01"
 
-        code, out = self.run_register_diff(mutate, mutate_base=placeholder_base)
-        self.assertEqual(code, 0, out)
-        self.assertIn("no assurance policy regression", out)
+                code, out = self.run_register_diff(
+                    mutate, mutate_base=placeholder_base
+                )
+                self.assertEqual(code, 0, out)
+                self.assertIn("no assurance policy regression", out)
+
+    def test_review_after_sentinel_alias_migration_not_flagged(self):
+        for before, after in (
+            (CURRENT_REVIEW_DATE_PLACEHOLDER, LEGACY_REVIEW_DATE_PLACEHOLDER),
+            (LEGACY_REVIEW_DATE_PLACEHOLDER, CURRENT_REVIEW_DATE_PLACEHOLDER),
+        ):
+            with self.subTest(before=before, after=after):
+                def placeholder_base(base):
+                    base["residuals"]["residuals"][0]["review_after"] = before
+
+                def mutate(head):
+                    head["residuals"]["residuals"][0]["review_after"] = after
+
+                code, out = self.run_register_diff(
+                    mutate, mutate_base=placeholder_base
+                )
+                self.assertEqual(code, 0, out)
+                self.assertIn("no assurance policy regression", out)
 
     def test_unchanged_review_after_sentinel_not_flagged(self):
-        for sentinel in ("REPLACE_WITH_REVIEW_AFTER_DATE", "YYYY-MM-DD"):
+        for sentinel in REVIEW_DATE_PLACEHOLDERS:
             with self.subTest(sentinel=sentinel):
                 def placeholder_base(base):
                     base["residuals"]["residuals"][0]["review_after"] = sentinel
@@ -2173,6 +2464,31 @@ class TestDriftRegisterPolicyDiff(ValidatorTestCase):
                 )
                 self.assertEqual(code, 0, out)
                 self.assertIn("no assurance policy regression", out)
+
+    def test_lite_review_after_sentinel_directions_through_cli(self):
+        # Exercise the separate lite loader, not only the shared comparator:
+        # aliases and repairs are neutral, while erasing a real commitment is
+        # still fail-closed for either official spelling.
+        neutral_transitions = [
+            *[(sentinel, sentinel) for sentinel in REVIEW_DATE_PLACEHOLDERS],
+            (CURRENT_REVIEW_DATE_PLACEHOLDER, LEGACY_REVIEW_DATE_PLACEHOLDER),
+            (LEGACY_REVIEW_DATE_PLACEHOLDER, CURRENT_REVIEW_DATE_PLACEHOLDER),
+            *[(sentinel, "2099-01-01") for sentinel in REVIEW_DATE_PLACEHOLDERS],
+        ]
+        for before, after in neutral_transitions:
+            with self.subTest(before=before, after=after, result="neutral"):
+                code, out = self.run_lite_review_date_diff(before, after)
+                self.assertEqual(code, 0, out)
+                self.assertIn("no assurance policy regression", out)
+
+        for sentinel in REVIEW_DATE_PLACEHOLDERS:
+            with self.subTest(
+                before="2099-01-01", after=sentinel, result="regression"
+            ):
+                code, out = self.run_lite_review_date_diff("2099-01-01", sentinel)
+                self.assertEqual(code, 1, out)
+                self.assertIn("review_after replaced with an unparsable value", out)
+                self.assertIn(repr(sentinel), out)
 
     def test_residual_review_after_brought_forward_not_flagged(self):
         # Moving a re-review earlier strengthens scrutiny.

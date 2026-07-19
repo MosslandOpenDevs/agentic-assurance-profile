@@ -8,11 +8,13 @@
 # Placement: copy to `.agentic-assurance/assurance.yaml`, next to adoption.yaml,
 # and add `layout: lite` to adoption.yaml.
 #
-# For the full field set, the optional `defeaters` section, and inline docs on
-# every field, see templates/assurance.yaml and the split register templates
-# (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml). Section items use the
-# same shapes as those files, so graduating to the split layout is a copy that
-# preserves IDs.
+# For an expanded reference showing the standard optional fields, the optional
+# `defeaters` section, and the local `extensions` namespace, see
+# templates/assurance.yaml and the split register templates
+# (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml,
+# templates/DEFEATERS.yaml). Register schemas permit project-local entry fields,
+# so no template attempts to enumerate every possible extension. Section items
+# use the same shapes as those files, so graduating to split preserves IDs.
 
 version: 1
 
