@@ -156,7 +156,7 @@ Taking the profile into a repository: pinning the upstream profile, creating the
 
 How far an adoption has progressed, declared by the adopter in the optional `adoption_stage` field of `adoption.yaml`. The declaration is self-made and self-binding: nobody awards a stage, the validator enforces exactly the stage declared, and declaring a stage the repository does not meet fails the build. Advancing the stage is a human owner's act, recorded like a review outcome; an absent field means `DRAFT`. The three stages:
 
-- `DRAFT` — work in progress; placeholders and `UNKNOWN` are allowed everywhere.
+- `DRAFT` — work in progress; placeholders and `UNKNOWN` are allowed in the assurance registers (the adoption declaration itself must be complete at every stage).
 - `HUMAN_REVIEWED` — no placeholders remain, and a completed human review is recorded with date, reviewer, and record.
 - `CONFORMANT` — additionally, review dates are fresh, every critical invariant's intent is decided, and at least one attributable approval (who, where, when) is on record.
 

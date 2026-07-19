@@ -71,6 +71,9 @@ FORBIDDEN_VERSION_STRING = "v0.1.0" + "-draft"
 VERSION_FILE_RE = re.compile(r"^(unreleased|v\d+\.\d+\.\d+(-rc\.\d+)?(-dev)?)$")
 
 PLACEHOLDER_RE = re.compile(r"^REPLACE_WITH_[A-Z0-9_]+$")
+# A far-future date: a substituted template review_after must not trip the
+# expired-review semantic check (a template is not an overdue review).
+DATE_SUBSTITUTION = "2999-01-01"
 PLACEHOLDER_SUBSTITUTIONS = {
     "REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA": "0" * 40,
     "REPLACE_WITH_PINNED_VERSION": "unreleased",
@@ -79,12 +82,11 @@ PLACEHOLDER_SUBSTITUTIONS = {
     # declare a classified set rather than inherit a `core` default; the
     # central self-check substitutes it to a valid enum value.
     "REPLACE_WITH_CLASSIFIED_PROFILE": "core",
+    # The register templates ship this in `review_after`; self-check
+    # substitutes a far-future date, but an adopter must fill a real one.
+    "REPLACE_WITH_REVIEW_AFTER_DATE": DATE_SUBSTITUTION,
 }
 DEFAULT_PLACEHOLDER_SUBSTITUTION = "placeholder"
-DATE_PLACEHOLDER = "YYYY-MM-DD"
-# A far-future date: substituted template dates must not trip the expired
-# review_after semantic check (a template is not an overdue review).
-DATE_SUBSTITUTION = "2999-01-01"
 
 SCHEMA_FILES = (
     "adoption.schema.json",
@@ -109,6 +111,16 @@ LITE_MINIMAL_TEMPLATE = "assurance.minimal.yaml"
 LITE_SECTION_KINDS = ("invariants", "defeaters", "residuals")
 # Lite is core-only; any other profile requires graduating to the split layout.
 LITE_PROFILES = ("core",)
+# The valid profiles that require the split layout (lite is core-only). Used so
+# the "graduate to split" advice fires only for a real non-core profile, not
+# for a placeholder or a schema-invalid value — those get their own errors.
+SPLIT_ONLY_PROFILES = (
+    "service",
+    "trust-critical",
+    "data-curation",
+    "agent-runtime",
+    "archived",
+)
 
 # Artifact kind -> (schema file, default repository-relative path).
 ARTIFACT_KINDS = {
@@ -314,8 +326,6 @@ class Report:
 def substitute_placeholders(node: object) -> object:
     """Replace template placeholder strings with type-appropriate dummies."""
     if isinstance(node, str):
-        if node == DATE_PLACEHOLDER:
-            return DATE_SUBSTITUTION
         if PLACEHOLDER_RE.match(node):
             return PLACEHOLDER_SUBSTITUTIONS.get(node, DEFAULT_PLACEHOLDER_SUBSTITUTION)
         return node
@@ -327,12 +337,13 @@ def substitute_placeholders(node: object) -> object:
 
 
 def find_placeholder_strings(node: object, path: str = "$") -> list[tuple[str, str]]:
-    """Return (json_path, value) pairs for every remaining template placeholder:
-    a ``REPLACE_WITH_`` token or an unfilled ``YYYY-MM-DD`` date (the date
-    placeholder the register templates carry in ``review_after``)."""
+    """Return (json_path, value) pairs for every remaining ``REPLACE_WITH_``
+    placeholder token (including the register templates' review-after date
+    sentinel). A literal string such as ``YYYY-MM-DD`` used as real data — for
+    example in a local ``extensions`` value — is not a placeholder."""
     found: list[tuple[str, str]] = []
     if isinstance(node, str):
-        if "REPLACE_WITH_" in node or node == DATE_PLACEHOLDER:
+        if "REPLACE_WITH_" in node:
             found.append((path, node))
     elif isinstance(node, list):
         for index, item in enumerate(node):
@@ -1136,7 +1147,8 @@ def check_adopter_warnings(project_root: Path, profiles: list[str], report: Repo
             "profile 'archived': PROFILE.md section 6.6's four statements "
             "(not operated, historical purpose, known limitations, last "
             "supported revision) are not mechanically verified — human review "
-            "must confirm them in the system description (tracked: issue #40)"
+            "must confirm them in the system description "
+            "(tracked: MosslandOpenDevs/agentic-assurance-profile#40)"
         )
 
 
@@ -1160,7 +1172,7 @@ def check_profile_exclusivity(profiles: list[str], report: Report) -> None:
 
 def check_lite_profiles(profiles: list[str], report: Report) -> None:
     """Layout 'lite' is core-only; richer profiles need the split layout."""
-    beyond_core = [profile for profile in profiles if profile not in LITE_PROFILES]
+    beyond_core = [profile for profile in profiles if profile in SPLIT_ONLY_PROFILES]
     if beyond_core:
         listed = ", ".join(f"'{profile}'" for profile in beyond_core)
         report.error(

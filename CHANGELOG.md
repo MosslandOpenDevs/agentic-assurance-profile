@@ -39,7 +39,7 @@ description; full §6.6 field enforcement tracked in #40).
   the classified set or validation fails on the unfilled placeholder, so
   no adoption silently inherits a `core` default. (This is a completion
   guard; detecting a *wrong* profile against the actual code remains the
-  separately-tracked under-classification backstop.)
+  under-classification backstop, tracked in #41.)
 
 #### Adopter impact / upgrade actions
 

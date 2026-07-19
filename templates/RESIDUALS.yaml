@@ -16,4 +16,4 @@ residuals:
     # Optional disposition fields:
     # acceptance_rationale: The human owner's recorded reason for an ACCEPTED disposition (expected when status is ACCEPTED).
     # resolution_note: How a RESOLVED residual was closed, with a remediation reference (expected when status is RESOLVED).
-    review_after: YYYY-MM-DD
+    review_after: REPLACE_WITH_REVIEW_AFTER_DATE

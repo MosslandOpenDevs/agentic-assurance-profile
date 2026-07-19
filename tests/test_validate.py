@@ -432,23 +432,35 @@ class TestAdopterPlaceholders(ValidatorTestCase):
         self.assertIn("stage HUMAN_REVIEWED: unfilled placeholder", out)
 
     def test_date_placeholder_in_register_fails_at_human_reviewed(self):
-        # An unfilled `review_after: YYYY-MM-DD` is a placeholder too — caught
-        # at HUMAN_REVIEWED, not only REPLACE_WITH_ tokens (the register
-        # templates ship this date placeholder).
+        # An unfilled `review_after` date sentinel is a placeholder too — caught
+        # at HUMAN_REVIEWED, like any REPLACE_WITH_ token.
         adoption = baseline_adoption()
         adoption["adoption_stage"] = "HUMAN_REVIEWED"
         adoption["human_review"] = human_review_block()
         registers = baseline_registers()
-        registers["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        registers["residuals"]["residuals"][0][
+            "review_after"
+        ] = "REPLACE_WITH_REVIEW_AFTER_DATE"
         code, out = self.run_split(adoption, registers)
         self.assertEqual(code, 1, out)
-        self.assertIn("unfilled placeholder 'YYYY-MM-DD'", out)
+        self.assertIn("unfilled placeholder 'REPLACE_WITH_REVIEW_AFTER_DATE'", out)
 
     def test_date_placeholder_in_register_passes_at_draft(self):
-        # DRAFT tolerates the date placeholder, exactly like REPLACE_WITH_.
+        # DRAFT tolerates the date sentinel, exactly like REPLACE_WITH_.
         registers = baseline_registers()
-        registers["residuals"]["residuals"][0]["review_after"] = "YYYY-MM-DD"
+        registers["residuals"]["residuals"][0][
+            "review_after"
+        ] = "REPLACE_WITH_REVIEW_AFTER_DATE"
         code, out = self.run_split(baseline_adoption(), registers)
+        self.assertEqual(code, 0, out)
+
+    def test_literal_yyyy_mm_dd_value_is_not_a_placeholder(self):
+        # A literal "YYYY-MM-DD" string used as real data (here a local
+        # `extensions` value) is data, not a placeholder, and must not be
+        # rejected — the schema permits the extensions namespace.
+        adoption = baseline_adoption()
+        adoption["extensions"] = {"date_format": "YYYY-MM-DD"}
+        code, out = self.run_split(adoption, baseline_registers())
         self.assertEqual(code, 0, out)
 
 
@@ -889,6 +901,34 @@ class TestLiteLayout(ValidatorTestCase):
         text = (REPO_ROOT / "templates" / "adoption.yaml").read_text(encoding="utf-8")
         self.assertIn("REPLACE_WITH_CLASSIFIED_PROFILE", text)
         self.assertNotIn("\n  - core\n", text)
+
+    def test_adoption_with_unfilled_profile_sentinel_fails(self):
+        # An adopter who copies the template and leaves the profile sentinel
+        # fails — the completion guard that stops a silent `core` default.
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["REPLACE_WITH_CLASSIFIED_PROFILE"]
+        code, out = self.run_split(adoption, baseline_registers())
+        self.assertEqual(code, 1, out)
+        self.assertIn("unfilled placeholder 'REPLACE_WITH_CLASSIFIED_PROFILE'", out)
+
+    def test_profile_sentinel_under_lite_does_not_advise_split(self):
+        # The profile sentinel is a placeholder, not a real non-core profile,
+        # so lite must not tell the adopter to "graduate to the split layout"
+        # (they may well be classifying as core).
+        adoption = baseline_lite_adoption()
+        adoption["profiles"] = ["REPLACE_WITH_CLASSIFIED_PROFILE"]
+        code, out = self.run_lite(adoption, baseline_lite_assurance())
+        self.assertEqual(code, 1, out)
+        self.assertIn("unfilled placeholder 'REPLACE_WITH_CLASSIFIED_PROFILE'", out)
+        self.assertNotIn("graduate to the split layout", out)
+
+    def test_archived_profile_emits_section_6_6_warning(self):
+        adoption = baseline_adoption()
+        adoption["profiles"] = ["archived"]
+        code, out = self.run_split(adoption, {})
+        self.assertEqual(code, 0, out)
+        self.assertIn("WARN", out)
+        self.assertIn("section 6.6", out)
 
     def test_default_public_assurance_root_warns_but_passes(self):
         adoption = baseline_lite_adoption()
