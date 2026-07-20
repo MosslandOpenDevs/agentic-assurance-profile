@@ -68,7 +68,8 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.3.2` | Yes — current release |
+| `v0.4.0` | Yes — current release |
+| `v0.3.2` | Yes — previous release; upgrade at convenience (v0.4.0 requires an invariant for every active adoption, restricts `layout: lite` to `core` alone, gives the two root guides a reading-order and an unfilled-placeholder obligation, and fixes a false accept that let an adoption reach `CONFORMANT` with both root guides left as untouched upstream templates) |
 | `v0.3.1` | Yes — previous release; upgrade at convenience (v0.3.2 closes a fail-open on symlinked base registers and change-controls recorded decisions — residual acceptance, terminal dispositions, unset judgement values, assurance-graph edges) |
 | `v0.3.0` | Yes — previous release; upgrade at convenience (v0.3.1 completes the register policy diff — whole-register removal, closing dispositions, claim-basis removal — and hardens the drift diff step) |
 | `v0.2.1` | Yes — previous release; upgrade at convenience (v0.3.0 adds the register policy diff and closes a drift-job file-read; no CI trust-boundary regression) |
