@@ -4,6 +4,13 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Documented the v0.4.x reusable-workflow event limitation: drift evaluation
+  runs only for `pull_request`, so a green push or other non-pull-request run
+  is not a drift verdict. Push remains outside the documented drift scope;
+  applicability for other caller events remains tracked in
+  [#43](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/43).
+  Documentation only; no validator or workflow behavior changes.
+
 - Added a non-normative [v0.5 working design and delivery plan](docs/V0.5-DESIGN.md)
   that records the verified v0.4.0 baseline, separates measured architecture
   pressure from unknown adopter usability, and separates the always-required
