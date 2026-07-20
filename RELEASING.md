@@ -29,6 +29,7 @@ Adopters may pin only commits whose `VERSION` content equals their declared `ups
 1. **Release pull request.** One pull request that:
    - moves the `## Unreleased` content of [CHANGELOG.md](CHANGELOG.md) into a new section for the release, including an **Adopter impact / upgrade actions** subsection that states what an adopting repository must do when upgrading (state "none" explicitly when nothing is required);
    - sets `VERSION` to the exact tag string;
+   - updates the [SECURITY.md](SECURITY.md) supported-versions table so the new release is marked current and the release it supersedes is demoted — the security policy must never assert that a superseded release is current;
    - states the release's semver classification per PROFILE.md §16;
    - states the release's review class per [GOVERNANCE.md](GOVERNANCE.md) §2 (currently `SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED` until a second active maintainer exists), citing any external technical reviews the release incorporates — the class is a fact about the record, stated per release, not inherited silently from the standing default;
    - is reviewed per [GOVERNANCE.md](GOVERNANCE.md) — a major release requires explicit governing-body approval recorded in this pull request.

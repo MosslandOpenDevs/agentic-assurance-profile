@@ -235,7 +235,7 @@ Issue or change proposal
 
 **채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** 어떤 active 프로필이 해당하는지, 아니면 배타적인 `archived` 프로필이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 모든 specialized active 프로필은 `core` 의무를 상속합니다. active 채택에서는 해당 specialized 프로필이 하나도 없을 때 `[core]`를 선언하고, 하나라도 있으면 걸린 specialized 프로필만 적는 것이 canonical 선언입니다. 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
 
-`core` 하나만 해당할 때는 필수 프로필 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 목적, 비목표, 최소 하나의 불변조건, 최소 하나의 잔차, 그리고 일반적으로 system 설명까지 `assurance.yaml` 한 파일에 모읍니다. system 설명은 기존 산출물을 가리키도록 기록한 mapping으로 대신할 수도 있습니다.
+`core` 하나만 해당할 때는 필수 프로필 파일 네 개로 채택합니다. 여기에 더해 `specification_workflow.root`가 실제로 존재하는 중대 변경 workflow 진입 문서를 가리켜야 합니다 — 보통 이미 있는 `CONTRIBUTING`·ADR·명세 문서를 재사용하므로, 그런 문서가 아예 없는 저장소만 다섯 번째 파일을 새로 씁니다. `adoption.yaml`에 `layout: lite`를 선언하고 목적, 비목표, 최소 하나의 불변조건, 최소 하나의 잔차, 그리고 일반적으로 system 설명까지 `assurance.yaml` 한 파일에 모읍니다. system 설명은 기존 산출물을 가리키도록 기록한 mapping으로 대신할 수도 있습니다.
 
 ```text
 AGENTS.md

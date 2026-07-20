@@ -103,7 +103,7 @@ Why an observed behavior exists:
 | `UNKNOWN` | Evidence is insufficient to determine intent. |
 | `DEPRECATED` | Temporarily supported with an approved removal path. |
 
-The same honesty rule applies: intent-`UNKNOWN` is a valid resting state, and only a human can move a behavior from `UNKNOWN` to `INTENDED`.
+The same honesty rule applies: intent-`UNKNOWN` is a valid resting state, and every affirmative disposition — `INTENDED`, `COMPATIBILITY`, or `DEPRECATED` — must name the human authority that decided it. `ACCIDENTAL` records that the behavior is unwanted, and needs no such authority.
 
 ### Residual statuses ([PROFILE.md §12](../PROFILE.md); [schemas/residuals.schema.json](../schemas/residuals.schema.json))
 

@@ -235,7 +235,7 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 **Adoption begins by classifying the profile, not by copying files.** Which active profiles apply — or whether the exclusive `archived` profile applies instead — is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). Every specialized active profile inherits the `core` obligations: for an active adopter, declare `[core]` when none applies; otherwise canonically list the fired specialized profiles without `core`. The layout follows from that classification — never from the repository's size.
 
-At `core` alone, adoption has four required profile files. The lite layout, declared with `layout: lite` in `adoption.yaml`, concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description in a single `assurance.yaml`; the system description may instead be supplied by a recorded mapping to an existing artifact:
+At `core` alone, adoption has four required profile files, and `specification_workflow.root` must point at a material-change workflow entry document that actually exists — normally an existing `CONTRIBUTING`, ADR, or spec file, so only a repository that has none writes a fifth. The lite layout, declared with `layout: lite` in `adoption.yaml`, concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description in a single `assurance.yaml`; the system description may instead be supplied by a recorded mapping to an existing artifact:
 
 ```text
 AGENTS.md

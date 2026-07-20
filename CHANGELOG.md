@@ -17,8 +17,8 @@ enforcement remains tracked in #40).
   self-check of the cited evidence, and the classified set declared in
   `adoption.yaml`'s enforced `profiles:` field rather than only in the
   handoff prose. The prior "start at `core` / lite is the default /
-  select `core` only at first" framing is flipped throughout (§0, §1.2,
-  §3.0, §3.2, §5); `README.md` and `README.ko.md` route a bare "apply
+  select `core` only at first" framing is flipped throughout (§0, §3.0,
+  §3.2, §4.0, §5); `README.md` and `README.ko.md` route a bare "apply
   this profile" prompt into classify-first; and `PROFILE.md` §5
   clarifies that the smallest applicable set covers the system's actual
   nature. Documentation only — no schema or validator change.
@@ -341,30 +341,6 @@ enforcement remains tracked in #40).
   invariants, so no live adopter is affected. See the version
   classification note below.
 
-#### Version classification — a recorded owner decision, not a pre-existing rule
-
-Under the §16 in force at v0.3.2 — "Major: removes, weakens, or
-materially changes an obligation" — this release would have been a
-**major**. It both adds obligations that break previously conforming
-adoptions and removes one previously valid capability (`archived` +
-`lite`).
-
-§16's initial-development paragraph, under which adding or tightening an
-obligation before `v1.0.0` is a **minor**, was **introduced in this
-release and applied to it**. That is a governing owner decision taken on
-2026-07-20 and recorded here, rather than presented as a rule that
-already existed; the classification of this release rests on that
-decision, not on a policy that predates it.
-
-Rationale: the profile is pre-`v1.0.0` with two adopters, both under
-this organization's control, and publishing `v1.0.0` solely to carry
-this change would assert an interface stability the profile does not yet
-have. The paragraph states this project's `0.x` operating policy; it
-does not claim that semantic versioning universally assigns every such
-change to a minor release. An adopter who prefers the stricter reading
-should treat this release as breaking and plan the migration below
-accordingly — the required work is identical either way.
-- **Audit and complete every active §6.1 system description before the pin
   upgrade.** Whether it is inline under lite or stored at `paths.system`, the
   description must identify the system being assured, its principal
   responsibilities and material boundaries, and known material limitations or
@@ -467,7 +443,12 @@ accordingly — the required work is identical either way.
   in its schema and labeled as status-conditional in both starter templates.
   Reviewed adopters must also add a real project-local
   review record if `human_review.record` previously named a missing or empty
-  path; active adopters must declare their existing material-change workflow.
+  path; active adopters must declare their existing material-change workflow,
+  and `specification_workflow.root` must resolve to a path that actually
+  exists and carries content — a readable, non-empty UTF-8 file, or a
+  directory holding at least one such file within the validator's bounded
+  scan. A stub or emptied workflow directory now fails. `docs/ADOPTION.md`
+  §3.6 states the exact bounds.
 - **Completed human acts cannot be future-dated.** Repair a future
   `human_review.date`, approval `at`, or residual `accepted_at`. Date-only
   values allow the current civil date possible in UTC+14; timestamp values use
@@ -494,11 +475,14 @@ accordingly — the required work is identical either way.
   `CONFORMANT`; the qualifying approval's civil date must not precede the
   human-review date.
 
-  **Every v0.3.x adoption fails this check until the block is added**, because
-  v0.3.2 required only that the two root files exist. Both pilot adoptions
-  fail today for exactly this reason. The block is, verbatim, in *both* root
-  files — substituting a custom `adoption-file` path for the second entry,
-  identically in both:
+  **Every v0.3.x adoption fails this check until the block is present in both
+  files**, because v0.3.2 required only that the two root files exist. In
+  practice the edit is one file: the v0.3.2 `AGENTS.md` template already
+  carried the block, and its `AGENTIC_ASSURANCE.md` template did not. Both
+  pilot adoptions were checked against this release — `AGENTS.md` passes in
+  both, `AGENTIC_ASSURANCE.md` fails in both, so each needs the block added
+  there and nothing else. The block is, verbatim — substituting a custom
+  `adoption-file` path for the second entry, identically in both files:
 
   ```text
   Before any material change, read:
@@ -506,6 +490,27 @@ accordingly — the required work is identical either way.
   1. `AGENTIC_ASSURANCE.md`;
   2. `.agentic-assurance/adoption.yaml`;
   ```
+
+- **`issue_integration` values are now constrained, not merely declared.**
+  `public_security_issues_allowed` must be `false` and
+  `closing_requires_artifact_update` must be `true`, enforced by both the
+  schema (`const`) and the validator. v0.3.2 typed them as ordinary booleans
+  and described the first as required only *for public repositories*, so a
+  private adopter could legitimately declare `true`. It is now unconditional
+  and `--repo-visibility private` does not relax it: repository visibility
+  bounds who can read a finding, not whether an exploitable one may be filed
+  as an ordinary Issue. An adopter that declared `public_security_issues_allowed:
+  true` must set it to `false` and route potentially exploitable findings
+  through a private report or Security Advisory. `PROFILE.md` §14 now states
+  both values normatively, so the mechanical rule has an anchor.
+
+- **Fill in the root guides before `HUMAN_REVIEWED`.** Because this release
+  makes the two root guides required artifacts, they now carry the same
+  reviewed-stage obligation as the mapped system artifact: from
+  `HUMAN_REVIEWED` onward neither may contain a `REPLACE_WITH_` marker,
+  including inside fenced sample blocks. Without this, an adoption could be
+  declared `CONFORMANT` while the file agents are told to read first was still
+  the unfilled upstream template. Both pilot adoptions already satisfy it.
 
 - **Move pull-request directive lines into a leading block.**
   `Assurance impact:`, `Reason:`, and `Assurance policy change:` now count
@@ -573,6 +578,52 @@ accordingly — the required work is identical either way.
   the status-conditional defeater `resolution` field and top-level `extensions`
   namespace. Template and adoption prose call it an expanded standard-field
   reference rather than “every field.”
+
+#### Fixed — placeholder scanning and diagnostics
+
+- **A completed artifact no longer fails for naming the marker convention.**
+  The reviewed-stage prose scan matches a named `REPLACE_WITH_...` token
+  rather than the bare prefix, and reports the token it found. The shipped
+  `SYSTEM.md` and `THREAT_MODEL.md` instructions were reworded so a copied
+  template does not carry a literal marker in its own guidance.
+- **Lite prose is scanned by the same rule as split prose.** `system`,
+  `purpose`, and `non_goals` in the lite envelope are prose, and now follow
+  the prose rule instead of the structured-field substring rule. Identical
+  text previously passed in the split layout and failed in lite, and the
+  error quoted the adopter's entire paragraph instead of the token.
+  Structured register fields keep the stricter substring rule.
+- **A malformed tagged scalar no longer escapes as a traceback.** `!!bool`
+  and `!!timestamp` values that PyYAML cannot resolve are reported as
+  ordinary validation errors, preserving PyYAML's own diagnostic text, so
+  `--json` output stays well-formed.
+- **`intent.authority` guidance ships with the templates.** The invariant
+  templates now state inline that an `INTENDED`, `COMPATIBILITY`, or
+  `DEPRECATED` classification requires a named authority, matching the
+  guidance already given for the residual and defeater conditionals.
+
+#### Version classification — a recorded owner decision, not a pre-existing rule
+
+Under the §16 in force at v0.3.2 — "Major: removes, weakens, or
+materially changes an obligation" — this release would have been a
+**major**. It both adds obligations that break previously conforming
+adoptions and removes one previously valid capability (`archived` +
+`lite`).
+
+§16's initial-development paragraph, under which adding or tightening an
+obligation before `v1.0.0` is a **minor**, was **introduced in this
+release and applied to it**. That is a governing owner decision taken on
+2026-07-20 and recorded here, rather than presented as a rule that
+already existed; the classification of this release rests on that
+decision, not on a policy that predates it.
+
+Rationale: the profile is pre-`v1.0.0` with two adopters, both under
+this organization's control, and publishing `v1.0.0` solely to carry
+this change would assert an interface stability the profile does not yet
+have. The paragraph states this project's `0.x` operating policy; it
+does not claim that semantic versioning universally assigns every such
+change to a minor release. An adopter who prefers the stricter reading
+should treat this release as breaking and plan the migration below
+accordingly — the required work is identical either way.
 
 ## v0.3.2 — 2026-07-19
 
