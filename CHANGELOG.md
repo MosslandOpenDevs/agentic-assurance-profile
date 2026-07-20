@@ -170,8 +170,13 @@ enforcement remains tracked in #40).
   `actionlint` image moves from 1.7.7 to 1.7.12, and Python-only workflow
   bodies (including the multi-thousand-line materializer) run directly under
   isolated Python custom shells instead of appearing to shellcheck as bash
-  heredocs. This is CI maintenance only; it adds no adopter action and does not
-  change workflow behavior.
+  heredocs. The greater-than-64-KiB materializer uses the equivalent `python3`
+  shell spelling so actionlint 1.7.12 does not feed it into that release's
+  pre-start Pyflakes stdin path, which can deadlock at the runner pipe limit
+  (`rhysd/actionlint#650` and `rhysd/actionlint#651`); regression tests compile
+  and execute the body instead. Smaller Python steps remain Pyflakes-checked.
+  This is CI maintenance only; it adds no adopter action and does not change
+  workflow behavior.
 - **Pull-request routing is bounded and safe at its inputs and CI sinks.**
   The drift job explicitly checks out the pull request's head SHA rather than
   GitHub's default synthetic merge ref, keeping HEAD-side policy reads aligned

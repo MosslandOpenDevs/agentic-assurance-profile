@@ -244,7 +244,7 @@ def run_workflow_step(
             text=True,
             timeout=timeout,
         )
-    if shell != "python -I {0}":
+    if shell not in {"python -I {0}", "python3 -I {0}"}:
         raise AssertionError(
             f"workflow step {step_name!r} has unsupported test shell {shell!r}"
         )
@@ -5499,14 +5499,14 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         self.assertIn("from validate import", workflow)
         self.assertIn("CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}", workflow)
         self.assertNotIn("<<'EOF'", workflow)
-        self.assertEqual(workflow.count("shell: python -I {0}"), 8)
+        self.assertEqual(workflow.count("shell: python -I {0}"), 7)
+        self.assertEqual(workflow.count("shell: python3 -I {0}"), 1)
         for step_name in (
             "Reserve trusted profile checkout destination",
             "Read and verify upstream pin",
             "Check pin staleness (non-blocking)",
             "Verify upstream pin matches this workflow",
             "Normalize changed files",
-            "Materialize the base tree and compute the assurance diff",
         ):
             with self.subTest(step=step_name):
                 shell, script = workflow_step_spec(step_name)
@@ -5532,7 +5532,12 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         shell, script = workflow_step_spec(
             "Materialize the base tree and compute the assurance diff"
         )
-        self.assertEqual(shell, "python -I {0}")
+        # actionlint v1.7.12's pyflakes subprocess path can deadlock before
+        # starting the child when this >64 KiB body fills its stdin pipe.
+        # `python3` has identical runner semantics after setup-python but is
+        # intentionally outside that release's exact `python` shell matcher.
+        self.assertEqual(shell, "python3 -I {0}")
+        self.assertGreater(len(script.encode("utf-8")), 64 * 1024)
         self.assertNotIn("python -I - <<'EOF'", script)
         compile(script, "<workflow-materializer>", "exec")
 
