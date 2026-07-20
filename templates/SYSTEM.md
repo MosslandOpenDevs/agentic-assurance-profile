@@ -1,6 +1,6 @@
 # As-built system description
 
-> **Placement:** Copy this file to `assurance/SYSTEM.md` in the adopting repository, or to the path recorded under `paths.system` in the configured adoption declaration (default: `.agentic-assurance/adoption.yaml`). Replace every `REPLACE_WITH_` placeholder in the sections that apply, and delete inapplicable prompt sections.
+> **Placement:** Copy this file to `assurance/SYSTEM.md` in the adopting repository, or to the path recorded under `paths.system` in the configured adoption declaration (default: `.agentic-assurance/adoption.yaml`). Replace every all-caps placeholder prompt in the sections that apply, and delete inapplicable prompt sections.
 >
 > **Evidence rule:** Every material conclusion in this document that is not classified `UNKNOWN` must cite concrete evidence: file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric. An AI-generated narrative is not evidence by itself. When evidence is insufficient, record `UNKNOWN` rather than invent confidence.
 >
@@ -19,7 +19,7 @@ Delete this section for every non-`archived` adoption. For an `archived` adoptio
 - **Known material limitations:** REPLACE_WITH_ARCHIVED_MATERIAL_LIMITATIONS
 - **Last supported revision or release:** REPLACE_WITH_ARCHIVED_LAST_SUPPORTED_REVISION_OR_RELEASE_OR_EXPLICIT_NONE
 
-The human owner must confirm all four statements and the `paths.system` mapping during adoption review. The interim validator requires this artifact to be non-empty at every adoption stage. At `HUMAN_REVIEWED` and `CONFORMANT`, it additionally rejects any unchanged `REPLACE_WITH_ARCHIVED_` prompt above. It does not establish the truth of a replacement or semantically parse the four statements. That stronger structured enforcement is deferred to [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), so explicit owner review remains the content backstop.
+The human owner must confirm all four statements and the `paths.system` mapping during adoption review. The interim validator requires this artifact to be non-empty at every adoption stage. At `HUMAN_REVIEWED` and `CONFORMANT`, it additionally rejects any unchanged archived prompt above. It does not establish the truth of a replacement or semantically parse the four statements. That stronger structured enforcement is deferred to [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), so explicit owner review remains the content backstop.
 
 ## 1. Purpose and users
 

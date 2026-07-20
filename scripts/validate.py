@@ -130,6 +130,14 @@ HTTP_URL_RE = re.compile(
 )
 
 PLACEHOLDER_RE = re.compile(r"^REPLACE_WITH_[A-Z0-9_]+$")
+# A placeholder left in a completed prose artifact is a NAMED marker: the
+# prefix followed by at least one more word character, in any case, so a
+# mangled marker such as `REPLACE_WITH_description` is still caught. The bare
+# prefix on its own is deliberately NOT a marker: prose legitimately quotes it
+# when instructing the reader to replace placeholders, and rejecting that made
+# a correctly completed template fail. The shipped templates additionally
+# avoid the literal so no copied instruction can trip this at all.
+PROSE_PLACEHOLDER_RE = re.compile(r"REPLACE_WITH_\w+")
 ARCHIVED_SYSTEM_PLACEHOLDERS = (
     "REPLACE_WITH_ARCHIVED_OPERATION_MAINTENANCE_AND_FEATURE_DEVELOPMENT_STATUS",
     "REPLACE_WITH_ARCHIVED_HISTORICAL_PURPOSE",
@@ -820,12 +828,65 @@ def construct_bounded_yaml_number(
     return yaml.constructor.SafeConstructor.construct_yaml_float(loader, node)
 
 
+def construct_strict_yaml_bool(
+    loader: yaml.SafeLoader, node: yaml.nodes.ScalarNode
+) -> object:
+    """Construct a boolean, reporting an unresolvable one as a YAML error.
+
+    PyYAML's SafeConstructor raises a bare ``KeyError`` for an explicitly
+    tagged ``!!bool`` scalar it cannot resolve. That escapes the loader's
+    error handling and would kill the run with a traceback instead of a
+    finding, so it is converted to the ConstructorError shape every other
+    rejection uses.
+    """
+    try:
+        return yaml.constructor.SafeConstructor.construct_yaml_bool(loader, node)
+    except yaml.YAMLError:
+        raise
+    except Exception as exc:  # KeyError for an unresolvable boolean word
+        raise yaml.constructor.ConstructorError(
+            "while constructing a boolean",
+            node.start_mark,
+            f"could not resolve {node.value!r} as a boolean: {exc}",
+            node.start_mark,
+        ) from exc
+
+
+def construct_strict_yaml_timestamp(
+    loader: yaml.SafeLoader, node: yaml.nodes.ScalarNode
+) -> object:
+    """Construct a timestamp, reporting an unresolvable one as a YAML error.
+
+    PyYAML's SafeConstructor raises ``AttributeError`` (a failed regexp match
+    dereferenced as if it succeeded) for an explicitly tagged ``!!timestamp``
+    scalar that is not a timestamp; same conversion rationale as
+    ``construct_strict_yaml_bool``.
+    """
+    try:
+        return yaml.constructor.SafeConstructor.construct_yaml_timestamp(loader, node)
+    except yaml.YAMLError:
+        raise
+    except Exception as exc:  # AttributeError on a non-matching timestamp
+        raise yaml.constructor.ConstructorError(
+            "while constructing a timestamp",
+            node.start_mark,
+            f"could not resolve {node.value!r} as a timestamp: {exc}",
+            node.start_mark,
+        ) from exc
+
+
 for policy_loader in (StrictSafeLoader, LegacySafeLoader):
     policy_loader.add_constructor(
         "tag:yaml.org,2002:int", construct_bounded_yaml_number
     )
     policy_loader.add_constructor(
         "tag:yaml.org,2002:float", construct_bounded_yaml_number
+    )
+    policy_loader.add_constructor(
+        "tag:yaml.org,2002:bool", construct_strict_yaml_bool
+    )
+    policy_loader.add_constructor(
+        "tag:yaml.org,2002:timestamp", construct_strict_yaml_timestamp
     )
 
 
@@ -4155,16 +4216,19 @@ def check_adoption_stage(
                     excluded_roots,
                 )
     if system_text is not None and not system_scanned_with_lite:
-        markers = (
-            ARCHIVED_SYSTEM_PLACEHOLDERS
-            if profiles == ["archived"]
-            else ("REPLACE_WITH_",)
-        )
-        for marker in markers:
-            if marker in system_text:
+        if profiles == ["archived"]:
+            for marker in ARCHIVED_SYSTEM_PLACEHOLDERS:
+                if marker in system_text:
+                    report.error(
+                        f"stage HUMAN_REVIEWED: unfilled placeholder {marker!r} "
+                        "in the mapped system artifact"
+                    )
+        else:
+            found = PROSE_PLACEHOLDER_RE.search(system_text)
+            if found is not None:
                 report.error(
-                    f"stage HUMAN_REVIEWED: unfilled placeholder {marker!r} "
-                    "in the mapped system artifact"
+                    "stage HUMAN_REVIEWED: unfilled placeholder "
+                    f"{found.group(0)!r} in the mapped system artifact"
                 )
 
     # Other required active prose must also be more than an untouched
@@ -4189,11 +4253,11 @@ def check_adoption_stage(
         )
         if text is None:
             continue
-        if "REPLACE_WITH_" in text:
-            marker = "REPLACE_WITH_"
+        found = PROSE_PLACEHOLDER_RE.search(text)
+        if found is not None:
             report.error(
-                f"stage HUMAN_REVIEWED: unfilled placeholder {marker!r} "
-                f"in the mapped {prose_name} artifact"
+                "stage HUMAN_REVIEWED: unfilled placeholder "
+                f"{found.group(0)!r} in the mapped {prose_name} artifact"
             )
 
     # HUMAN_REVIEWED (also CONFORMANT): a completed human review on record.

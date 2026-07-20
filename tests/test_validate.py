@@ -5194,6 +5194,11 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         for label, raw_value, expected in (
             ("invalid date", "2026-02-30", "day"),
             ("oversized integer", "9" * 5_000, "numeric token is too long"),
+            # Explicitly tagged scalars PyYAML cannot resolve: SafeConstructor
+            # raises KeyError / AttributeError, which escaped the loader's
+            # error handling and killed the run with a traceback.
+            ("unresolvable boolean tag", '!!bool "maybe"', "as a boolean"),
+            ("unresolvable timestamp tag", '!!timestamp "zz"', "as a timestamp"),
         ):
             with self.subTest(label=label):
                 root = self.make_tmp()
@@ -8806,8 +8811,12 @@ class TestArchivedAndOperationalStageHardening(ValidatorTestCase):
         self.assertIn("threat model", out)
         self.assertNotIn("requirements satisfied", out)
 
-    def test_reviewed_active_prose_rejects_any_generic_marker_suffix(self):
-        for marker in ("REPLACE_WITH_description", "REPLACE_WITH_"):
+    def test_reviewed_active_prose_rejects_any_named_marker(self):
+        # A NAMED marker is rejected whatever its case, so a mangled prompt
+        # such as `REPLACE_WITH_description` cannot survive review. The bare
+        # prefix alone is prose, not a marker — see
+        # test_bare_marker_prefix_in_prose_is_not_an_unfilled_placeholder.
+        for marker in ("REPLACE_WITH_description", "REPLACE_WITH_PURPOSE"):
             with self.subTest(artifact="split system", marker=marker):
                 root = self.make_tmp()
                 adoption, registers = conformant_fixture()
@@ -8817,7 +8826,7 @@ class TestArchivedAndOperationalStageHardening(ValidatorTestCase):
                 )
                 code, out = self.run_adopter(root, adoption_path)
                 self.assertEqual(code, 1, out)
-                self.assertIn("unfilled placeholder 'REPLACE_WITH_'", out)
+                self.assertIn(f"unfilled placeholder '{marker}'", out)
                 self.assertIn("mapped system artifact", out)
 
             with self.subTest(artifact="service threat model", marker=marker):
@@ -8830,7 +8839,7 @@ class TestArchivedAndOperationalStageHardening(ValidatorTestCase):
                 )
                 code, out = self.run_adopter(root, adoption_path)
                 self.assertEqual(code, 1, out)
-                self.assertIn("unfilled placeholder 'REPLACE_WITH_'", out)
+                self.assertIn(f"unfilled placeholder '{marker}'", out)
                 self.assertIn("threat model", out)
 
             with self.subTest(artifact="lite system", marker=marker):
@@ -8843,6 +8852,35 @@ class TestArchivedAndOperationalStageHardening(ValidatorTestCase):
                 self.assertEqual(code, 1, out)
                 self.assertIn(marker, out)
                 self.assertIn(LITE_ASSURANCE_PATH, out)
+
+    def test_bare_marker_prefix_in_prose_is_not_an_unfilled_placeholder(self):
+        # The prefix on its own is prose, not a placeholder: a completed
+        # artifact may legitimately instruct the reader to replace
+        # placeholders. Rejecting it made a correctly completed template fail
+        # its own instruction blockquote.
+        root = self.make_tmp()
+        adoption, registers = conformant_fixture()
+        adoption_path = build_split_project(root, adoption, registers)
+        (root / "assurance" / "SYSTEM.md").write_text(
+            "# System\n\n> Replace every `REPLACE_WITH_` placeholder.\n\nComplete.\n",
+            encoding="utf-8",
+        )
+        code, out = self.run_adopter(root, adoption_path)
+        self.assertNotIn("unfilled placeholder", out)
+        self.assertEqual(code, 0, out)
+
+    def test_shipped_prose_templates_do_not_hide_markers_in_instructions(self):
+        # An adopter keeps the template's instruction blockquotes. Those lines
+        # must never carry a NAMED marker, or a correctly completed artifact
+        # would be rejected by the very instructions telling it what to do.
+        for name in ("SYSTEM.md", "THREAT_MODEL.md"):
+            text = (REPO_ROOT / "templates" / name).read_text(encoding="utf-8")
+            instructions = [
+                line for line in text.splitlines() if line.lstrip().startswith(">")
+            ]
+            self.assertTrue(instructions, name)
+            for line in instructions:
+                self.assertNotRegex(line, r"REPLACE_WITH_\w", f"{name}: {line}")
 
     def test_workflow_root_must_exist_and_be_adopter_owned(self):
         adoption = baseline_adoption()
