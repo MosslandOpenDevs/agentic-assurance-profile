@@ -338,12 +338,32 @@ enforcement remains tracked in #40).
   `service` required an invariant, so any of these declared without
   `service` was previously conforming. Add at least one invariant (the
   properties that must remain true). Both pilot adoptions already carry
-  invariants, so no live adopter is affected. **Owner-classified as
-  minor** per §16's existing pre-`v1.0.0` operating rule (a new
-  obligation before the first stable release) — not a patch. That rule
-  records the governing owner's interpretation of SemVer's `0.x`
-  initial-development latitude for this project; it does not claim that
-  SemVer universally assigns every such change to a minor release.
+  invariants, so no live adopter is affected. See the version
+  classification note below.
+
+#### Version classification — a recorded owner decision, not a pre-existing rule
+
+Under the §16 in force at v0.3.2 — "Major: removes, weakens, or
+materially changes an obligation" — this release would have been a
+**major**. It both adds obligations that break previously conforming
+adoptions and removes one previously valid capability (`archived` +
+`lite`).
+
+§16's initial-development paragraph, under which adding or tightening an
+obligation before `v1.0.0` is a **minor**, was **introduced in this
+release and applied to it**. That is a governing owner decision taken on
+2026-07-20 and recorded here, rather than presented as a rule that
+already existed; the classification of this release rests on that
+decision, not on a policy that predates it.
+
+Rationale: the profile is pre-`v1.0.0` with two adopters, both under
+this organization's control, and publishing `v1.0.0` solely to carry
+this change would assert an interface stability the profile does not yet
+have. The paragraph states this project's `0.x` operating policy; it
+does not claim that semantic versioning universally assigns every such
+change to a minor release. An adopter who prefers the stricter reading
+should treat this release as breaking and plan the migration below
+accordingly — the required work is identical either way.
 - **Audit and complete every active §6.1 system description before the pin
   upgrade.** Whether it is inline under lite or stored at `paths.system`, the
   description must identify the system being assured, its principal
