@@ -6,11 +6,13 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 - Added a non-normative [v0.5 working design and delivery plan](docs/V0.5-DESIGN.md)
   that records the verified v0.4.0 baseline, separates measured architecture
-  pressure from unknown adopter usability, and defines phased contracts,
+  pressure from unknown adopter usability, and separates the always-required
+  Foundation, evidence-gated Progressive UX, and conditional Canonical Engine
+  tracks. It defines phased contracts, expected-outcome-ledger parity,
   canonical-engine go/no-go criteria, CLI authority boundaries, compatibility,
-  test strategy, release blockers, and open-issue disposition. Documentation
-  only; no profile obligation, schema, validator, template, or workflow behavior
-  changes.
+  test strategy, release blockers, and open-issue disposition. The proposal's
+  lifecycle and acceptance rules are explicit. Documentation only; no profile
+  obligation, schema, validator, template, or workflow behavior changes.
 
 ## v0.4.0 — 2026-07-20
 

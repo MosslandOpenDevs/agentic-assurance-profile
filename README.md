@@ -6,8 +6,6 @@
 **Repository:** `MosslandOpenDevs/agentic-assurance-profile`  
 **Current maturity:** reference profile, not a certification scheme
 
-**Development direction:** [v0.5 working design and delivery plan](docs/V0.5-DESIGN.md)
-
 > **Normative status:** [PROFILE.md](PROFILE.md) is the normative text. This README and all translations are informative summaries; where they disagree, PROFILE.md governs.
 
 The profile helps a project preserve the parts of software development that code generation does not make cheap:
@@ -416,6 +414,10 @@ The release process is defined in [RELEASING.md](RELEASING.md). The root `VERSIO
 ---
 
 ## Contributing
+
+The proposed development direction is recorded in the non-normative
+[v0.5 working design and delivery plan](docs/V0.5-DESIGN.md). Its lifecycle and
+acceptance status are stated in that document.
 
 Use public Issues for:
 
