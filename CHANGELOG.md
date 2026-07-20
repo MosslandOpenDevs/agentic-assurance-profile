@@ -493,6 +493,28 @@ accordingly — the required work is identical either way.
   a valid non-future date/timestamp, and full conformance scope when used for
   `CONFORMANT`; the qualifying approval's civil date must not precede the
   human-review date.
+
+  **Every v0.3.x adoption fails this check until the block is added**, because
+  v0.3.2 required only that the two root files exist. Both pilot adoptions
+  fail today for exactly this reason. The block is, verbatim, in *both* root
+  files — substituting a custom `adoption-file` path for the second entry,
+  identically in both:
+
+  ```text
+  Before any material change, read:
+
+  1. `AGENTIC_ASSURANCE.md`;
+  2. `.agentic-assurance/adoption.yaml`;
+  ```
+
+- **Move pull-request directive lines into a leading block.**
+  `Assurance impact:`, `Reason:`, and `Assurance policy change:` now count
+  only inside a leading top-level directive block, before any ordinary visible
+  content; previously they were recognized anywhere in the description.
+  Update the repository's pull-request template so the directive lines come
+  first, and re-edit any pull request left open across the pin upgrade — an
+  acknowledgment that sits below prose stops counting the moment the pin
+  moves.
 - **Required service threat models now have content guards.** A service
   adopter's mapped `THREAT_MODEL` must be non-empty at every stage and, from
   HUMAN_REVIEWED, must not retain a generic `REPLACE_WITH_` template marker.
