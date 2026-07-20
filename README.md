@@ -359,7 +359,8 @@ Layout of this central repository:
 │   ├── DISCLOSURE-AND-ISSUES.md
 │   ├── GLOSSARY.md
 │   ├── MAPPINGS.md
-│   └── REVIEW-GUIDE.md
+│   ├── REVIEW-GUIDE.md
+│   └── V0.5-DESIGN.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── assurance-lite.schema.json
@@ -413,6 +414,10 @@ The release process is defined in [RELEASING.md](RELEASING.md). The root `VERSIO
 ---
 
 ## Contributing
+
+The proposed development direction is recorded in the non-normative
+[v0.5 working design and delivery plan](docs/V0.5-DESIGN.md). Its lifecycle and
+acceptance status are stated in that document.
 
 Use public Issues for:
 

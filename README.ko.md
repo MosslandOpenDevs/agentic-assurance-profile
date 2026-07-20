@@ -359,7 +359,8 @@ active 경로의 as-built system 복원, 동작 분류, active claim/invariant/r
 │   ├── DISCLOSURE-AND-ISSUES.md
 │   ├── GLOSSARY.md
 │   ├── MAPPINGS.md
-│   └── REVIEW-GUIDE.md
+│   ├── REVIEW-GUIDE.md
+│   └── V0.5-DESIGN.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── assurance-lite.schema.json
@@ -413,6 +414,10 @@ release 절차는 [RELEASING.md](RELEASING.md)에 정의되어 있습니다. 루
 ---
 
 ## 기여 방법
+
+제안된 개발 방향은 비규범 문서인
+[v0.5 작업 설계 및 실행 계획](docs/V0.5-DESIGN.md)에 기록되어 있습니다.
+문서의 lifecycle과 승인 상태는 해당 문서 머리말을 따릅니다.
 
 다음 주제는 공개 Issue로 다룹니다.
 
