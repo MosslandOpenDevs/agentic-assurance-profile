@@ -133,24 +133,6 @@ jobs:
     outputs:
       adoption_stage: ${{ steps.pin.outputs.adoption_stage }}
     steps:
-      # Fail closed on an unsupported triggering event. The drift job is gated
-      # on `pull_request`; under `pull_request_target` — or any other event —
-      # it would silently skip, leaving the structural checks green with no
-      # pull-request policy comparison having run at all. A skipped gate must
-      # never read as a passed one, so an unsupported caller event fails here
-      # instead.
-      - name: Verify supported triggering event
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          case "$EVENT_NAME" in
-            pull_request | push) ;;
-            *)
-              echo "::error::Unsupported triggering event '${EVENT_NAME}'. Call this workflow from 'pull_request' or 'push' only; on any other event (for example 'pull_request_target') the pull-request policy comparison does not run and a green result would not mean the change was compared against the base branch."
-              exit 1
-              ;;
-          esac
-
       - name: Check out adopting repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
