@@ -167,10 +167,11 @@ enforcement remains tracked in #40).
   escape-then-reentry spellings fail even when they happen to resolve inside
   HEAD, because a detached BASE worktree would give them a different identity.
 - **Self-check workflow linting remains bounded.** The digest-pinned
-  `actionlint` image moves from 1.7.7 to 1.7.12, and the multi-thousand-line
-  materializer runs directly under an isolated Python custom shell instead of
-  appearing to shellcheck as a bash heredoc. This is CI maintenance only; it
-  adds no adopter action and does not change materializer behavior.
+  `actionlint` image moves from 1.7.7 to 1.7.12, and Python-only workflow
+  bodies (including the multi-thousand-line materializer) run directly under
+  isolated Python custom shells instead of appearing to shellcheck as bash
+  heredocs. This is CI maintenance only; it adds no adopter action and does not
+  change workflow behavior.
 - **Pull-request routing is bounded and safe at its inputs and CI sinks.**
   The drift job explicitly checks out the pull request's head SHA rather than
   GitHub's default synthetic merge ref, keeping HEAD-side policy reads aligned

@@ -175,8 +175,8 @@ jobs:
       # version-pinned pyyaml bootstrap is gone — the pin reader now runs
       # on the hash-locked set from the trusted checkout).
       - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
         run: |
-          python -I - <<'EOF'
           from pathlib import Path
 
           destination = Path(".assurance-profile-pin")
@@ -194,7 +194,6 @@ jobs:
                   "adopter tree; refusing to let adopter-controlled content or "
                   "a symlink choose where the trusted checkout writes."
               )
-          EOF
 
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -217,8 +216,8 @@ jobs:
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           WORKFLOW_SHA: ${{ job.workflow_sha }}
+        shell: python -I {0}
         run: |
-          python -I - "$ADOPTION_FILE" <<'EOF'
           import os
           import re
           import stat
@@ -288,7 +287,7 @@ jobs:
                   )
               return resolved
 
-          path = sys.argv[1]
+          path = os.environ["ADOPTION_FILE"]
           display_path = f"adoption file {github_log_line(path)}"
           adoption_path = resolve_head_adoption(path)
           adoption, load_error = load_yaml(adoption_path)
@@ -347,7 +346,6 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write(f"version={version}\n")
               out.write(f"adoption_stage={stage}\n")
-          EOF
 
       # A release identifier can appear in more than one commit's VERSION file
       # (the release PR's branch commit and the merge commit the tag points to).
@@ -394,8 +392,8 @@ jobs:
         continue-on-error: true
         env:
           PINNED_VERSION: ${{ steps.pin.outputs.version }}
+        shell: python -I {0}
         run: |
-          python -I - <<'EOF'
           import datetime
           import json
           import math
@@ -444,7 +442,6 @@ jobs:
                   f"release {latest}. Upgrade through explicit project change "
                   "review (PROFILE.md section 16)."
               )
-          EOF
 
   # Declared-stage enforcement: the full stage-enforcing validation (no
   # --ignore-stage). Green means "the declared adoption_stage's requirements
@@ -493,8 +490,8 @@ jobs:
           fi
 
       - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
         run: |
-          python -I - <<'EOF'
           from pathlib import Path
 
           destination = Path(".assurance-profile-pin")
@@ -512,7 +509,6 @@ jobs:
                   "adopter tree; refusing to let adopter-controlled content or "
                   "a symlink choose where the trusted checkout writes."
               )
-          EOF
 
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -534,8 +530,8 @@ jobs:
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           WORKFLOW_SHA: ${{ job.workflow_sha }}
+        shell: python -I {0}
         run: |
-          python -I - "$ADOPTION_FILE" <<'EOF'
           import os
           import stat
           import sys
@@ -597,7 +593,7 @@ jobs:
                   )
               return resolved
 
-          path = sys.argv[1]
+          path = os.environ["ADOPTION_FILE"]
           display_path = f"adoption file {github_log_line(path)}"
           adoption_path = resolve_head_adoption(path)
           adoption, load_error = load_yaml(adoption_path)
@@ -622,7 +618,6 @@ jobs:
                   f"{display_path}: upstream.commit is {commit!r} but the caller pins this reusable "
                   f"workflow at {os.environ['WORKFLOW_SHA']} — update both in the same change."
               )
-          EOF
 
       - name: Enforce the declared adoption stage
         env:
@@ -683,8 +678,8 @@ jobs:
           fi
 
       - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
         run: |
-          python -I - <<'EOF'
           from pathlib import Path
 
           destination = Path(".assurance-profile-pin")
@@ -702,7 +697,6 @@ jobs:
                   "adopter tree; refusing to let adopter-controlled content or "
                   "a symlink choose where the trusted checkout writes."
               )
-          EOF
 
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -743,17 +737,23 @@ jobs:
             echo "::error::Git reported diagnostics while detecting renames/copies; changed-file routing cannot safely continue."
             exit 1
           fi
-          python -I - "$RUNNER_TEMP/name-status.z" > "$RUNNER_TEMP/changed-files.z" <<'EOF'
+
+      - name: Normalize changed files
+        shell: python -I {0}
+        run: |
           import os
-          import sys
 
           MAX_NAME_STATUS_BYTES = 64 * 1024 * 1024
-          size = os.path.getsize(sys.argv[1])
+          runner_temp = os.environ["RUNNER_TEMP"]
+          input_path = os.path.join(runner_temp, "name-status.z")
+          output_path = os.path.join(runner_temp, "changed-files.z")
+          size = os.path.getsize(input_path)
           if size > MAX_NAME_STATUS_BYTES:
               raise SystemExit(
                   "name-status input exceeds the 64 MiB workflow routing limit"
               )
-          raw = open(sys.argv[1], "rb").read(MAX_NAME_STATUS_BYTES + 1)
+          with open(input_path, "rb") as handle:
+              raw = handle.read(MAX_NAME_STATUS_BYTES + 1)
           tokens = raw.split(b"\0")
           paths = []
           seen = set()
@@ -769,9 +769,9 @@ jobs:
                       seen.add(path)
                       paths.append(path)
               index += 1 + take
-          if paths:
-              sys.stdout.buffer.write(b"\0".join(paths) + b"\0")
-          EOF
+          output = b"\0".join(paths) + b"\0" if paths else b""
+          with open(output_path, "wb") as handle:
+              handle.write(output)
 
       - name: Write PR description to a file
         env:

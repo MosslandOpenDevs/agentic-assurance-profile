@@ -197,9 +197,9 @@ def workflow_step_spec(step_name):
     body = section[run_index + len(run_marker) :]
     lines = []
     for line in body.splitlines():
-        if line.startswith("      - name:"):
+        if line and not line.startswith("          "):
             break
-        lines.append(line[10:] if line.startswith("          ") else line)
+        lines.append(line[10:] if line else line)
     script = "\n".join(lines) + "\n"
     return shell, script
 
@@ -5498,16 +5498,20 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         self.assertNotIn("yaml.safe_load", workflow)
         self.assertIn("from validate import", workflow)
         self.assertIn("CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}", workflow)
-        inline_python = [
-            line.strip()
-            for line in workflow.splitlines()
-            if "<<'EOF'" in line and line.strip().startswith("python ")
-        ]
-        self.assertTrue(inline_python)
-        self.assertTrue(
-            all(line.startswith("python -I -") for line in inline_python),
-            inline_python,
-        )
+        self.assertNotIn("<<'EOF'", workflow)
+        self.assertEqual(workflow.count("shell: python -I {0}"), 8)
+        for step_name in (
+            "Reserve trusted profile checkout destination",
+            "Read and verify upstream pin",
+            "Check pin staleness (non-blocking)",
+            "Verify upstream pin matches this workflow",
+            "Normalize changed files",
+            "Materialize the base tree and compute the assurance diff",
+        ):
+            with self.subTest(step=step_name):
+                shell, script = workflow_step_spec(step_name)
+                self.assertEqual(shell, "python -I {0}")
+                compile(script, f"<workflow-step:{step_name}>", "exec")
         validator_calls = [
             line.strip()
             for line in workflow.splitlines()
@@ -5642,18 +5646,25 @@ class TestStrictPolicyInputs(ValidatorTestCase):
 
         runner_temp = root / "runner-temp"
         runner_temp.mkdir()
-        completed = subprocess.run(
-            ["bash", "-c", step],
+        workflow_env = clean_env(
+            {
+                "BASE_SHA": base_sha,
+                "HEAD_SHA": head_sha,
+                "RUNNER_TEMP": str(runner_temp),
+            }
+        )
+        completed = run_workflow_step(
+            "Compute changed files (rename-safe)",
             cwd=repository,
-            env=clean_env(
-                {
-                    "BASE_SHA": base_sha,
-                    "HEAD_SHA": head_sha,
-                    "RUNNER_TEMP": str(runner_temp),
-                }
-            ),
-            capture_output=True,
-            text=True,
+            env=workflow_env,
+            timeout=10,
+        )
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 0, output)
+        completed = run_workflow_step(
+            "Normalize changed files",
+            cwd=repository,
+            env=workflow_env,
             timeout=10,
         )
         output = completed.stdout + completed.stderr
@@ -5693,18 +5704,10 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         (repository / ".assurance-profile-pin").symlink_to(
             outside, target_is_directory=True
         )
-        completed = subprocess.run(
-            [
-                "bash",
-                "-c",
-                workflow_step_shell(
-                    "Reserve trusted profile checkout destination"
-                ),
-            ],
+        completed = run_workflow_step(
+            "Reserve trusted profile checkout destination",
             cwd=repository,
             env=clean_env(),
-            capture_output=True,
-            text=True,
             timeout=10,
         )
         output = completed.stdout + completed.stderr
@@ -6092,12 +6095,8 @@ class TestStrictPolicyInputs(ValidatorTestCase):
         )
         write_yaml(repository / "adoption.yaml", adoption)
         output_path = root / "github-output"
-        completed = subprocess.run(
-            [
-                "bash",
-                "-c",
-                workflow_step_shell("Read and verify upstream pin"),
-            ],
+        completed = run_workflow_step(
+            "Read and verify upstream pin",
             cwd=repository,
             env=clean_env(
                 {
@@ -6106,8 +6105,6 @@ class TestStrictPolicyInputs(ValidatorTestCase):
                     "GITHUB_OUTPUT": str(output_path),
                 }
             ),
-            capture_output=True,
-            text=True,
             timeout=10,
         )
         output = completed.stdout + completed.stderr
@@ -6228,16 +6225,10 @@ class TestStrictPolicyInputs(ValidatorTestCase):
                 "GITHUB_OUTPUT": str(output_path),
             }
         )
-        completed = subprocess.run(
-            [
-                "bash",
-                "-c",
-                workflow_step_shell("Read and verify upstream pin"),
-            ],
+        completed = run_workflow_step(
+            "Read and verify upstream pin",
             cwd=repository,
             env=env,
-            capture_output=True,
-            text=True,
             timeout=10,
         )
         output = completed.stdout + completed.stderr
@@ -9583,8 +9574,8 @@ class TestGithubAnnotations(ValidatorTestCase):
         shutil.copy2(VALIDATOR, trusted_scripts / "validate.py")
         (repository / command_path).write_text("[unterminated", encoding="utf-8")
         output_path = root / "github-output"
-        completed = subprocess.run(
-            ["bash", "-c", workflow_step_shell("Read and verify upstream pin")],
+        completed = run_workflow_step(
+            "Read and verify upstream pin",
             cwd=repository,
             env=clean_env(
                 {
@@ -9593,8 +9584,6 @@ class TestGithubAnnotations(ValidatorTestCase):
                     "GITHUB_OUTPUT": str(output_path),
                 }
             ),
-            capture_output=True,
-            text=True,
             timeout=10,
         )
         pin_output = completed.stdout + completed.stderr
@@ -10475,12 +10464,8 @@ evil: .nan
                 )
                 write_yaml(repository / "adoption.yaml", adoption)
                 output_path.unlink(missing_ok=True)
-                completed = subprocess.run(
-                    [
-                        "bash",
-                        "-c",
-                        workflow_step_shell("Read and verify upstream pin"),
-                    ],
+                completed = run_workflow_step(
+                    "Read and verify upstream pin",
                     cwd=repository,
                     env=clean_env(
                         {
@@ -10489,8 +10474,6 @@ evil: .nan
                             "GITHUB_OUTPUT": str(output_path),
                         }
                     ),
-                    capture_output=True,
-                    text=True,
                     timeout=10,
                 )
                 output = completed.stdout + completed.stderr
