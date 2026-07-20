@@ -97,6 +97,95 @@ The correct alternatives:
 
 Copying the templates is not a fork. Everything under [../templates/](../templates/) is published under CC0-1.0 precisely so adopters can copy the skeletons and fill them with project truth. The fork prohibition covers the normative profile text and the schemas, not the templates.
 
+## 5. Mapping external tool output into the evidence position
+
+The `paths:` mechanism maps documents. An adopting repository also runs tools, and their output belongs in the model too — referenced from the registers rather than restated inside them. This is the reuse that keeps the profile a coordination layer: it consumes what the existing toolchain already produces instead of asking for a second, hand-written account of the same result.
+
+### 5.1 Where each tool class lands
+
+| Tool class | Typical output | Position in the core model | What it does not establish |
+|---|---|---|---|
+| Specification and planning workflow (Spec Kit, OpenSpec, ADR/RFC, issues) | change specification, approved plan | intent and claim input, declared via `specification_workflow` (§3.2, §3.3) | that the implementation matches the specification |
+| Tests, schema checks, constraint checks | pass or fail bound to a revision | `verification` on the invariant; the run is `evidence` | that an unchecked property holds |
+| Static analysis, scanners, structural or semantic code review | findings on a revision or a diff | `evidence` where the run is reproducible; individual findings are defeater candidates ([PROFILE.md §2.7](../PROFILE.md)) | that the absence of a finding proves the property |
+| Agent change records, session logs, prompt and tool-call traces | what an agent read, ran, and changed | provenance evidence: attribution for a change, and an input to brownfield reconstruction ([PROFILE.md §7](../PROFILE.md)) | that the change was correct, or that a human approved it |
+| Build and release attestation (SLSA, in-toto, signed digests) | where and how an artifact was built | the release evidence manifest ([PROFILE.md §11](../PROFILE.md)) | anything about the behavior of the source |
+
+The rightmost column is the one that gets lost. Each of these tools answers its own question well; an assurance argument fails when a strong answer to one question is filed as the answer to another.
+
+### 5.2 An evidence reference binds to a revision
+
+The `evidence` field in the claim, invariant, and defeater registers is a free-form array of strings by design — a reference is whatever lets a reader reproduce the result. [PROFILE.md §11](../PROFILE.md) supplies the constraint: evidence is attributable to a revision, release, artifact, or deployment. A tool's name is not a reference, and neither is a URL that shows something different next week.
+
+Not evidence references:
+
+```yaml
+evidence:
+  - "CI is green"
+  - "static analysis passes"
+  - "https://ci.example.com/latest"
+```
+
+Evidence references:
+
+```yaml
+evidence:
+  - "tests/test_session.py::test_expired_challenge_rejected, commit 4f2a9c1"
+  - "assurance/evidence/2026-07-01-codeql.sarif (workflow run 118392, commit 4f2a9c1)"
+  - "SLSA provenance attestation for sha256:9b1e0c7..., release v1.4.0"
+```
+
+Where the tool's output is durable and safe to publish, store it under the mapped `evidence` root and reference the file. Where it is not — a hosted scan behind authentication, a report carrying restricted detail — reference the run identity, keep the artifact private, and let the affected claim's `proof_tier` be `OPERATIONALLY_AUDITABLE` rather than `INDEPENDENTLY_VERIFIABLE` ([PROFILE.md §8](../PROFILE.md), [§13](../PROFILE.md)).
+
+### 5.3 The output does not set the status by itself
+
+[PROFILE.md §4](../PROFILE.md) classifies conclusions, and the classification follows the reproducibility of the reference rather than the confidence of the tool:
+
+- a deterministic check a reader can re-run against a named revision supports `VERIFIED`;
+- a result the reader cannot re-run — an expired hosted run, a summary pasted out of a tool — supports `INFERRED` at best;
+- an agent's narrative that it ran a check is not evidence by itself ([PROFILE.md §2.6](../PROFILE.md)). An agent change record is evidence *of the action*: it can support "this file changed under approved task T" and leaves the invariant's own status where it was;
+- a review tool reporting no findings is coverage, not proof. Record it under `verification`, and record what that tool cannot see as a defeater or a residual.
+
+### 5.4 Worked example: existing test suite and scanner referenced from an invariant
+
+```yaml
+# assurance/INVARIANTS.yaml (excerpt)
+- id: INV-AUTH-001
+  title: Consumed authentication challenges cannot be replayed
+  statement: An expired or consumed challenge cannot create a valid authenticated session.
+  severity: critical
+  intent:
+    classification: INTENDED
+    authority: docs/adr/0031-wallet-authentication.md
+  scope: The session-issuing path of the authentication service.
+  enforcement:
+    - "Unique partial index on auth_challenge(nonce) where consumed_at is null"
+    - "src/auth/session.py: single-use guard in issue_session()"
+  verification:
+    - "tests/test_session.py::test_expired_challenge_rejected"
+    - "tests/test_session.py::test_consumed_challenge_rejected"
+    - "CodeQL workflow .github/workflows/codeql.yml"
+  evidence:
+    - "tests/test_session.py, commit 4f2a9c1 (workflow run 118392)"
+    - "assurance/evidence/2026-07-01-codeql.sarif (run 118392, commit 4f2a9c1)"
+  status: VERIFIED
+  disclosure: PUBLIC
+  owner: REPLACE_WITH_OWNER
+```
+
+Nothing here is a new artifact: the tests, the workflow, and the ADR already existed. `enforcement` names what blocks a violation and `verification` names what checks it — the distinction in [PROFILE.md §2.4](../PROFILE.md) and [§2.5](../PROFILE.md) — while `evidence` carries the bound references that let a reader confirm the `VERIFIED` status. The decision record is reachable through `intent.authority` because §3.2 already mapped `decisions` onto `docs/adr`.
+
+### 5.5 What no external tool supplies
+
+No tool produces the entries that carry human authority ([PROFILE.md §3](../PROFILE.md)):
+
+- purpose and non-goals;
+- the wording and the limitation of a public claim;
+- the disposition of a defeater;
+- the acceptance of a critical residual.
+
+A tool may propose any of these and an agent may draft them, but only the named owner can decide them — an agent-drafted record carries human authority only when the owner's own approval act, such as a reviewed merge or a recorded review outcome, anchors it ([PROFILE.md §7](../PROFILE.md)). That boundary is also why the profile does not need an analyzer, a scanner, or a session recorder of its own: the mechanical work belongs to tools that already do it well, and what remains is the part that has to be decided by a person and survive the next change.
+
 ## Related documents
 
 - [ADOPTION.md](ADOPTION.md) — the full adoption walk-through
