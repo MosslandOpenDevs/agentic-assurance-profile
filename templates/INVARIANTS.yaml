@@ -1,13 +1,18 @@
 version: 1
 invariants:
   - id: INV-EXAMPLE-001
-    title: Replace with a precise invariant title
-    statement: Replace with a proposition that must remain true.
+    title: REPLACE_WITH_INVARIANT_TITLE
+    statement: REPLACE_WITH_THE_PROPOSITION_THAT_MUST_HOLD
     severity: critical
     intent:
       classification: UNKNOWN
+      # Required when classification is INTENDED, COMPATIBILITY, or DEPRECATED:
+      # authority must name the human decision granting that affirmative
+      # intent — a reviewed merge, a recorded review outcome, or an approved
+      # specification. It stays null only while classification is UNKNOWN or
+      # ACCIDENTAL, which are honest resting states (PROFILE.md §17).
       authority: null
-    scope: Replace with bounded system scope.
+    scope: REPLACE_WITH_BOUNDED_SYSTEM_SCOPE
     assumptions: []
     limitations: []
     enforcement: []

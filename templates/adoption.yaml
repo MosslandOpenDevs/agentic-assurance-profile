@@ -9,18 +9,36 @@ project:
   repository: REPLACE_WITH_OWNER_AND_REPOSITORY
   human_owner: REPLACE_WITH_PERSON_OR_GOVERNING_BODY
 
+# Classify from what the repository IS and promises (docs/ADOPTION.md §4.0): run
+# the trigger scan, escalate on any fired trigger with file:line evidence, and
+# replace the placeholder below with the classified set. This field selects the
+# checks, and validation fails until it is filled — inheriting a default is not
+# an option. For an active adopter, use `core` only when no specialized trigger
+# fires. If any fire, list all fired specialized profiles and normally omit
+# `core`; they inherit every core obligation whether or not it is written.
+# `archived` is the exclusive alternative and must appear alone. It applies
+# only when the repository is retained solely for historical reference, is not
+# supported or intended for current use, and has no active operation,
+# functional maintenance, or feature development. Initial adoption and factual
+# corrections or upkeep to this pin, stage, review record, and agent instructions
+# are archival-assurance metadata work, not functional maintenance.
 profiles:
-  - core
+  - REPLACE_WITH_CLASSIFIED_PROFILE
+  # active, with no specialized trigger:
+  # - core
+  # otherwise add each fired specialized profile, for example:
   # - service
   # - trust-critical
   # - data-curation
   # - agent-runtime
-  # - archived
+  # - archived  # archived is exclusive — declare it alone
 
 # layout: lite
-# (single-file core layout — put purpose/non-goals/invariants/residuals in
-#  .agentic-assurance/assurance.yaml; see templates/assurance.yaml. Selecting
-#  profiles beyond core requires the default split layout. Under lite, also
+# (single-file core layout — put purpose/non-goals, a system description,
+#  invariants, and residuals in
+#  .agentic-assurance/assurance.yaml; start from templates/assurance.minimal.yaml,
+#  or templates/assurance.yaml for an expanded standard-field reference. Any
+#  profile other than core requires the default split layout. Under lite, also
 #  set security.public_assurance_root below to .agentic-assurance — the
 #  default 'assurance' names the split layout's directory.)
 
@@ -34,12 +52,21 @@ profiles:
 #  change without its invariants being addressed; see docs/ADOPTION.md §3.7.)
 
 # adoption_stage: DRAFT
-# (optional self-declared stage, enforced as declared: DRAFT (placeholders
-#  allowed) → HUMAN_REVIEWED (no placeholders, review recorded) → CONFORMANT
-#  (fresh review dates, decided critical intents, attributable approval).
+# (optional self-declared stage, enforced as declared: DRAFT (schema, required
+#  artifacts, and applicable semantic checks pass; register placeholders are
+#  allowed — the adoption declaration itself must be complete at every stage)
+#  → HUMAN_REVIEWED (active registers completed; archived SYSTEM markers
+#  replaced; non-future review recorded; active critical intent recorded,
+#  with UNKNOWN allowed)
+#  → CONFORMANT
+#  (active review dates fresh; critical intent neither UNKNOWN nor ACCIDENTAL;
+#  at least one non-future attributable approval on/after the review date).
 #  Absent means DRAFT; declaring a stage you do not meet fails validation;
 #  see docs/ADOPTION.md §3.8.)
 
+# Required by every active profile. Under `archived`, keep this optional block
+# only when a real archival-record workflow applies; otherwise delete it rather
+# than inventing an active change workflow.
 specification_workflow:
   system: existing
   # openspec | spec-kit | adr-rfc | existing | minimal
@@ -65,16 +92,19 @@ issue_integration:
   public_security_issues_allowed: false
   closing_requires_artifact_update: true
 
-# Optional pointer to the most recent completed human review (PROFILE.md section 4.3)
-# and its durable record. Additional keys are permitted for local review conventions.
+# Optional pointer to the most recent completed, non-future human review (docs/ADOPTION.md
+# section 4.3; normative authority/review rules are PROFILE.md sections 3 and 7)
+# and its durable record. Additional keys are permitted for local conventions.
 # human_review:
 #   date: YYYY-MM-DD
 #   reviewer: REPLACE_WITH_REVIEWER
 #   record: REPLACE_WITH_PATH_TO_DURABLE_REVIEW_RECORD
 #   notes: REPLACE_WITH_REVIEW_OUTCOME_SUMMARY
-#   approvals:                  # at least one entry is required at CONFORMANT (docs/ADOPTION.md §3.8)
+#   approvals:                  # at CONFORMANT at least one entry must attest the full claim (docs/ADOPTION.md §3.8)
 #     - approver: REPLACE_WITH_APPROVER
 #       review_url: REPLACE_WITH_APPROVED_REVIEW_URL
-#       at: YYYY-MM-DD
-#       covers: [ REPLACE_WITH_COVERED_IDS ]   # optional: what the approval covers
+#       at: REPLACE_WITH_APPROVAL_DATE_OR_TIMESTAMP  # completed act; not future; at CONFORMANT one approval must be on/after human_review.date
+#       # Optional: omit covers for full scope; when present, CONFORMANCE is
+#       # required for an explicit full-claim attestation.
+#       covers: [ CONFORMANCE, REPLACE_WITH_COVERED_IDS ]
 #       rule: REPLACE_WITH_LOCAL_REVIEW_RULE   # optional: the local review rule it satisfies

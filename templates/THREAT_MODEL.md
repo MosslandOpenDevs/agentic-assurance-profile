@@ -1,10 +1,10 @@
 # Threat model
 
-> **Placement:** Copy this file to `assurance/THREAT_MODEL.md` in the adopting repository, or to the path recorded under `paths.threat_model` in `.agentic-assurance/adoption.yaml`. Replace every `REPLACE_WITH_` placeholder.
+> **Placement:** Copy this file to `assurance/THREAT_MODEL.md` in the adopting repository, or to the path recorded under `paths.threat_model` in the configured adoption declaration (default: `.agentic-assurance/adoption.yaml`). Replace every all-caps placeholder prompt.
 >
 > **Disclosure rule:** This file is public. Keep actionable attack detail — exploit steps, unpatched bypasses, sensitive production topology, privileged access paths — in the restricted record, not here. See `PROFILE.md` §13 ("Public and restricted disclosure") of the pinned upstream profile, `MosslandOpenDevs/agentic-assurance-profile`.
 >
-> **Paths note:** Sibling artifact references below use the default `assurance/` paths; if your repository remaps artifacts, substitute the paths recorded under `paths:` in `.agentic-assurance/adoption.yaml`.
+> **Paths note:** Sibling artifact references below use the default `assurance/` paths; if your repository remaps artifacts, substitute the paths recorded under `paths:` in the configured adoption declaration.
 
 ---
 

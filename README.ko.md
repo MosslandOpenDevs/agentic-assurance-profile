@@ -86,7 +86,7 @@ OpenDevs Agentic Assurance Profile의 성격은 다음과 같습니다.
 - 공개 취약점 장부
 - 비밀 정보, 악용 가능한 공격 경로, 민감한 내부 구조, 개인정보, 미조치 발견 사항을 공개할 이유
 
-**Conformance(적합)는 채택한 프로필이 정한 대로 약속, 통제, 증거, 남은 의심이 표현되어 있다는 뜻입니다. “취약점이 없다”는 뜻이 아닙니다.**
+**Active 채택에서 conformance(적합)는 채택한 프로필이 정한 대로 약속, 통제, 증거, 남은 의심이 표현되어 있다는 뜻입니다. 배타적인 `archived`에서는 참고 전용 자격과 네 가지 필수 역사 정보가 표현되고 human owner에게 확인되었다는 뜻이며, 현재 운영에 대한 assurance를 주장하지 않습니다. 어느 쪽도 “취약점이 없다”는 뜻이 아닙니다.**
 
 ---
 
@@ -233,9 +233,9 @@ Issue or change proposal
 
 ## 채택 방식
 
-**채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** `core`, `service`, `trust-critical`, `data-curation`, `agent-runtime` 중 무엇이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
+**채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** 어떤 active 프로필이 해당하는지, 아니면 배타적인 `archived` 프로필이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 모든 specialized active 프로필은 `core` 의무를 상속합니다. active 채택에서는 해당 specialized 프로필이 하나도 없을 때 `[core]`를 선언하고, 하나라도 있으면 걸린 specialized 프로필만 적는 것이 canonical 선언입니다. 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
 
-`core` 하나만 해당할 때는 파일 네 개로 채택합니다. `adoption.yaml`에 `layout: lite`를 선언하고 assurance 내용 전체를 `assurance.yaml` 한 파일에 담는 lite 구성입니다.
+`core` 하나만 해당할 때는 필수 프로필 파일 네 개로 채택합니다. 여기에 더해 `specification_workflow.root`가 실제로 존재하는 중대 변경 workflow 진입 문서를 가리켜야 합니다 — 보통 이미 있는 `CONTRIBUTING`·ADR·명세 문서를 재사용하므로, 그런 문서가 아예 없는 저장소만 다섯 번째 파일을 새로 씁니다. `adoption.yaml`에 `layout: lite`를 선언하고 목적, 비목표, 최소 하나의 불변조건, 최소 하나의 잔차, 그리고 일반적으로 system 설명까지 `assurance.yaml` 한 파일에 모읍니다. system 설명은 기존 산출물을 가리키도록 기록한 mapping으로 대신할 수도 있습니다.
 
 ```text
 AGENTS.md
@@ -245,7 +245,7 @@ AGENTIC_ASSURANCE.md
 └── assurance.yaml
 ```
 
-`service`부터는(또는 `core`에서도 원한다면) 레지스터마다 파일을 따로 두는 split 구성을 사용합니다.
+specialized active 프로필을 선언할 때는(또는 `core`에서도 원한다면) active 레지스터마다 파일을 따로 두는 split 구성을 사용합니다.
 
 ```text
 AGENTS.md
@@ -254,14 +254,16 @@ AGENTIC_ASSURANCE.md
 └── adoption.yaml
 assurance/
 ├── SYSTEM.md
+├── INVARIANTS.yaml
 └── RESIDUALS.yaml
 ```
+
+`archived`도 split 경로 관례를 사용하지만 active 레지스터 의무를 상속하지는 않습니다. assurance 최소 구성은 §6.6의 네 가지 역사 정보를 담은 system 산출물이며, 루트의 채택·에이전트 지시 파일도 함께 둡니다.
 
 다음 산출물은 해당 사항이 있을 때만 도입합니다.
 
 ```text
 assurance/
-├── INVARIANTS.yaml   # recommended at core; required from `service`
 ├── CLAIMS.yaml
 ├── DEFEATERS.yaml
 ├── THREAT_MODEL.md
@@ -281,24 +283,36 @@ assurance/
 | `trust-critical` | 신원, 인가, 프라이버시, 보안, 금융, 거버넌스, 공개 검증 가능성을 내세우는 경우 |
 | `data-curation` | 외부에서 수집하거나 편집, 채점, 분류, 추천을 거치는 데이터 |
 | `agent-runtime` | production에서 동작하는 모델 기반 에이전트나 workflow |
-| `archived` | 운영과 기능 개발이 멈춘 참고용 저장소 |
+| `archived` | 오직 역사적 참고용으로 보존되고 현재 사용을 지원하거나 의도하지 않으며, 실제 운영·기능적 유지보수·기능 개발이 없는 저장소 |
+
+`service`, `trust-critical`, `data-curation`, `agent-runtime`은 `profiles:`에 `core`를 적지 않아도 모든 `core` 의무를 상속합니다. `archived`는 단독으로 선언하고, `paths.system`이 가리키는 system 산출물(기본값 `assurance/SYSTEM.md`)에 네 가지 필수 역사 정보를 기록합니다. 이 산출물은 모든 단계에서 비어 있지 않아야 하며, `HUMAN_REVIEWED`부터는 배포된 archived 템플릿의 네 가지 정확한 prompt marker가 하나도 남아 있으면 안 됩니다.
 
 ### brownfield 채택 순서
 
-이미 존재하는 저장소라면 다음 순서를 밟습니다.
+기존 저장소는 여기서 시작하고, 분류 결과가 active 프로필일 때만 8단계까지 계속합니다.
 
-1. 저장소가 무엇이고 무엇을 약속하는지로 프로필을 분류합니다 — `service` / `trust-critical` / `data-curation` / `agent-runtime` 트리거 중 하나라도 걸리면 `file:line` 증거와 함께 승격하고, `core`라고 가정하지 않습니다([§4.0](docs/ADOPTION.md)).
+1. 저장소가 무엇이고 무엇을 약속하는지로 프로필을 분류합니다 — `service` / `trust-critical` / `data-curation` / `agent-runtime` 트리거를 `file:line` 증거와 함께 모으고, 하나도 걸리지 않으며 `archived` 조건에도 해당하지 않을 때만 `[core]`를 선언합니다. 증거가 `archived`에 해당한다면 여기서 멈추고 아래의 짧은 경로를 따릅니다([§4.0](docs/ADOPTION.md)).
 2. 기존 명세, 테스트, workflow, 정책, release 통제를 살핍니다.
 3. 기능 코드는 건드리지 않고, 실제로 만들어진 그대로의 시스템을 복원합니다.
 4. 그렇게 내린 결론을 `VERIFIED`, `INFERRED`, `UNKNOWN`, `CONTRADICTED`로 분류합니다.
-5. 목적, 비목표, 핵심 주장, 핵심 불변조건, 모호한 동작은 사람의 검토를 받습니다.
+5. 목적과 비목표, 핵심 주장과 불변조건, `INTENDED`·`ACCIDENTAL`·`COMPATIBILITY`·`UNKNOWN`·`DEPRECATED`로 분류한 동작, 핵심 잔차, 공개 주장의 한계를 human owner에게 검토받습니다.
 6. conformance 공백과 잔차를 기록합니다.
 7. 범위를 좁힌 별도의 Issue와 Pull Request로 보완합니다.
 8. 증거를 commit, 산출물 digest, release, 배포 식별자에 결부합니다.
 
+`archived` 후보 저장소는 대신 다음의 좁은 경로를 따릅니다.
+
+1. 저장소가 오직 역사적 참고용으로 보존되고 현재 사용을 지원하거나 의도하지 않으며, 실제 운영·기능적 유지보수·기능 개발이 없다는 증거를 수집합니다.
+2. `[archived]`만 단독 선언하고, `paths.system`이 가리키는 system 산출물에 §6.6의 네 가지 사실을 모두 기록합니다 — 위의 참고 전용·비활성 상태, 역사적 목적, 알려진 중대한 한계, 마지막 지원 revision 또는 release(없다면 없다는 명시적 진술).
+3. [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에 따라 human owner에게 `archived` 자격, 산출물 mapping, 네 가지 사실 각각을 확인받습니다.
+
+active 경로의 as-built system 복원, 동작 분류, active claim/invariant/residual 레지스터, 보완 계획은 `archived` 채택에 적용되지 않습니다. 빈 active 산출물을 대신 만들지 마십시오.
+
+최초 `archived` 채택, 역사적 사실 정정, pin·stage·review record·agent 지침 메타데이터 유지 작업 자체는 기능적 유지보수가 아닙니다. 현재 사용을 지원하려고 코드·의존성·동작을 바꾸는 일은 기능적 유지보수이므로, 그 전에 해당 active 프로필로 다시 분류해야 합니다.
+
 파일만 만들었다고 채택한 것이 아닙니다.
 
-**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 먼저: (1) 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고). (2) 대상 저장소의 프로필을 그것이 무엇이고 무엇을 약속하는지로 **분류**하되([§4.0](docs/ADOPTION.md)) `core`라고 가정하지 않습니다. (3) 그다음 [docs/ADOPTION.md §4](docs/ADOPTION.md)의 brownfield 순서를 따라, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언하고, 결과를 브랜치에 올려 merge 없이 human owner에게 넘깁니다. [§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
+**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 먼저: (1) 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고). (2) 대상 저장소의 프로필을 그것이 무엇이고 무엇을 약속하는지로 **분류**하되([§4.0](docs/ADOPTION.md)), active 분류이면서 specialized 트리거가 하나도 없을 때만 `[core]`를 선언하고 위의 참고 전용 자격 전체가 증거로 확립될 때만 `archived`를 배타적인 대안으로 선택합니다. (3) 그다음 [docs/ADOPTION.md §4](docs/ADOPTION.md)의 active 또는 archived brownfield 경로 중 해당하는 절차를 따라, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언하고, 결과를 브랜치에 올려 merge 없이 human owner에게 넘깁니다. [§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
 
 실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오. 채택 결과를 검토하는 human owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하십시오. 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
 
@@ -360,6 +374,7 @@ assurance/
     ├── SYSTEM.md
     ├── THREAT_MODEL.md
     ├── adoption.yaml
+    ├── assurance.minimal.yaml
     ├── assurance.yaml
     └── github/
         ├── CODEOWNERS
@@ -382,6 +397,8 @@ assurance/
 - **Major:** 의무를 없애거나 약화하거나 실질적으로 바꿉니다.
 - **Minor:** 하위 호환을 지키면서 요구사항, 프로필, 필드를 더합니다.
 - **Patch:** 의무의 의도는 그대로 두고 문구를 다듬거나 schema를 고칩니다.
+
+`v1.0.0` 이전에는 프로필이 활발한 개발 단계입니다. 이 프로젝트는 semantic versioning의 초기 개발 단계 재량에 대한 governing interpretation에 따라, 의무를 새로 더하거나 강화하는 것을 minor로 다룹니다(이미 적합하던 채택에 새 내용이 필요해질 수 있으며, 그 영향은 changelog에 명시합니다). 이는 이 프로필이 정한 `0.x` 운용 정책이지 보편적인 SemVer 규칙이라는 주장이 아닙니다. `v1.0.0`부터는 의무를 실질적으로 바꾸는 것이 major입니다.
 
 채택 저장소는 사람이 읽는 버전과 정확한 commit SHA를 함께 고정합니다. 업그레이드는 영향 검토를 거치는 명시적인 프로젝트 변경으로 다룹니다.
 

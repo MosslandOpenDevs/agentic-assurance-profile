@@ -13,7 +13,7 @@
 #     assurance:
 #       uses: MosslandOpenDevs/agentic-assurance-profile/.github/workflows/adopter-validate.yml@REPLACE_WITH_FULL_40_CHARACTER_COMMIT_SHA
 #
-# The `edited` type matters: the drift job reads invariant mentions and
+# The `edited` type matters: the drift job reads impact directives and
 # no-impact statements from the PR description, so editing the description
 # must re-run the check — the default pull_request types would leave a stale
 # verdict standing.
@@ -27,6 +27,14 @@
 #
 #       with:
 #         adoption-file: path/to/adoption.yaml
+#
+# Use that same path in the assurance reading order in BOTH root
+# AGENTIC_ASSURANCE.md and root AGENTS.md. Add the custom declaration, every
+# custom artifact named under `paths:`, `specification_workflow.root`,
+# `human_review.record`, `security.policy`, and
+# `security.public_assurance_root` to the effective owner-review boundary
+# (and to CODEOWNERS when that is the mechanism); changing this input does not
+# update those project controls.
 #
 # TRUST BOUNDARY (what this workflow can and cannot guarantee):
 # the validator code executed on the runner is ALWAYS this workflow's own
@@ -57,14 +65,17 @@
 # workflow with CANONICAL (in every job) changed to their fork.
 #
 # Two validation jobs run on every event. `structure` (check name
-# "assurance / structure" with the caller above) is the structural
-# validation: everything except adoption-stage enforcement, i.e. a
-# DRAFT-equivalent pass/fail. `declared-stage` enforces the requirements of
+# "assurance / structure" with the caller above; the historical name is
+# retained) is the baseline validation: schema, required artifacts, and
+# applicable semantic checks, with only adoption-stage enforcement omitted —
+# a DRAFT-equivalent pass/fail. `declared-stage` enforces the requirements of
 # the `adoption_stage` declared in the adoption file; it is skipped entirely
 # when the declared stage is DRAFT or absent. The check is deliberately NOT
 # named "conformance": it enforces whatever stage is declared, so it is
 # green at HUMAN_REVIEWED too — a green check must not read as a
-# conformance statement. Renames across releases: "assurance / validate"
+# conformance statement. Even behind CONFORMANT, green covers the implemented
+# mechanical subset; the human-approved declaration is the full normative
+# claim. Renames across releases: "assurance / validate"
 # (pre-v0.2.0) became "assurance / structure"; "assurance / conformance"
 # (v0.2.0) is now "assurance / declared-stage" — update branch protection
 # when re-pinning.
@@ -72,10 +83,12 @@
 # On pull_request events an additional `drift` job routes the change set
 # against the optional `components:` map in the adoption file (impact
 # routing): it warns when a mapped component changes without an assurance
-# update referencing its invariants, an invariant mention, or an explicit
-# no-impact statement in the PR description. It also screens the assurance
-# policy against the base branch — the adoption declaration (stage
-# downgrade, pin change, component removal/narrowing, owner/path moves)
+# artifact update or an explicit leading top-level `Assurance impact:`
+# directive in the PR description (`INV-*` IDs, or `none` followed by
+# `Reason:`). It also screens the assurance policy against the base branch —
+# the adoption declaration (declaration
+# move, stage downgrade, pin change, approval-scope rewrite, component
+# removal/narrowing, owner/artifact-path moves)
 # and the registers themselves, by stable ID (deleted entries, whole
 # register removal, severity/status/proof-tier downgrades, evidence and
 # claim-basis removal, a cleared CONTRADICTED status, and residual/defeater
@@ -110,10 +123,11 @@ permissions:
   contents: read
 
 jobs:
-  # Structural validation (formerly job id `validate`; the required check is
-  # now "assurance / structure"): the full adopter validation minus
-  # adoption-stage enforcement (--ignore-stage), so this check's pass/fail
-  # is stage-independent (a DRAFT-equivalent verdict).
+  # Baseline validation (formerly job id `validate`; the required check keeps
+  # the name "assurance / structure"): schema, required artifacts, and
+  # applicable semantic checks, minus adoption-stage enforcement
+  # (--ignore-stage), so this check's pass/fail is stage-independent (a
+  # DRAFT-equivalent verdict).
   structure:
     runs-on: ubuntu-latest
     outputs:
@@ -126,9 +140,9 @@ jobs:
 
       # The workflow's own identity is the trust anchor: everything below
       # executes code from job.workflow_repository @ job.workflow_sha, so
-      # first pin that identity down. The suffix check on job.workflow_ref
-      # rejects callers that pin by tag or branch — a tag can move even
-      # when it currently resolves to the same commit.
+      # first pin that identity down. Exact workflow path + SHA equality on
+      # job.workflow_ref rejects tags, branches, misleading `@<sha>` suffixes,
+      # and a different reusable workflow path.
       - name: Verify workflow identity
         env:
           WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
@@ -143,15 +157,16 @@ jobs:
             echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream. A fork must run its own copy with the CANONICAL constants changed (see the header comment)."
             exit 1
           fi
-          case "$WORKFLOW_REF" in
-            *"@${WORKFLOW_SHA}")
-              echo "workflow identity: $WORKFLOW_REPOSITORY @ $WORKFLOW_SHA (caller pins the full SHA)"
-              ;;
-            *)
-              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA (docs/ADOPTION.md section 3.4), not a tag or branch."
-              exit 1
-              ;;
-          esac
+          if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::job.workflow_sha is not a canonical 40-character lowercase commit SHA."
+            exit 1
+          fi
+          EXPECTED_WORKFLOW_REF="MosslandOpenDevs/agentic-assurance-profile/.github/workflows/adopter-validate.yml@${WORKFLOW_SHA}"
+          if [ "$WORKFLOW_REF" != "$EXPECTED_WORKFLOW_REF" ]; then
+            echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the canonical adopter-validate.yml path at the full 40-character commit SHA (docs/ADOPTION.md section 3.4), not a tag or branch."
+            exit 1
+          fi
+          echo "workflow identity: $WORKFLOW_REPOSITORY @ $WORKFLOW_SHA (caller pins the canonical workflow at the full SHA)"
 
       # The trusted checkout doubles as the pinned profile: the pin-read
       # step below enforces upstream.commit == job.workflow_sha, so this
@@ -159,6 +174,27 @@ jobs:
       # code or dependency is installed before this point (the v0.2.1
       # version-pinned pyyaml bootstrap is gone — the pin reader now runs
       # on the hash-locked set from the trusted checkout).
+      - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
+        run: |
+          from pathlib import Path
+
+          destination = Path(".assurance-profile-pin")
+          try:
+              destination.lstat()
+          except FileNotFoundError:
+              destination.mkdir(mode=0o700)
+          except OSError as exc:
+              raise SystemExit(
+                  f"Cannot inspect reserved profile checkout destination: {exc}"
+              ) from exc
+          else:
+              raise SystemExit(
+                  "Reserved profile checkout destination already exists in the "
+                  "adopter tree; refusing to let adopter-controlled content or "
+                  "a symlink choose where the trusted checkout writes."
+              )
+
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -180,33 +216,98 @@ jobs:
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           WORKFLOW_SHA: ${{ job.workflow_sha }}
+        shell: python -I {0}
         run: |
-          python - "$ADOPTION_FILE" <<'EOF'
           import os
+          import re
+          import stat
           import sys
+          from pathlib import Path
 
-          import yaml
+          sys.path.insert(0, ".assurance-profile-pin/scripts")
+          from validate import github_log_line, load_yaml
 
           # The declared repository is validated as data, never used to
           # choose the code that executes on the runner.
           CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
+          ADOPTER_VERSION_RE = re.compile(
+              r"(?:unreleased|v(?:0|[1-9][0-9]*)\."
+              r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+              r"(?:-rc\.[1-9][0-9]*)?)"
+          )
 
-          path = sys.argv[1]
-          with open(path, encoding="utf-8") as f:
-              adoption = yaml.safe_load(f)
+          def is_within(candidate, root):
+              return candidate == root or candidate.is_relative_to(root)
+
+          def resolve_head_adoption(raw_path):
+              """Resolve one adopter path without crossing the workflow trust boundary."""
+              project_root = Path.cwd().resolve(strict=True)
+              candidate = Path(raw_path)
+              if candidate.is_absolute():
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} must use a repository-relative "
+                      "lexical path"
+                  )
+              candidate = project_root / candidate
+              lexical = Path(os.path.abspath(candidate))
+              try:
+                  resolved = candidate.resolve(strict=True)
+              except (OSError, RuntimeError, ValueError) as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be resolved: {exc}"
+                  ) from exc
+              if not is_within(resolved, project_root):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} resolves outside the project root"
+                  )
+              for excluded_name in (".git", ".assurance-profile-pin"):
+                  excluded_lexical = project_root / excluded_name
+                  try:
+                      excluded_resolved = excluded_lexical.resolve(strict=True)
+                  except (OSError, RuntimeError, ValueError) as exc:
+                      raise SystemExit(
+                          f"trusted path {excluded_name!r} cannot be resolved: {exc}"
+                      ) from exc
+                  if is_within(lexical, excluded_lexical) or is_within(
+                      resolved, excluded_resolved
+                  ):
+                      raise SystemExit(
+                          f"adoption file {raw_path!r} resolves inside trusted/non-adopter "
+                          f"data at {excluded_name}"
+                      )
+              try:
+                  mode = resolved.stat().st_mode
+              except OSError as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be inspected: {exc}"
+                  ) from exc
+              if not stat.S_ISREG(mode):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} is not a regular file"
+                  )
+              return resolved
+
+          path = os.environ["ADOPTION_FILE"]
+          display_path = f"adoption file {github_log_line(path)}"
+          adoption_path = resolve_head_adoption(path)
+          adoption, load_error = load_yaml(adoption_path)
+          if load_error is not None:
+              raise SystemExit(
+                  github_log_line(f"adoption file {path}: {load_error}")
+              )
 
           if not isinstance(adoption, dict):
-              raise SystemExit(f"{path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
           upstream = adoption.get("upstream")
           if not isinstance(upstream, dict):
-              raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
           missing = [key for key in ("repository", "commit", "version") if key not in upstream]
           if missing:
-              raise SystemExit(f"{path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: 'upstream' is missing required key(s): {', '.join(missing)}; see docs/ADOPTION.md.")
 
           if upstream["repository"] != CANONICAL:
               raise SystemExit(
-                  f"{path}: upstream.repository is {upstream['repository']!r}, but this reusable "
+                  f"{display_path}: upstream.repository is {upstream['repository']!r}, but this reusable "
                   f"workflow only validates against the canonical upstream {CANONICAL!r}. If you "
                   "pin a fork of the profile, run your own copy of adopter-validate.yml with "
                   "CANONICAL changed to your fork."
@@ -214,32 +315,37 @@ jobs:
 
           commit = str(upstream["commit"])
           if not (len(commit) == 40 and all(c in "0123456789abcdef" for c in commit)):
-              raise SystemExit(f"{path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: upstream.commit must be a full 40-character lowercase hex SHA; see docs/ADOPTION.md.")
 
           # The documented same-change rule, enforced: the caller's @ SHA
           # (this workflow's own commit) and the adoption pin move together.
           workflow_sha = os.environ["WORKFLOW_SHA"]
           if commit != workflow_sha:
               raise SystemExit(
-                  f"{path}: upstream.commit is {commit} but the caller pins this reusable "
+                  f"{display_path}: upstream.commit is {commit} but the caller pins this reusable "
                   f"workflow at {workflow_sha}. Update upstream.version, upstream.commit, and "
                   "the caller's @ reference in the same change (docs/ADOPTION.md section 3.4)."
               )
 
-          # Single-line, like commit and adoption_stage: every value written
-          # to $GITHUB_OUTPUT must be validated against output injection.
-          version = str(upstream["version"])
-          if not version.strip() or "\n" in version or "\r" in version:
-              raise SystemExit(f"{path}: upstream.version must be a non-empty single-line string; see docs/ADOPTION.md.")
+          # This value is written to $GITHUB_OUTPUT and then placed in a Git
+          # tag refspec. Validate the complete adopter grammar before either
+          # sink; a merely single-line value could still contain refspec
+          # metacharacters such as '*'.
+          version = upstream["version"]
+          if not isinstance(version, str) or ADOPTER_VERSION_RE.fullmatch(version) is None:
+              raise SystemExit(
+                  f"{display_path}: upstream.version must be 'unreleased', "
+                  "vMAJOR.MINOR.PATCH, or vMAJOR.MINOR.PATCH-rc.N; "
+                  "see docs/ADOPTION.md."
+              )
 
           stage = adoption.get("adoption_stage", "DRAFT")
           if not isinstance(stage, str) or not stage.strip() or "\n" in stage or "\r" in stage:
-              raise SystemExit(f"{path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: 'adoption_stage' must be a single-line string when present; see docs/ADOPTION.md.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write(f"version={version}\n")
               out.write(f"adoption_stage={stage}\n")
-          EOF
 
       # A release identifier can appear in more than one commit's VERSION file
       # (the release PR's branch commit and the merge commit the tag points to).
@@ -274,7 +380,7 @@ jobs:
             VISIBILITY_FLAG="--repo-visibility $REPO_VISIBILITY"
           fi
           # shellcheck disable=SC2086  # VISIBILITY_FLAG splits into flag+value on purpose
-          python .assurance-profile-pin/scripts/validate.py adopter \
+          python -I .assurance-profile-pin/scripts/validate.py adopter \
             --adoption "$ADOPTION_FILE" \
             --project-root . \
             --schemas .assurance-profile-pin/schemas \
@@ -286,8 +392,8 @@ jobs:
         continue-on-error: true
         env:
           PINNED_VERSION: ${{ steps.pin.outputs.version }}
+        shell: python -I {0}
         run: |
-          python - <<'EOF'
           import json
           import os
           import re
@@ -301,7 +407,11 @@ jobs:
               release, and a -rc.N pre-release sorts before its base release."""
               if tag == "unreleased":
                   return (0, 0, 0, 0, 0, 0)
-              match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?", tag)
+              match = re.fullmatch(
+                  r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\."
+                  r"(0|[1-9][0-9]*)(?:-rc\.([1-9][0-9]*))?",
+                  tag,
+              )
               if match is None:
                   raise ValueError(f"unrecognized version string {tag!r}")
               major, minor, patch, rc = match.groups()
@@ -330,7 +440,6 @@ jobs:
                   f"release {latest}. Upgrade through explicit project change "
                   "review (PROFILE.md section 16)."
               )
-          EOF
 
   # Declared-stage enforcement: the full stage-enforcing validation (no
   # --ignore-stage). Green means "the declared adoption_stage's requirements
@@ -368,13 +477,36 @@ jobs:
             echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream."
             exit 1
           fi
-          case "$WORKFLOW_REF" in
-            *"@${WORKFLOW_SHA}") : ;;
-            *)
-              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA."
-              exit 1
-              ;;
-          esac
+          if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::job.workflow_sha is not a canonical 40-character lowercase commit SHA."
+            exit 1
+          fi
+          EXPECTED_WORKFLOW_REF="MosslandOpenDevs/agentic-assurance-profile/.github/workflows/adopter-validate.yml@${WORKFLOW_SHA}"
+          if [ "$WORKFLOW_REF" != "$EXPECTED_WORKFLOW_REF" ]; then
+            echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the canonical adopter-validate.yml path at the full 40-character commit SHA."
+            exit 1
+          fi
+
+      - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
+        run: |
+          from pathlib import Path
+
+          destination = Path(".assurance-profile-pin")
+          try:
+              destination.lstat()
+          except FileNotFoundError:
+              destination.mkdir(mode=0o700)
+          except OSError as exc:
+              raise SystemExit(
+                  f"Cannot inspect reserved profile checkout destination: {exc}"
+              ) from exc
+          else:
+              raise SystemExit(
+                  "Reserved profile checkout destination already exists in the "
+                  "adopter tree; refusing to let adopter-controlled content or "
+                  "a symlink choose where the trusted checkout writes."
+              )
 
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -396,36 +528,94 @@ jobs:
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           WORKFLOW_SHA: ${{ job.workflow_sha }}
+        shell: python -I {0}
         run: |
-          python - "$ADOPTION_FILE" <<'EOF'
           import os
+          import stat
           import sys
+          from pathlib import Path
 
-          import yaml
+          sys.path.insert(0, ".assurance-profile-pin/scripts")
+          from validate import github_log_line, load_yaml
 
           CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
 
-          path = sys.argv[1]
-          with open(path, encoding="utf-8") as f:
-              adoption = yaml.safe_load(f)
+          def is_within(candidate, root):
+              return candidate == root or candidate.is_relative_to(root)
+
+          def resolve_head_adoption(raw_path):
+              """Resolve one adopter path without crossing the workflow trust boundary."""
+              project_root = Path.cwd().resolve(strict=True)
+              candidate = Path(raw_path)
+              if candidate.is_absolute():
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} must use a repository-relative "
+                      "lexical path"
+                  )
+              candidate = project_root / candidate
+              lexical = Path(os.path.abspath(candidate))
+              try:
+                  resolved = candidate.resolve(strict=True)
+              except (OSError, RuntimeError, ValueError) as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be resolved: {exc}"
+                  ) from exc
+              if not is_within(resolved, project_root):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} resolves outside the project root"
+                  )
+              for excluded_name in (".git", ".assurance-profile-pin"):
+                  excluded_lexical = project_root / excluded_name
+                  try:
+                      excluded_resolved = excluded_lexical.resolve(strict=True)
+                  except (OSError, RuntimeError, ValueError) as exc:
+                      raise SystemExit(
+                          f"trusted path {excluded_name!r} cannot be resolved: {exc}"
+                      ) from exc
+                  if is_within(lexical, excluded_lexical) or is_within(
+                      resolved, excluded_resolved
+                  ):
+                      raise SystemExit(
+                          f"adoption file {raw_path!r} resolves inside trusted/non-adopter "
+                          f"data at {excluded_name}"
+                      )
+              try:
+                  mode = resolved.stat().st_mode
+              except OSError as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be inspected: {exc}"
+                  ) from exc
+              if not stat.S_ISREG(mode):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} is not a regular file"
+                  )
+              return resolved
+
+          path = os.environ["ADOPTION_FILE"]
+          display_path = f"adoption file {github_log_line(path)}"
+          adoption_path = resolve_head_adoption(path)
+          adoption, load_error = load_yaml(adoption_path)
+          if load_error is not None:
+              raise SystemExit(
+                  github_log_line(f"adoption file {path}: {load_error}")
+              )
 
           if not isinstance(adoption, dict):
-              raise SystemExit(f"{path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: adoption file is empty or not a YAML mapping; see docs/ADOPTION.md.")
           upstream = adoption.get("upstream")
           if not isinstance(upstream, dict):
-              raise SystemExit(f"{path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
+              raise SystemExit(f"{display_path}: 'upstream' is missing or not a mapping; see docs/ADOPTION.md.")
           if upstream.get("repository") != CANONICAL:
               raise SystemExit(
-                  f"{path}: upstream.repository is {upstream.get('repository')!r}, but this "
+                  f"{display_path}: upstream.repository is {upstream.get('repository')!r}, but this "
                   f"reusable workflow only validates against the canonical upstream {CANONICAL!r}."
               )
           commit = str(upstream.get("commit", ""))
           if commit != os.environ["WORKFLOW_SHA"]:
               raise SystemExit(
-                  f"{path}: upstream.commit is {commit!r} but the caller pins this reusable "
+                  f"{display_path}: upstream.commit is {commit!r} but the caller pins this reusable "
                   f"workflow at {os.environ['WORKFLOW_SHA']} — update both in the same change."
               )
-          EOF
 
       - name: Enforce the declared adoption stage
         env:
@@ -437,7 +627,7 @@ jobs:
             VISIBILITY_FLAG="--repo-visibility $REPO_VISIBILITY"
           fi
           # shellcheck disable=SC2086  # VISIBILITY_FLAG splits into flag+value on purpose
-          python .assurance-profile-pin/scripts/validate.py adopter \
+          python -I .assurance-profile-pin/scripts/validate.py adopter \
             --adoption "$ADOPTION_FILE" \
             --project-root . \
             --schemas .assurance-profile-pin/schemas \
@@ -454,6 +644,10 @@ jobs:
       - name: Check out adopting repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # pull_request defaults to refs/pull/.../merge. Drift compares the
+          # explicit base and head SHAs, so every HEAD-side policy read must
+          # come from that same head tree rather than the synthetic merge.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -471,13 +665,36 @@ jobs:
             echo "::error::This workflow is running from $WORKFLOW_REPOSITORY, not the canonical upstream."
             exit 1
           fi
-          case "$WORKFLOW_REF" in
-            *"@${WORKFLOW_SHA}") : ;;
-            *)
-              echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the full 40-character commit SHA."
-              exit 1
-              ;;
-          esac
+          if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::job.workflow_sha is not a canonical 40-character lowercase commit SHA."
+            exit 1
+          fi
+          EXPECTED_WORKFLOW_REF="MosslandOpenDevs/agentic-assurance-profile/.github/workflows/adopter-validate.yml@${WORKFLOW_SHA}"
+          if [ "$WORKFLOW_REF" != "$EXPECTED_WORKFLOW_REF" ]; then
+            echo "::error::The caller references this workflow as '$WORKFLOW_REF' — pin the canonical adopter-validate.yml path at the full 40-character commit SHA."
+            exit 1
+          fi
+
+      - name: Reserve trusted profile checkout destination
+        shell: python -I {0}
+        run: |
+          from pathlib import Path
+
+          destination = Path(".assurance-profile-pin")
+          try:
+              destination.lstat()
+          except FileNotFoundError:
+              destination.mkdir(mode=0o700)
+          except OSError as exc:
+              raise SystemExit(
+                  f"Cannot inspect reserved profile checkout destination: {exc}"
+              ) from exc
+          else:
+              raise SystemExit(
+                  "Reserved profile checkout destination already exists in the "
+                  "adopter tree; refusing to let adopter-controlled content or "
+                  "a symlink choose where the trusted checkout writes."
+              )
 
       - name: Check out this workflow's profile source (trusted)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -501,30 +718,72 @@ jobs:
       # or copy lists BOTH source and destination (with --name-only a rename
       # out of a mapped path would only show the destination and escape the
       # component's globs), and NUL separation keeps unusual filenames intact.
+      #
+      # --find-copies-harder is kept deliberately: a copy out of a mapped path
+      # whose source was NOT modified in the same change is invisible without
+      # it, and that is exactly the escape this step exists to close. It makes
+      # every tracked file a candidate source, so Git can hit its rename limit
+      # and skip detection entirely on a large repository — which this step
+      # then fails, because a skipped detection silently drops the guarantee.
+      # An explicit renameLimit raises the ceiling before that happens rather
+      # than buying headroom by weakening detection.
       - name: Compute changed files (rename-safe)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git diff --name-status -z "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/name-status.z"
-          python - "$RUNNER_TEMP/name-status.z" > "$RUNNER_TEMP/changed-files.txt" <<'EOF'
-          import sys
+          # Defined here, not as a step env: an unset or empty value would
+          # reach Git as `diff.renameLimit=` and abort the whole diff with a
+          # bad-config error rather than the rename-limit path this handles.
+          RENAME_LIMIT=20000
+          if ! git -c diff.renameLimit="$RENAME_LIMIT" diff -M -C --find-copies-harder --name-status -z \
+            "$BASE_SHA...$HEAD_SHA" \
+            > "$RUNNER_TEMP/name-status.z" \
+            2> "$RUNNER_TEMP/name-status.err"
+          then
+            echo "::error::Could not compute the pull request changed-file set."
+            exit 1
+          fi
+          if [ -s "$RUNNER_TEMP/name-status.err" ]; then
+            cat "$RUNNER_TEMP/name-status.err" >&2
+            echo "::error::Git could not complete rename/copy detection for this pull request (diagnostics above). Routing cannot continue without it: a rename out of a mapped path would otherwise appear only as an addition and escape that component's globs. Raise diff.renameLimit above ${RENAME_LIMIT} for this repository, or split the change."
+            exit 1
+          fi
 
-          raw = open(sys.argv[1], "rb").read().decode("utf-8", "surrogateescape")
-          tokens = raw.split("\0")
+      - name: Normalize changed files
+        shell: python -I {0}
+        run: |
+          import os
+
+          MAX_NAME_STATUS_BYTES = 64 * 1024 * 1024
+          runner_temp = os.environ["RUNNER_TEMP"]
+          input_path = os.path.join(runner_temp, "name-status.z")
+          output_path = os.path.join(runner_temp, "changed-files.z")
+          size = os.path.getsize(input_path)
+          if size > MAX_NAME_STATUS_BYTES:
+              raise SystemExit(
+                  "name-status input exceeds the 64 MiB workflow routing limit"
+              )
+          with open(input_path, "rb") as handle:
+              raw = handle.read(MAX_NAME_STATUS_BYTES + 1)
+          tokens = raw.split(b"\0")
           paths = []
+          seen = set()
           index = 0
           while index < len(tokens) and tokens[index]:
               status = tokens[index]
               # R (rename) and C (copy) records carry two paths (source,
               # destination); both count as changed so code cannot move out
               # of a mapped path unseen.
-              take = 2 if status[:1] in ("R", "C") else 1
-              paths.extend(tokens[index + 1 : index + 1 + take])
+              take = 2 if status[:1] in (b"R", b"C") else 1
+              for path in tokens[index + 1 : index + 1 + take]:
+                  if path not in seen:
+                      seen.add(path)
+                      paths.append(path)
               index += 1 + take
-          for path in paths:
-              print(path)
-          EOF
+          output = b"\0".join(paths) + b"\0" if paths else b""
+          with open(output_path, "wb") as handle:
+              handle.write(output)
 
       - name: Write PR description to a file
         env:
@@ -532,34 +791,178 @@ jobs:
         run: |
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
 
-      # The base branch's adoption declaration and registers (for the policy
-      # regression check) come from a detached worktree of the base SHA, and
-      # the diff of the assurance artifacts is scoped by the paths BOTH
-      # declarations actually name (custom `paths:` mappings included), not
-      # just the default directories.
+      # The base declaration and registers (for policy comparison) come from
+      # a detached worktree of the base SHA. Positive evidence is narrower: it
+      # follows HEAD-active regular strict-text blobs and contained tracked
+      # targets. Exact lines present anywhere at the PR merge base (including
+      # binary/symlink blobs on that cancellation-only side) are subtracted, so
+      # relocation, copy, remapping, or type reclassification cannot expose old
+      # prose as new. BASE-only bindings remain trust- and target-checked but
+      # cannot supply positive evidence after being deactivated.
       - name: Materialize the base tree and compute the assurance diff
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           ADOPTION_FILE: ${{ inputs.adoption-file }}
+          CALLER_REPOSITORY: ${{ github.repository }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+        # This step is Python, not shell. `python3` is deliberate: actionlint
+        # v1.7.12 only sends a `python`-prefixed custom shell to pyflakes, and
+        # its pre-fix stdin path can deadlock on this >64 KiB body (upstream
+        # rhysd/actionlint#650 and rhysd/actionlint#651). Regression tests
+        # compile and execute this body directly.
+        shell: python3 -I {0}
         run: |
-          python - <<'EOF'
+          import datetime
+          import json
+          import math
           import os
+          import re
+          import selectors
+          import stat
           import subprocess
           import sys
+          import time
+          from pathlib import Path
+
+          import yaml
 
           sys.path.insert(0, ".assurance-profile-pin/scripts")
           import posixpath
 
-          import yaml
-          from validate import DEFAULT_PATHS, LITE_ASSURANCE_PATH, resolve_paths
+          from validate import (
+              DEFAULT_PATHS,
+              LITE_ASSURANCE_PATH,
+              MAX_POLICY_NUMBER_CHARACTERS,
+              MAX_POLICY_YAML_BYTES,
+              MAX_YAML_EXPANDED_NODES,
+              StrictSafeLoader,
+              github_command_value,
+              github_log_line,
+              load_yaml,
+              load_yaml_with_loader,
+              nonempty_string,
+              nonportable_project_symlink,
+              resolve_paths,
+          )
+
+          CANONICAL = "MosslandOpenDevs/agentic-assurance-profile"
+          KNOWN_PROFILES = {
+              "core",
+              "service",
+              "trust-critical",
+              "data-curation",
+              "agent-runtime",
+              "archived",
+          }
+          MAX_DISCOVERY_FILES = 100_000
+          MAX_DISCOVERY_LISTING_BYTES = 64 * 1024 * 1024
+          MAX_DISCOVERY_BYTES = 64 * 1024 * 1024
+          # Deliberately NOT bounded per file. A declaration padded past any
+          # plausible per-file cap is still a declaration, so skipping large
+          # files would let a base declaration go undiscovered and turn this
+          # fallback fail-open. When the aggregate budget is exhausted the
+          # scan fails closed instead; the remedy is to pin the caller so
+          # exact recovery succeeds and this scan never runs.
+          MAX_DISCOVERY_DECLARATIONS = 16
+          MAX_POLICY_PATH_MAPPINGS = 256
+          MAX_POLICY_PATH_LENGTH = 4096
+          MAX_EVIDENCE_SCOPES = 256
+          MAX_EVIDENCE_SCOPE_BYTES = 64 * 1024
+          MAX_EVIDENCE_STDERR_BYTES = 1024 * 1024
+          MAX_EVIDENCE_GIT_SECONDS = 60
+          MAX_EVIDENCE_OUTPUT_BYTES = 20 * 1024 * 1024
+          INVARIANT_LINE_RE = re.compile(
+              rb"(?<![A-Z0-9-])INV-[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{3}"
+              rb"(?![A-Z0-9-])"
+          )
+
+          # GitHub workflow files use YAML 1.2-style booleans: an unquoted
+          # `on` is a string key, while PyYAML's default YAML 1.1 resolver
+          # treats it as True. Retain the validator's duplicate-key and
+          # JSON-object protections, but narrow bool resolution to true/false
+          # while reading the caller workflow as data.
+          class GitHubWorkflowLoader(StrictSafeLoader):
+              pass
+
+          GitHubWorkflowLoader.yaml_implicit_resolvers = {
+              key: list(resolvers)
+              for key, resolvers in StrictSafeLoader.yaml_implicit_resolvers.items()
+          }
+          for first_character, resolvers in list(
+              GitHubWorkflowLoader.yaml_implicit_resolvers.items()
+          ):
+              GitHubWorkflowLoader.yaml_implicit_resolvers[first_character] = [
+                  resolver
+                  for resolver in resolvers
+                  if resolver[0] != "tag:yaml.org,2002:bool"
+              ]
+          GitHubWorkflowLoader.add_implicit_resolver(
+              "tag:yaml.org,2002:bool",
+              re.compile(r"^(?:true|false)$", re.IGNORECASE | re.ASCII),
+              list("tTfF"),
+          )
+
+          def is_within(candidate, root):
+              return candidate == root or candidate.is_relative_to(root)
+
+          def emit_command(kind, message):
+              print(f"::{kind}::{github_command_value(message)}")
+
+          def resolve_head_adoption(raw_path):
+              """Resolve one adopter path without crossing the workflow trust boundary."""
+              project_root = Path.cwd().resolve(strict=True)
+              candidate = Path(raw_path)
+              if candidate.is_absolute():
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} must use a repository-relative "
+                      "lexical path"
+                  )
+              candidate = project_root / candidate
+              lexical = Path(os.path.abspath(candidate))
+              try:
+                  resolved = candidate.resolve(strict=True)
+              except (OSError, RuntimeError, ValueError) as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be resolved: {exc}"
+                  ) from exc
+              if not is_within(resolved, project_root):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} resolves outside the project root"
+                  )
+              for excluded_name in (".git", ".assurance-profile-pin"):
+                  excluded_lexical = project_root / excluded_name
+                  try:
+                      excluded_resolved = excluded_lexical.resolve(strict=True)
+                  except (OSError, RuntimeError, ValueError) as exc:
+                      raise SystemExit(
+                          f"trusted path {excluded_name!r} cannot be resolved: {exc}"
+                      ) from exc
+                  if is_within(lexical, excluded_lexical) or is_within(
+                      resolved, excluded_resolved
+                  ):
+                      raise SystemExit(
+                          f"adoption file {raw_path!r} resolves inside trusted/non-adopter "
+                          f"data at {excluded_name}"
+                      )
+              try:
+                  mode = resolved.stat().st_mode
+              except OSError as exc:
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} cannot be inspected: {exc}"
+                  ) from exc
+              if not stat.S_ISREG(mode):
+                  raise SystemExit(
+                      f"adoption file {raw_path!r} is not a regular file"
+                  )
+              return resolved
 
           base_sha = os.environ["BASE_SHA"]
           head_sha = os.environ["HEAD_SHA"]
           adoption_file = os.environ["ADOPTION_FILE"]
           tmp = os.environ["RUNNER_TEMP"]
 
-          def safe_relative(path):
+          def safe_relative(path, *, allow_root=False):
               """Normalized in-tree relative path, or None if it escapes.
 
               The adoption paths are pull-request-controlled, and they flow
@@ -573,38 +976,968 @@ jobs:
               only genuine escapes: absolute paths, and paths that climb out
               of the tree.
               """
-              if not isinstance(path, str) or not path or posixpath.isabs(path):
+              if (
+                  not isinstance(path, str)
+                  or not path
+                  or len(path) > MAX_POLICY_PATH_LENGTH
+                  or "\0" in path
+                  or posixpath.isabs(path)
+              ):
+                  return None
+              try:
+                  # Policy YAML is UTF-8. Reject escaped unpaired surrogates
+                  # before the value reaches Path/os.fsencode/sorted sinks.
+                  path.encode("utf-8")
+              except UnicodeEncodeError:
                   return None
               normalized = posixpath.normpath(path)
+              if normalized == ".":
+                  return "." if allow_root else None
               if (
-                  normalized == "."
-                  or normalized == ".."
+                  normalized == ".."
                   or normalized.startswith("../")
                   or posixpath.isabs(normalized)
               ):
                   return None
               return normalized
 
-          # Fixed, in-tree literals; the adoption-declared paths are added
-          # only after passing safe_relative.
-          diff_scope = {"assurance", ".agentic-assurance"}
-          diff_scope |= set(DEFAULT_PATHS.values()) | {LITE_ASSURANCE_PATH}
+          # Only the two fixed root guides apply to every layout. Impact
+          # evidence is derived from HEAD-active bindings only: a BASE-only
+          # artifact is still trust-checked and compared as policy below, but
+          # added text in an artifact that this change deactivates must not
+          # satisfy routing. A broad `assurance/` or `.agentic-assurance/`
+          # pathspec would create the same inactive/decoy false green.
+          fixed_path_bindings = [
+              (relative, relative, True, False)
+              for relative in ("AGENTIC_ASSURANCE.md", "AGENTS.md")
+          ]
+          impact_diff_scope = set()
           adoption_rel = safe_relative(adoption_file)
-          if adoption_rel is not None:
-              diff_scope.add(adoption_rel)
+          if adoption_rel is None:
+              emit_command(
+                  "error",
+                  "The configured adoption-file must use a non-root "
+                  "repository-relative lexical path inside the repository.",
+              )
+              raise SystemExit(1)
 
-          def declared_paths(adoption):
+          def lite_has_inline_system(root):
+              """Inspect lite system prose only after a local trust check."""
+              root_path = Path(root).resolve(strict=True)
+              candidate = root_path / LITE_ASSURANCE_PATH
+              try:
+                  resolved = candidate.resolve(strict=False)
+              except (OSError, RuntimeError, ValueError):
+                  return False
+              if not is_within(resolved, root_path):
+                  return False
+              relative = (
+                  "."
+                  if resolved == root_path
+                  else resolved.relative_to(root_path).as_posix()
+              )
+              if any(
+                  relative == excluded or relative.startswith(excluded + "/")
+                  for excluded in (".git", ".assurance-profile-pin")
+              ):
+                  return False
+              if not resolved.is_file():
+                  return False
+              document, error = load_yaml(resolved)
+              return (
+                  error is None
+                  and isinstance(document, dict)
+                  and isinstance(document.get("system"), str)
+                  and bool(document["system"].strip())
+              )
+
+          def declared_path_bindings(adoption, root):
+              """Return (lexical, raw, impact-eligible, allow-root) bindings.
+
+              Every explicit path remains trust-bound and retarget-checked.
+              Only artifacts active for the selected layout may contribute
+              lines that satisfy impact routing.
+              """
               if not isinstance(adoption, dict):
-                  return {}
-              return {
-                  kind: rel
-                  for kind, value in resolve_paths(adoption).items()
-                  if (rel := safe_relative(value)) is not None
-              }
+                  return []
+              declared = adoption.get("paths")
+              declared = declared if isinstance(declared, dict) else {}
+              if len(declared) > MAX_POLICY_PATH_MAPPINGS:
+                  emit_command(
+                      "error",
+                      "The HEAD adoption declaration exceeds the "
+                      f"{MAX_POLICY_PATH_MAPPINGS}-path-mapping limit.",
+                  )
+                  raise SystemExit(1)
+              values = []
+              if adoption.get("layout") == "lite":
+                  inline_system = lite_has_inline_system(root)
+                  for key, value in declared.items():
+                      impact_eligible = key not in DEFAULT_PATHS or (
+                          key == "system" and not inline_system
+                      )
+                      values.append((value, False, impact_eligible))
+                  if "system" not in declared and not inline_system:
+                      values.append((DEFAULT_PATHS["system"], False, True))
+                  values.append((LITE_ASSURANCE_PATH, False, True))
+              else:
+                  values.extend(
+                      (value, False, True)
+                      for value in resolve_paths(adoption).values()
+                  )
+              workflow = adoption.get("specification_workflow")
+              if isinstance(workflow, dict):
+                  values.append((workflow.get("root"), True, True))
+              human_review = adoption.get("human_review")
+              if isinstance(human_review, dict) and "record" in human_review:
+                  values.append((human_review.get("record"), False, True))
+              security = adoption.get("security")
+              if isinstance(security, dict):
+                  values.extend(
+                      (
+                          security.get(key),
+                          key == "public_assurance_root",
+                          True,
+                      )
+                      for key in ("policy", "public_assurance_root")
+                      if key in security
+                  )
+              bindings = []
+              for value, allow_root, impact_eligible in values:
+                  relative = safe_relative(value, allow_root=allow_root)
+                  if relative is None:
+                      emit_command(
+                          "error",
+                          "A HEAD assurance binding is not a canonical, bounded "
+                          "repository-relative path.",
+                      )
+                      raise SystemExit(1)
+                  if allow_root and relative == ".":
+                      # Repository-root workflow/security bindings remain
+                      # trust-checked navigation policy, but widening positive
+                      # evidence to `.` would let an ID added to ordinary
+                      # source code satisfy its own routing gate.
+                      impact_eligible = False
+                  bindings.append(
+                      (relative, value, impact_eligible, allow_root)
+                  )
+              return bindings
 
-          with open(adoption_file, encoding="utf-8") as handle:
-              head_adoption = yaml.safe_load(handle)
-          diff_scope |= set(declared_paths(head_adoption).values())
+          def resolved_policy_relative(
+              root,
+              relative,
+              side,
+              *,
+              missing_ok,
+              resolution_path=None,
+              allow_root=False,
+          ):
+              """Return a contained resolved target as a repository path.
+
+              Policy paths may be tracked symlinks (including paths beneath a
+              symlinked directory). The lexical identity remains policy-bound,
+              but a HEAD symlink blob is later excluded from added-line
+              evidence because its content is only a target pathname. Its
+              resolved target is bound separately. An escape into Git metadata,
+              the trusted profile checkout, or outside the repository is never
+              accepted as a scope target.
+              """
+              root_path = Path(root).resolve(strict=True)
+              normalized = safe_relative(relative, allow_root=allow_root)
+              if normalized is None:
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {relative!r} is not a "
+                      "contained repository-relative path.",
+                  )
+                  raise SystemExit(1)
+              raw_resolution_path = (
+                  relative if resolution_path is None else resolution_path
+              )
+              if safe_relative(
+                  raw_resolution_path, allow_root=allow_root
+              ) is None:
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {raw_resolution_path!r} is "
+                      "not a contained repository-relative path.",
+                  )
+                  raise SystemExit(1)
+              lexical = root_path / raw_resolution_path
+              nonportable_link = nonportable_project_symlink(lexical, root_path)
+              if nonportable_link is not None:
+                  link, target = nonportable_link
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {normalized!r} traverses "
+                      f"non-portable symlink {link!r} -> {target!r}; every "
+                      "policy symlink hop must remain inside the repository.",
+                  )
+                  raise SystemExit(1)
+              try:
+                  # strict=False still follows every existing symlink and
+                  # exposes an escape through a missing final target.
+                  resolved = lexical.resolve(strict=False)
+              except (OSError, RuntimeError, ValueError) as exc:
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {normalized!r} cannot be "
+                      f"resolved safely: {exc}",
+                  )
+                  raise SystemExit(1) from exc
+              if not is_within(resolved, root_path) or (
+                  resolved == root_path and not allow_root
+              ):
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {normalized!r} resolves "
+                      "outside the permitted repository content.",
+                  )
+                  raise SystemExit(1)
+              resolved_relative = (
+                  "."
+                  if resolved == root_path
+                  else resolved.relative_to(root_path).as_posix()
+              )
+              for excluded in (".git", ".assurance-profile-pin"):
+                  if (
+                      normalized == excluded
+                      or normalized.startswith(excluded + "/")
+                      or resolved_relative == excluded
+                      or resolved_relative.startswith(excluded + "/")
+                  ):
+                      emit_command(
+                          "error",
+                          f"The {side} assurance path {normalized!r} resolves "
+                          f"inside trusted/non-adopter data at {excluded}.",
+                      )
+                      raise SystemExit(1)
+              if not resolved.exists():
+                  if missing_ok:
+                      return None
+                  emit_command(
+                      "error",
+                      f"The {side} assurance path {normalized!r} does not "
+                      "resolve to existing repository content.",
+                  )
+                  raise SystemExit(1)
+              return resolved_relative
+
+          def add_resolved_evidence_scope(
+              root, path_bindings, side, *, resolved_scope=None
+          ):
+              """Trust-check every binding; optionally collect eligible targets.
+
+              HEAD targets enter the positive evidence scope. Old-line
+              cancellation is computed independently from the entire merge-base
+              tree, so this collector never authorizes base-only bindings.
+              """
+              root_path = Path(root).resolve(strict=True)
+              for relative, resolution_path, impact_eligible, allow_root in sorted(
+                  path_bindings,
+                  key=lambda binding: (
+                      os.fsencode(binding[0]),
+                      os.fsencode(binding[1]),
+                      binding[2],
+                      binding[3],
+                  ),
+              ):
+                  resolved_relative = resolved_policy_relative(
+                      root_path,
+                      relative,
+                      side,
+                      missing_ok=True,
+                      resolution_path=resolution_path,
+                      allow_root=allow_root,
+                  )
+                  if (
+                      resolved_scope is None
+                      or not impact_eligible
+                      or resolved_relative is None
+                      or resolved_relative == "."
+                  ):
+                      continue
+                  # Positive evidence follows the effective filesystem target
+                  # only. A normalized lexical spelling such as `alias/../x`
+                  # can name a different object after symlink resolution and
+                  # must never widen the scope to a decoy (especially `.`).
+                  # The Git tree scan below naturally ignores untracked or
+                  # absent descendants, so no per-binding subprocess is needed.
+                  resolved_scope.add(resolved_relative)
+
+          def is_prior_aap_declaration(document):
+              """Strong historical signature, independent of filename/syntax."""
+              if not isinstance(document, dict):
+                  return False
+              upstream = document.get("upstream")
+              project = document.get("project")
+              profiles = document.get("profiles")
+              if not (
+                  isinstance(upstream, dict)
+                  and upstream.get("repository") == CANONICAL
+                  and isinstance(upstream.get("version"), str)
+                  # Pre-v0.4 used the broader digit grammar. Discovery must
+                  # recognize that historical contract before current schema
+                  # validation can tighten it.
+                  and re.fullmatch(
+                      r"(?:unreleased|v[0-9]+\.[0-9]+\.[0-9]+"
+                      r"(?:-rc\.[0-9]+)?)",
+                      upstream["version"],
+                  )
+                  and isinstance(upstream.get("commit"), str)
+                  and re.fullmatch(r"[0-9a-f]{40}", upstream["commit"])
+                  and isinstance(project, dict)
+                  and all(
+                      key in project and isinstance(project[key], str)
+                      for key in ("name", "repository", "human_owner")
+                  )
+                  and isinstance(profiles, list)
+                  and profiles
+                  and all(isinstance(profile, str) for profile in profiles)
+                  and len(profiles) == len(set(profiles))
+                  and all(profile in KNOWN_PROFILES for profile in profiles)
+              ):
+                  return False
+              # Empty/invisible project strings and mixed archived lists were
+              # schema-valid in older releases. Tightening discovery with the
+              # v0.4 rules would erase that reviewed baseline during upgrade.
+              return True
+
+          class _IdentityScalar:
+              __slots__ = ("value", "is_merge")
+
+              def __init__(self, value, is_merge=False):
+                  self.value = value
+                  self.is_merge = is_merge
+
+          class _IdentityMapping:
+              __slots__ = (
+                  "explicit",
+                  "merged",
+                  "merge_indeterminate",
+                  "complete",
+              )
+
+              def __init__(self):
+                  # SafeLoader applies every merge before explicit pairs and
+                  # keeps the last explicit duplicate. Retaining only that
+                  # four-key semantic view prevents repeated relevant keys
+                  # from amplifying projection memory.
+                  self.explicit = {}
+                  self.merged = {}
+                  self.merge_indeterminate = False
+                  self.complete = False
+
+          class _IdentitySequence:
+              __slots__ = ("merged", "has_non_mapping", "indeterminate", "complete")
+
+              def __init__(self):
+                  # In a YAML merge sequence, the first mapping wins. Store
+                  # its effective value per identity key, not every alias.
+                  self.merged = {}
+                  self.has_non_mapping = False
+                  self.indeterminate = False
+                  self.complete = False
+
+          _IDENTITY_UNKNOWN = object()
+          _IDENTITY_KEYS = frozenset(
+              ("upstream", "project", "profiles", "repository")
+          )
+          # A scalar/alias contributes one event and a collection contributes
+          # start/end events, so twice the historical logical-node budget plus
+          # document framing covers an admissible projection.
+          MAX_IDENTITY_EVENTS = MAX_YAML_EXPANDED_NODES * 2 + 16
+
+          def _identity_scalar(event):
+              # yaml.parse has already decoded quoted/escaped scalars. Keep
+              # only small values needed as keys or the canonical repository.
+              value = event.value if len(event.value) <= 256 else None
+              implicit_plain = bool(event.implicit and event.implicit[0])
+              is_merge = event.tag == "tag:yaml.org,2002:merge" or (
+                  event.tag is None
+                  and implicit_plain
+                  and not event.style
+                  and event.value == "<<"
+              )
+              return _IdentityScalar(value, is_merge)
+
+          def _identity_mapping_view(mapping):
+              """Return the compressed historical SafeLoader mapping view."""
+              result = dict(mapping.merged)
+              result.update(mapping.explicit)
+              return result
+
+          def _identity_merge_view(value):
+              if isinstance(value, _IdentityMapping):
+                  return (
+                      _identity_mapping_view(value),
+                      value.merge_indeterminate or not value.complete,
+                  )
+              if isinstance(value, _IdentitySequence):
+                  return (
+                      dict(value.merged),
+                      value.indeterminate
+                      or value.has_non_mapping
+                      or not value.complete,
+                  )
+              return {}, True
+
+          def _is_strong_identity_projection(root):
+              if not isinstance(root, _IdentityMapping):
+                  return False
+              root_view = _identity_mapping_view(root)
+              upstream = root_view.get("upstream")
+              if not isinstance(upstream, _IdentityMapping):
+                  return False
+              upstream_view = _identity_mapping_view(upstream)
+              repository = upstream_view.get("repository")
+              return (
+                  "project" in root_view
+                  and "profiles" in root_view
+                  and isinstance(repository, _IdentityScalar)
+                  and repository.value == CANONICAL
+              )
+
+          def historical_aap_identity_status(path):
+              """Stream a bounded semantic identity projection of legacy YAML.
+
+              Full historical construction can fail before returning a
+              document (file-size, numeric-token, or alias-expansion bounds).
+              Parsing events still exposes the effective top-level identity
+              without constructing large scalar values or expanding aliases.
+              The surrounding discovery pass bounds aggregate input to 64 MiB;
+              this projection retains only four keys and referenced mappings.
+              It returns ``strong``, ``not-aap``, or ``indeterminate``. After
+              the structural budget is exhausted, parsing continues without
+              retaining nodes: an exact decoded canonical repository scalar
+              preserves ``indeterminate`` fail-closed handling, while its
+              absence lets an unrelated large data file remain ``not-aap``.
+              """
+              documents = []
+              anchors = {}
+              stack = []
+              document_root = [None]
+              event_count = 0
+              projection_exhausted = False
+              saw_canonical_scalar = False
+
+              def deliver(value):
+                  if not stack:
+                      document_root[0] = value
+                      return
+                  frame = stack[-1]
+                  if frame["kind"] == "sequence":
+                      if isinstance(value, _IdentityMapping):
+                          source, indeterminate = _identity_merge_view(value)
+                          for key, item in source.items():
+                              frame["value"].merged.setdefault(key, item)
+                          frame["value"].indeterminate = (
+                              frame["value"].indeterminate or indeterminate
+                          )
+                      elif isinstance(value, _IdentitySequence):
+                          # A nested sequence is not a mapping and therefore
+                          # cannot be an item in YAML's merge sequence form.
+                          frame["value"].has_non_mapping = True
+                      else:
+                          frame["value"].has_non_mapping = True
+                      return
+                  if frame["expecting_key"]:
+                      frame["key"] = value
+                      frame["expecting_key"] = False
+                      return
+                  key = frame["key"]
+                  frame["key"] = None
+                  frame["expecting_key"] = True
+                  if isinstance(key, _IdentityScalar) and (
+                      key.is_merge or key.value in _IDENTITY_KEYS
+                  ):
+                      if key.is_merge:
+                          source, indeterminate = _identity_merge_view(value)
+                          # Separate merge directives are flattened in source
+                          # order, so a later directive wins per supplied key.
+                          frame["value"].merged.update(source)
+                          frame["value"].merge_indeterminate = (
+                              frame["value"].merge_indeterminate
+                              or indeterminate
+                          )
+                      else:
+                          # Explicit pairs follow every merge and duplicate
+                          # keys retain SafeLoader's last-key-wins behavior.
+                          frame["value"].explicit[key.value] = value
+
+              try:
+                  with open(path, encoding="utf-8", newline="") as handle:
+                      identity_loader = getattr(
+                          yaml, "CSafeLoader", yaml.SafeLoader
+                      )
+                      for event in yaml.parse(handle, Loader=identity_loader):
+                          if (
+                              isinstance(event, yaml.events.ScalarEvent)
+                              and event.value == CANONICAL
+                          ):
+                              saw_canonical_scalar = True
+                          if projection_exhausted:
+                              # Keep draining the bounded aggregate input with
+                              # the C parser, but retain no further structure.
+                              continue
+                          event_count += 1
+                          if event_count > MAX_IDENTITY_EVENTS:
+                              projection_exhausted = True
+                              documents.clear()
+                              anchors.clear()
+                              stack.clear()
+                              document_root[0] = None
+                              continue
+                          if isinstance(event, yaml.events.DocumentStartEvent):
+                              anchors = {}
+                              stack = []
+                              document_root[0] = None
+                          elif isinstance(event, yaml.events.ScalarEvent):
+                              value = _identity_scalar(event)
+                              if event.anchor is not None:
+                                  if (
+                                      event.anchor not in anchors
+                                      and len(anchors) >= MAX_YAML_EXPANDED_NODES
+                                  ):
+                                      projection_exhausted = True
+                                      documents.clear()
+                                      anchors.clear()
+                                      stack.clear()
+                                      document_root[0] = None
+                                      continue
+                                  anchors[event.anchor] = value
+                              deliver(value)
+                          elif isinstance(event, yaml.events.AliasEvent):
+                              deliver(anchors.get(event.anchor, _IDENTITY_UNKNOWN))
+                          elif isinstance(event, yaml.events.MappingStartEvent):
+                              value = _IdentityMapping()
+                              if event.anchor is not None:
+                                  if (
+                                      event.anchor not in anchors
+                                      and len(anchors) >= MAX_YAML_EXPANDED_NODES
+                                  ):
+                                      projection_exhausted = True
+                                      documents.clear()
+                                      anchors.clear()
+                                      stack.clear()
+                                      document_root[0] = None
+                                      continue
+                                  anchors[event.anchor] = value
+                              if len(stack) >= MAX_YAML_EXPANDED_NODES:
+                                  projection_exhausted = True
+                                  documents.clear()
+                                  anchors.clear()
+                                  stack.clear()
+                                  document_root[0] = None
+                                  continue
+                              stack.append(
+                                  {
+                                      "kind": "mapping",
+                                      "value": value,
+                                      "expecting_key": True,
+                                      "key": None,
+                                  }
+                              )
+                          elif isinstance(event, yaml.events.SequenceStartEvent):
+                              value = _IdentitySequence()
+                              if event.anchor is not None:
+                                  if (
+                                      event.anchor not in anchors
+                                      and len(anchors) >= MAX_YAML_EXPANDED_NODES
+                                  ):
+                                      projection_exhausted = True
+                                      documents.clear()
+                                      anchors.clear()
+                                      stack.clear()
+                                      document_root[0] = None
+                                      continue
+                                  anchors[event.anchor] = value
+                              if len(stack) >= MAX_YAML_EXPANDED_NODES:
+                                  projection_exhausted = True
+                                  documents.clear()
+                                  anchors.clear()
+                                  stack.clear()
+                                  document_root[0] = None
+                                  continue
+                              stack.append({"kind": "sequence", "value": value})
+                          elif isinstance(event, yaml.events.MappingEndEvent):
+                              frame = stack.pop()
+                              if not frame["expecting_key"]:
+                                  raise ValueError(
+                                      "incomplete historical identity mapping"
+                                  )
+                              frame["value"].complete = True
+                              deliver(frame["value"])
+                          elif isinstance(event, yaml.events.SequenceEndEvent):
+                              frame = stack.pop()
+                              frame["value"].complete = True
+                              deliver(frame["value"])
+                          elif isinstance(event, yaml.events.DocumentEndEvent):
+                              if stack:
+                                  raise ValueError(
+                                      "incomplete historical identity document"
+                                  )
+                              documents.append(document_root[0])
+              except (
+                  OSError,
+                  UnicodeDecodeError,
+                  yaml.YAMLError,
+                  RecursionError,
+                  ValueError,
+              ):
+                  if projection_exhausted:
+                      return (
+                          "indeterminate"
+                          if saw_canonical_scalar
+                          else "not-aap"
+                      )
+                  roots = documents + [document_root[0]]
+                  return (
+                      "strong"
+                      if any(
+                          _is_strong_identity_projection(root) for root in roots
+                      )
+                      else "not-aap"
+                  )
+              if projection_exhausted:
+                  return (
+                      "indeterminate" if saw_canonical_scalar else "not-aap"
+                  )
+              # SafeLoader's single-document contract rejects multi-document
+              # files. A strong identity in any completed document still
+              # fails closed because the applicable loader cannot safely
+              # prove that this is unrelated policy rather than skip it.
+              return (
+                  "strong"
+                  if any(
+                      _is_strong_identity_projection(root) for root in documents
+                  )
+                  else "not-aap"
+              )
+
+          def uses_pre_v04_contract(document):
+              if not isinstance(document, dict):
+                  return False
+              upstream = document.get("upstream")
+              version = upstream.get("version") if isinstance(upstream, dict) else None
+              if version == "unreleased":
+                  return True
+              match = (
+                  re.fullmatch(
+                      r"v(?P<major>[0-9]+)\.(?P<minor>[0-9]+)\."
+                      r"[0-9]+(?:-rc\.[0-9]+)?",
+                      version,
+                  )
+                  if isinstance(version, str)
+                  else None
+              )
+              if match is None:
+                  return False
+              major = match.group("major").lstrip("0") or "0"
+              minor = match.group("minor").lstrip("0") or "0"
+              return major == "0" and minor in ("1", "2", "3")
+
+          def historical_node_count(node):
+              """Bound aliases/merges before historical SafeLoader flattening."""
+              memo = {}
+              active = set()
+
+              def count(value):
+                  identity = id(value)
+                  if isinstance(value, yaml.nodes.ScalarNode):
+                      if (
+                          value.tag in (
+                              "tag:yaml.org,2002:int",
+                              "tag:yaml.org,2002:float",
+                          )
+                          and len(value.value) > MAX_POLICY_NUMBER_CHARACTERS
+                      ):
+                          raise ValueError(
+                              "numeric token exceeds the historical policy limit"
+                          )
+                      return 1
+                  if identity in active:
+                      raise ValueError("recursive historical YAML is unsupported")
+                  if identity in memo:
+                      return memo[identity]
+                  active.add(identity)
+                  total = 1
+                  if isinstance(value, yaml.nodes.SequenceNode):
+                      children = value.value
+                  elif isinstance(value, yaml.nodes.MappingNode):
+                      children = [item for pair in value.value for item in pair]
+                  else:
+                      raise ValueError("unsupported historical YAML node")
+                  for child in children:
+                      total += count(child)
+                      if total > MAX_YAML_EXPANDED_NODES:
+                          raise ValueError(
+                              "historical YAML aliases/merges exceed the "
+                              f"{MAX_YAML_EXPANDED_NODES:,}-node limit"
+                          )
+                  active.remove(identity)
+                  memo[identity] = total
+                  return total
+
+              return count(node)
+
+          def normalize_historical_document(document):
+              """Convert historically accepted SafeLoader data to strict JSON data."""
+              memo = {}
+              active = set()
+
+              def normalize(value):
+                  value_type = type(value)
+                  if value is None or value_type in (bool, int, str):
+                      return value
+                  if value_type is float:
+                      if not math.isfinite(value):
+                          raise ValueError("non-finite historical number")
+                      return value
+                  if isinstance(value, (datetime.datetime, datetime.date)):
+                      return value.isoformat()
+                  if value_type not in (list, dict):
+                      raise ValueError(
+                          f"unsupported historical YAML value {value_type.__name__}"
+                      )
+                  identity = id(value)
+                  if identity in active:
+                      raise ValueError("recursive historical YAML is unsupported")
+                  if identity in memo:
+                      return memo[identity]
+                  active.add(identity)
+                  if value_type is list:
+                      result = []
+                      memo[identity] = result
+                      result.extend(normalize(item) for item in value)
+                  else:
+                      result = {}
+                      memo[identity] = result
+                      for key, item in value.items():
+                          if isinstance(key, str):
+                              normalized_key = key
+                          elif key is None:
+                              normalized_key = "null"
+                          elif type(key) is bool:
+                              normalized_key = "true" if key else "false"
+                          elif type(key) in (int, float):
+                              if type(key) is float and not math.isfinite(key):
+                                  raise ValueError("non-finite historical mapping key")
+                              normalized_key = str(key)
+                          elif isinstance(key, (datetime.datetime, datetime.date)):
+                              normalized_key = key.isoformat()
+                          else:
+                              raise ValueError("unsupported historical mapping key")
+                          if normalized_key in result:
+                              raise ValueError(
+                                  "historical mapping keys collide after JSON normalization"
+                              )
+                          result[normalized_key] = normalize(item)
+                  active.remove(identity)
+                  return result
+
+              return normalize(document)
+
+          def load_historical_base(path):
+              """Load exactly the bounded SafeLoader surface used before v0.4."""
+              raw_document = None
+              try:
+                  size = path.stat().st_size
+                  if size > MAX_POLICY_YAML_BYTES:
+                      raise ValueError(
+                          f"file exceeds {MAX_POLICY_YAML_BYTES:,} bytes"
+                      )
+                  with path.open(encoding="utf-8", newline="") as handle:
+                      node = yaml.compose(handle, Loader=yaml.SafeLoader)
+                  if node is None:
+                      return None, None, "historical YAML is empty"
+                  historical_node_count(node)
+                  with path.open(encoding="utf-8", newline="") as handle:
+                      raw_document = yaml.load(handle, Loader=yaml.SafeLoader)
+                  normalized = normalize_historical_document(raw_document)
+                  return raw_document, normalized, None
+              except (
+                  OSError,
+                  UnicodeDecodeError,
+                  yaml.YAMLError,
+                  RecursionError,
+                  ValueError,
+                  OverflowError,
+              ) as exc:
+                  return raw_document, None, str(exc)
+
+          def write_bounded_historical_json(document, destination):
+              """Atomically emit strict JSON without expansion past YAML limits."""
+              destination = Path(destination)
+              temporary = destination.with_name(destination.name + ".tmp")
+              total = 0
+              encoder = json.JSONEncoder(indent=2)
+              try:
+                  with open(temporary, "xb") as handle:
+                      for chunk in encoder.iterencode(document):
+                          encoded = chunk.encode("utf-8")
+                          total += len(encoded)
+                          if total > MAX_POLICY_YAML_BYTES:
+                              raise ValueError(
+                                  "normalized historical declaration exceeds "
+                                  f"{MAX_POLICY_YAML_BYTES:,} bytes"
+                              )
+                          handle.write(encoded)
+                  os.replace(temporary, destination)
+              except (OSError, UnicodeEncodeError, ValueError):
+                  try:
+                      temporary.unlink()
+                  except OSError:
+                      pass
+                  raise
+
+          def load_base_document(path):
+              """Read base policy strictly, then its bounded historical contract.
+
+              Any canonical pre-v0.4 declaration accepted by the old
+              SafeLoader surface remains comparable while it is upgraded:
+              duplicate keys retain last-key-wins behavior, merge keys are
+              expanded only after a logical-node bound, and legacy non-string
+              extension keys are normalized. A recognized current-contract
+              declaration that fails strict loading is a hard error, never a
+              reason to call the change a new adoption.
+              """
+              document, strict_error = load_yaml(path)
+              if strict_error is None:
+                  return document, None, False
+              historical_raw, historical_document, historical_error = (
+                  load_historical_base(path)
+              )
+              identity_document = (
+                  historical_raw
+                  if isinstance(historical_raw, dict)
+                  else historical_document
+              )
+              if not is_prior_aap_declaration(identity_document):
+                  return None, strict_error, False
+              if historical_error is not None or historical_document is None:
+                  return identity_document, (
+                      "recognized historical AAP declaration cannot be "
+                      f"normalized safely: {historical_error}"
+                  ), False
+              if uses_pre_v04_contract(historical_document):
+                  return historical_document, None, True
+              return historical_document, strict_error, False
+
+          def caller_workflow_relative():
+              """Extract the real caller workflow path from github.workflow_ref."""
+              repository = os.environ.get("CALLER_REPOSITORY", "")
+              workflow_ref = os.environ.get("CALLER_WORKFLOW_REF", "")
+              if not repository or not workflow_ref:
+                  return None, "the caller workflow context is unavailable"
+              match = re.fullmatch(
+                  rf"{re.escape(repository)}/"
+                  r"(?P<path>\.github/workflows/[^/\r\n]+\.(?:yml|yaml))@"
+                  r"(?:refs/[^\r\n]+|[0-9a-f]{40})",
+                  workflow_ref,
+              )
+              if match is None:
+                  return None, "github.workflow_ref does not identify a direct caller workflow"
+              relative = safe_relative(match.group("path"))
+              if relative is None:
+                  return None, "the caller workflow path is not an in-tree path"
+              return relative, None
+
+          def recover_caller_adoption_path(base_root):
+              """Read the base version of the actual caller and its literal input."""
+              caller_relative, caller_error = caller_workflow_relative()
+              if caller_error is not None:
+                  return None, caller_error
+              caller = os.path.join(base_root, caller_relative)
+              if not os.path.lexists(caller):
+                  return None, "the caller workflow does not exist at that path on the base"
+              if not os.path.isfile(caller):
+                  emit_command(
+                      "error",
+                      "The base caller workflow exists but is not a readable regular file.",
+                  )
+                  raise SystemExit(1)
+              resolved = Path(os.path.realpath(caller))
+              if not is_within(resolved, Path(base_root)):
+                  emit_command(
+                      "error",
+                      "The base caller workflow resolves outside the base tree.",
+                  )
+                  raise SystemExit(1)
+              workflow, load_error = load_yaml_with_loader(
+                  resolved, GitHubWorkflowLoader
+              )
+              if load_error is not None:
+                  return None, "the base caller workflow cannot be parsed unambiguously"
+              jobs = workflow.get("jobs") if isinstance(workflow, dict) else None
+              if not isinstance(jobs, dict):
+                  return None, "the base caller workflow has no jobs mapping"
+
+              uses_prefix = (
+                  f"{CANONICAL}/.github/workflows/adopter-validate.yml@"
+              )
+              recovered = set()
+              matching_job_found = False
+              for job in jobs.values():
+                  if not isinstance(job, dict):
+                      continue
+                  uses = job.get("uses")
+                  if not (
+                      isinstance(uses, str)
+                      and uses.startswith(uses_prefix)
+                      and len(uses) > len(uses_prefix)
+                  ):
+                      continue
+                  matching_job_found = True
+                  with_block = job.get("with", {})
+                  if not isinstance(with_block, dict):
+                      return None, "a reusable-workflow job has a non-mapping with block"
+                  configured = with_block.get(
+                      "adoption-file", ".agentic-assurance/adoption.yaml"
+                  )
+                  if not isinstance(configured, str) or ("$" + "{{") in configured:
+                      return None, "the base caller adoption-file is not a literal string"
+                  relative = safe_relative(configured)
+                  if relative is None:
+                      return None, "the base caller adoption-file is not an in-tree path"
+                  # Retain both spellings: the normalized value is safe for
+                  # Git pathspecs and transition reporting, while the literal
+                  # value preserves filesystem semantics when `..` follows an
+                  # in-tree symlink.
+                  recovered.add((relative, configured))
+
+              if not matching_job_found:
+                  return None, "the base caller has no canonical reusable-workflow job"
+              if len(recovered) != 1:
+                  return None, "the base caller has differing adoption-file inputs"
+              return recovered.pop(), None
+
+          head_adoption_path = resolve_head_adoption(adoption_file)
+          head_adoption, load_error = load_yaml(head_adoption_path)
+          if load_error is not None:
+              raise SystemExit(
+                  github_log_line(
+                      f"HEAD adoption file {adoption_file}: {load_error}"
+                  )
+              )
+          head_path_bindings = (
+              fixed_path_bindings
+              + declared_path_bindings(head_adoption, Path.cwd())
+              + [(adoption_rel, adoption_file, True, False)]
+          )
+          add_resolved_evidence_scope(
+              Path.cwd(),
+              head_path_bindings,
+              "HEAD",
+              resolved_scope=impact_diff_scope,
+          )
+          head_resolved_relative = resolved_policy_relative(
+              Path.cwd(),
+              adoption_rel,
+              "HEAD adoption declaration",
+              missing_ok=False,
+              resolution_path=adoption_file,
+          )
 
           # The base side is a detached worktree of the base SHA, not
           # per-file `git show` writes: `git show` renders a symlink blob as
@@ -621,81 +1954,889 @@ jobs:
               capture_output=True,
           )
           if worktree.returncode != 0:
-              sys.stderr.write(worktree.stderr.decode("utf-8", "replace"))
+              sys.stderr.write(
+                  github_log_line(
+                      "git worktree stderr: "
+                      + worktree.stderr.decode("utf-8", "replace")
+                  )
+                  + "\n"
+              )
               print("::error::Could not materialize the base tree (git worktree add failed).")
               raise SystemExit(1)
 
           base_adoption_file = None
-          if adoption_rel is not None:
-              candidate = os.path.join(base_root, adoption_rel)
+          base_adoption_relative = None
+          base_adoption_resolution_path = None
+          base_adoption = None
+          base_uses_legacy_loader = False
+          base_selected_by_caller = False
+
+          # The base caller is the authority for the base declaration path.
+          # In particular, never prefer the HEAD input merely because a file
+          # already existed at that destination on the base: an attacker could
+          # switch the input from a reviewed declaration to a weaker decoy and
+          # otherwise compare the decoy against itself. github.workflow_ref is
+          # associated with the caller, so inspect that same workflow in the
+          # detached base worktree and recover its literal adoption-file input.
+          caller_adoption_binding, caller_recovery_error = (
+              recover_caller_adoption_path(base_root)
+          )
+          if caller_adoption_binding is not None:
+              caller_adoption_relative, caller_adoption_raw = (
+                  caller_adoption_binding
+              )
+              candidate = os.path.join(base_root, caller_adoption_raw)
               if os.path.isfile(candidate):
-                  # Defence in depth: adoption_rel passed safe_relative, but
-                  # a symlink inside the base tree could resolve elsewhere.
-                  resolved = os.path.realpath(candidate)
-                  if not resolved.startswith(base_root + os.sep):
-                      print("::error::The base adoption declaration resolves outside the base tree.")
+                  resolved = Path(os.path.realpath(candidate))
+                  if not is_within(resolved, Path(base_root)):
+                      emit_command(
+                          "error",
+                          "The base adoption declaration resolves outside the base tree.",
+                      )
                       raise SystemExit(1)
                   base_adoption_file = candidate
+                  base_adoption_relative = caller_adoption_relative
+                  base_adoption_resolution_path = caller_adoption_raw
+                  base_selected_by_caller = True
               elif os.path.lexists(candidate):
-                  # Present but unreadable (e.g. a broken symlink): the
-                  # policy baseline exists and cannot be read — fail closed
-                  # rather than comparing against nothing.
-                  print("::error::The base adoption declaration exists but is not a readable file.")
+                  # Present but unreadable (e.g. a broken symlink): the policy
+                  # baseline exists and cannot be read. Never turn that into a
+                  # new-adoption comparison.
+                  emit_command(
+                      "error",
+                      "The base caller's adoption declaration exists but is not "
+                      "a readable regular file.",
+                  )
                   raise SystemExit(1)
+              else:
+                  caller_recovery_error = (
+                      "the declaration referenced by the base caller is absent"
+                  )
+
+          # Caller recovery can be impossible for a newly added/renamed
+          # caller, an expression-valued input, or an older unconventional
+          # setup. Only then scan tracked base files for the unique strong AAP
+          # identity. The scan is fully bounded before parsing; exhausting a
+          # budget is a hard failure, never evidence that this is a new
+          # adoption. No filename or YAML presentation syntax is assumed.
           if base_adoption_file is None:
-              print(
-                  f"::notice::No adoption declaration at {adoption_file} on the base "
-                  "branch — policy comparison skipped (new adoption, or a moved "
-                  "declaration; a move should itself be treated as an assurance "
-                  "policy change)."
+              emit_command(
+                  "notice",
+                  "Exact base caller recovery is unavailable "
+                  f"({caller_recovery_error}); using bounded declaration discovery.",
+              )
+              # Keep the lexical scan budgets tied to every tracked entry,
+              # including symlinks.  Candidate identity is different: a
+              # tracked in-tree symlink and its tracked target are two names
+              # for the same declaration, not two independent policies.  Use
+              # the fully resolved base-tree path as the identity and retain
+              # the bytewise-smallest tracked name as a deterministic lexical
+              # representative for transition metadata, notices, and diff
+              # scope.
+              discovery_files_by_resolved = {}
+              discovery_entry_count = 0
+              discovery_listing_bytes = 0
+              discovery_bytes = 0
+              try:
+                  tracked = subprocess.Popen(
+                      ["git", "-C", base_root, "ls-files", "-z"],
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.DEVNULL,
+                  )
+              except OSError as exc:
+                  emit_command(
+                      "error",
+                      "Could not start tracked-file enumeration while locating "
+                      f"the prior adoption declaration: {exc}",
+                  )
+                  raise SystemExit(1) from exc
+
+              pending_name = b""
+              try:
+                  assert tracked.stdout is not None
+                  while True:
+                      chunk = tracked.stdout.read(64 * 1024)
+                      if not chunk:
+                          break
+                      discovery_listing_bytes += len(chunk)
+                      if discovery_listing_bytes > MAX_DISCOVERY_LISTING_BYTES:
+                          emit_command(
+                              "error",
+                              "Bounded base declaration discovery exceeds its "
+                              f"{MAX_DISCOVERY_LISTING_BYTES // (1024 * 1024)} "
+                              "MiB raw tracked-listing byte budget; policy "
+                              "comparison cannot safely be skipped.",
+                          )
+                          raise SystemExit(1)
+
+                      records = (pending_name + chunk).split(b"\0")
+                      pending_name = records.pop()
+                      for raw_name in records:
+                          if not raw_name:
+                              continue
+
+                          # Count every tracked record before applying path,
+                          # file-type, or containment filters. Broken symlinks,
+                          # gitlinks, and excluded paths still consume bounded
+                          # enumeration work.
+                          discovery_entry_count += 1
+                          if discovery_entry_count > MAX_DISCOVERY_FILES:
+                              emit_command(
+                                  "error",
+                                  "Bounded base declaration discovery exceeds "
+                                  f"its {MAX_DISCOVERY_FILES:,}-tracked-entry "
+                                  "enumeration budget; policy comparison cannot "
+                                  "safely be skipped.",
+                              )
+                              raise SystemExit(1)
+
+                          name = raw_name.decode("utf-8", "surrogateescape")
+                          relative = safe_relative(name)
+                          if relative is None or (
+                              relative == ".assurance-profile-pin"
+                              or relative.startswith(".assurance-profile-pin/")
+                          ):
+                              continue
+                          prior = os.path.join(base_root, relative)
+                          if not os.path.isfile(prior):
+                              continue
+                          resolved = Path(os.path.realpath(prior))
+                          if not is_within(resolved, Path(base_root)):
+                              continue
+                          try:
+                              file_size = os.path.getsize(prior)
+                          except OSError as exc:
+                              emit_command(
+                                  "error",
+                                  f"Could not inspect a tracked base file during "
+                                  f"declaration discovery: {exc}",
+                              )
+                              raise SystemExit(1) from exc
+                          discovery_bytes += file_size
+                          if discovery_bytes > MAX_DISCOVERY_BYTES:
+                              emit_command(
+                                  "error",
+                                  "Bounded base declaration discovery exceeds "
+                                  f"its {MAX_DISCOVERY_BYTES // (1024 * 1024)} "
+                                  "MiB byte budget; policy comparison cannot "
+                                  "safely be skipped. This fallback only runs "
+                                  "when the base caller's adoption declaration "
+                                  "cannot be recovered exactly — pin the caller "
+                                  "workflow and set its `adoption-file` input "
+                                  "explicitly so recovery succeeds and this "
+                                  "scan is not needed.",
+                              )
+                              raise SystemExit(1)
+
+                          resolved_key = os.fspath(resolved)
+                          existing = discovery_files_by_resolved.get(resolved_key)
+                          if existing is None or os.fsencode(relative) < os.fsencode(
+                              existing[0]
+                          ):
+                              discovery_files_by_resolved[resolved_key] = (
+                                  relative,
+                                  resolved_key,
+                              )
+
+                  if pending_name:
+                      emit_command(
+                          "error",
+                          "Tracked-file enumeration returned an unterminated "
+                          "record while locating the prior adoption declaration.",
+                      )
+                      raise SystemExit(1)
+                  if tracked.wait() != 0:
+                      emit_command(
+                          "error",
+                          "Could not enumerate tracked base files while locating "
+                          "the prior adoption declaration.",
+                      )
+                      raise SystemExit(1)
+              except OSError as exc:
+                  emit_command(
+                      "error",
+                      "Tracked-file enumeration failed while locating the "
+                      f"prior adoption declaration: {exc}",
+                  )
+                  raise SystemExit(1) from exc
+              finally:
+                  if tracked.stdout is not None:
+                      tracked.stdout.close()
+                  if tracked.poll() is None:
+                      tracked.terminate()
+                      try:
+                          tracked.wait(timeout=5)
+                      except subprocess.TimeoutExpired:
+                          tracked.kill()
+                          tracked.wait()
+
+              discovery_files = sorted(
+                  discovery_files_by_resolved.values(),
+                  key=lambda item: os.fsencode(item[0]),
+              )
+
+              prior_candidates = []
+              for relative, prior in discovery_files:
+                  document, candidate_error, used_legacy = load_base_document(
+                      Path(prior)
+                  )
+                  if candidate_error is not None:
+                      identity_status = historical_aap_identity_status(prior)
+                      if (
+                          is_prior_aap_declaration(document)
+                          or identity_status != "not-aap"
+                      ):
+                          identity_reason = (
+                              "a strong canonical AAP identity"
+                              if identity_status != "indeterminate"
+                              else "an indeterminate bounded AAP identity projection"
+                          )
+                          emit_command(
+                              "error",
+                              f"A tracked base file has {identity_reason} but "
+                              "cannot be parsed under its applicable "
+                              "strict contract; policy comparison cannot safely "
+                              "be skipped.",
+                          )
+                          raise SystemExit(1)
+                      continue
+                  if is_prior_aap_declaration(document):
+                      prior_candidates.append(
+                          (relative, prior, document, used_legacy)
+                      )
+                      if len(prior_candidates) > MAX_DISCOVERY_DECLARATIONS:
+                          emit_command(
+                              "error",
+                              "Bounded base declaration discovery exceeds its "
+                              f"{MAX_DISCOVERY_DECLARATIONS}-candidate budget; "
+                              "policy comparison is ambiguous and cannot be skipped.",
+                          )
+                          raise SystemExit(1)
+              if len(prior_candidates) > 1:
+                  names = ", ".join(
+                      relative for relative, _, _, _ in prior_candidates
+                  )
+                  emit_command(
+                      "error",
+                      "Exact base caller recovery is unavailable, and multiple "
+                      f"prior AAP declarations were found ({names}); policy "
+                      "comparison is ambiguous and cannot be skipped.",
+                  )
+                  raise SystemExit(1)
+              if prior_candidates:
+                  (
+                      base_adoption_relative,
+                      base_adoption_file,
+                      base_adoption,
+                      base_uses_legacy_loader,
+                  ) = prior_candidates[0]
+          if base_adoption_file is None:
+              emit_command(
+                  "notice",
+                  f"No adoption declaration at {adoption_file} on the base branch "
+                  "and no prior AAP declaration was found — policy comparison skipped "
+                  "for a new adoption.",
               )
           else:
-              with open(base_adoption_file, "rb") as handle:
-                  base_bytes = handle.read()
-              with open(os.path.join(tmp, "base-adoption.yaml"), "wb") as handle:
-                  handle.write(base_bytes)
-              base_adoption = yaml.safe_load(base_bytes)
-              diff_scope |= set(declared_paths(base_adoption).values())
+              if base_adoption is None:
+                  (
+                      base_adoption,
+                      load_error,
+                      base_uses_legacy_loader,
+                  ) = load_base_document(Path(base_adoption_file))
+              else:
+                  load_error = None
+              if load_error is not None:
+                  raise SystemExit(
+                      github_log_line(f"base adoption: {load_error}")
+                  )
+              if base_selected_by_caller and not is_prior_aap_declaration(
+                  base_adoption
+              ):
+                  emit_command(
+                      "error",
+                      "The base caller's adoption-file does not contain a "
+                      "strong canonical AAP declaration; policy comparison "
+                      "cannot safely continue.",
+                  )
+                  raise SystemExit(1)
+              materialized_path = os.path.join(tmp, "base-adoption.yaml")
+              if base_uses_legacy_loader:
+                  # Emit strict JSON (also valid YAML), preserving the bounded
+                  # historical SafeLoader result without carrying duplicate,
+                  # merge-key, or non-string-key syntax into strict readers.
+                  try:
+                      write_bounded_historical_json(
+                          base_adoption, materialized_path
+                      )
+                  except (OSError, UnicodeEncodeError, ValueError) as exc:
+                      emit_command(
+                          "error",
+                          "The normalized pre-v0.4 base declaration cannot be "
+                          f"materialized safely: {exc}",
+                      )
+                      raise SystemExit(1) from None
+                  emit_command(
+                      "warning",
+                      "The pre-v0.4 base adoption declaration uses a YAML "
+                      "surface no longer accepted by the strict contract; "
+                      "policy comparison uses bounded historical normalization "
+                      "and legacy last-key-wins semantics. The HEAD declaration "
+                      "must use the current strict JSON data model.",
+                  )
+              else:
+                  with open(base_adoption_file, "rb") as handle:
+                      base_bytes = handle.read()
+                  with open(materialized_path, "wb") as handle:
+                      handle.write(base_bytes)
 
-          # --literal-pathspecs: the scope entries are plain paths, never git
-          # pathspec magic. Fail closed on a diff error rather than proceeding
-          # with an empty (falsely "no change") diff.
-          diff = subprocess.run(
-              [
-                  "git",
-                  "--literal-pathspecs",
-                  "diff",
-                  f"{base_sha}...{head_sha}",
-                  "--",
-                  *sorted(diff_scope),
-              ],
-              capture_output=True,
-          )
-          if diff.returncode != 0:
-              sys.stderr.write(diff.stderr.decode("utf-8", "replace"))
-              print("::error::Could not compute the assurance diff (git diff failed).")
+              if base_adoption_relative != adoption_rel:
+                  emit_command(
+                      "notice",
+                      f"The adoption declaration moved from {base_adoption_relative} "
+                      f"to {adoption_rel}; policy comparison will use the prior path.",
+                  )
+              if base_adoption_resolution_path is None:
+                  base_adoption_resolution_path = base_adoption_relative
+              base_resolved_relative = resolved_policy_relative(
+                  base_root,
+                  base_adoption_relative,
+                  "base adoption declaration",
+                  missing_ok=False,
+                  resolution_path=base_adoption_resolution_path,
+              )
+              with open(os.path.join(tmp, "adoption-path-transition.json"), "w", encoding="utf-8") as handle:
+                  json.dump(
+                      {
+                          "base": base_adoption_relative,
+                          "head": adoption_rel,
+                          "base_resolved": base_resolved_relative,
+                          "head_resolved": head_resolved_relative,
+                      },
+                      handle,
+                  )
+
+          def fail_evidence(message, detail=b""):
+              if detail:
+                  sys.stderr.write(
+                      github_log_line(
+                          "evidence git detail: "
+                          + detail.decode("utf-8", "replace")
+                      )
+                      + "\n"
+                  )
+              emit_command("error", message)
               raise SystemExit(1)
+
+          evidence_git_deadline = time.monotonic() + MAX_EVIDENCE_GIT_SECONDS
+          evidence_output_totals = {"stdout": 0, "stderr": 0}
+          evidence_work_totals = {"tree_records": 0}
+
+          def scope_batches(scopes, side):
+              """Deduplicate and batch literal pathspecs below argv limits."""
+              batches = []
+              current = []
+              current_bytes = 0
+              unique_scopes = set(scopes)
+              if "." in unique_scopes:
+                  unique_scopes = {"."}
+              else:
+                  # Literal directory pathspecs cover every descendant.  Drop
+                  # lexically nested bindings before batching so additional
+                  # mappings cannot make the same tree records consume work
+                  # and output budgets repeatedly.
+                  collapsed = []
+                  prefix_trie = {}
+                  for scope in sorted(
+                      unique_scopes,
+                      key=lambda value: (value.count("/"), os.fsencode(value)),
+                  ):
+                      node = prefix_trie
+                      covered = False
+                      for component in scope.split("/"):
+                          if None in node:
+                              covered = True
+                              break
+                          node = node.setdefault(component, {})
+                      if covered:
+                          continue
+                      node[None] = True
+                      collapsed.append(scope)
+                  unique_scopes = set(collapsed)
+              for scope in sorted(unique_scopes, key=os.fsencode):
+                  encoded_bytes = len(os.fsencode(scope)) + 1
+                  if encoded_bytes > MAX_EVIDENCE_SCOPE_BYTES:
+                      fail_evidence(
+                          f"One {side} assurance evidence pathspec exceeds "
+                          f"{MAX_EVIDENCE_SCOPE_BYTES:,} encoded bytes."
+                      )
+                  if current and (
+                      len(current) >= MAX_EVIDENCE_SCOPES
+                      or current_bytes + encoded_bytes > MAX_EVIDENCE_SCOPE_BYTES
+                  ):
+                      batches.append(current)
+                      current = []
+                      current_bytes = 0
+                  current.append(scope)
+                  current_bytes += encoded_bytes
+              if current:
+                  batches.append(current)
+              return batches
+
+          def bounded_process_output(
+              arguments,
+              side,
+              operation,
+              *,
+              no_match_ok=False,
+              stdin_bytes=None,
+              stdout_limit=MAX_DISCOVERY_LISTING_BYTES,
+              charge_stdout=True,
+              stdout_label="listing",
+          ):
+              """Drain Git stdin/stdout/stderr concurrently under shared budgets."""
+              try:
+                  process = subprocess.Popen(
+                      arguments,
+                      stdin=(
+                          subprocess.PIPE
+                          if stdin_bytes is not None
+                          else subprocess.DEVNULL
+                      ),
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE,
+                  )
+              except OSError as exc:
+                  fail_evidence(
+                      f"Could not start Git while {operation} {side} assurance "
+                      f"evidence: {exc}"
+                  )
+              assert process.stdout is not None and process.stderr is not None
+              stream_selector = selectors.DefaultSelector()
+              buffers = {
+                  process.stdout: bytearray(),
+                  process.stderr: bytearray(),
+              }
+              limits = {
+                  process.stdout: stdout_limit,
+                  process.stderr: MAX_EVIDENCE_STDERR_BYTES,
+              }
+              for stream in buffers:
+                  os.set_blocking(stream.fileno(), False)
+                  stream_selector.register(stream, selectors.EVENT_READ)
+              input_stream = process.stdin
+              input_view = memoryview(stdin_bytes or b"")
+              input_offset = 0
+              if input_stream is not None:
+                  if input_view:
+                      os.set_blocking(input_stream.fileno(), False)
+                      stream_selector.register(input_stream, selectors.EVENT_WRITE)
+                  else:
+                      input_stream.close()
+              budget_failure = None
+              try:
+                  while stream_selector.get_map():
+                      remaining = evidence_git_deadline - time.monotonic()
+                      if remaining <= 0:
+                          budget_failure = (
+                              f"Git exceeded {MAX_EVIDENCE_GIT_SECONDS} seconds "
+                              f"while {operation} {side} assurance evidence."
+                          )
+                          break
+                      for key, _events in stream_selector.select(
+                          timeout=min(remaining, 1.0)
+                      ):
+                          stream = key.fileobj
+                          if stream is input_stream:
+                              try:
+                                  written = os.write(
+                                      stream.fileno(),
+                                      input_view[input_offset : input_offset + 64 * 1024],
+                                  )
+                              except BlockingIOError:
+                                  continue
+                              except BrokenPipeError:
+                                  written = 0
+                                  input_offset = len(input_view)
+                              else:
+                                  input_offset += written
+                              if input_offset >= len(input_view) or written == 0:
+                                  stream_selector.unregister(stream)
+                                  stream.close()
+                              continue
+                          try:
+                              chunk = os.read(stream.fileno(), 64 * 1024)
+                          except BlockingIOError:
+                              continue
+                          if not chunk:
+                              stream_selector.unregister(stream)
+                              continue
+                          buffers[stream].extend(chunk)
+                          stream_name = (
+                              "stdout" if stream is process.stdout else "stderr"
+                          )
+                          previously_charged = (
+                              evidence_output_totals[stream_name]
+                              if stream is process.stderr or charge_stdout
+                              else 0
+                          )
+                          if (
+                              previously_charged + len(buffers[stream])
+                              > limits[stream]
+                          ):
+                              label = (
+                                  stdout_label
+                                  if stream is process.stdout
+                                  else "diagnostic"
+                              )
+                              budget_failure = (
+                                  f"The {side} assurance evidence {label} while "
+                                  f"{operation} exceeds {limits[stream]:,} bytes."
+                              )
+                              break
+                      if budget_failure is not None:
+                          break
+              finally:
+                  stream_selector.close()
+              if budget_failure is not None:
+                  process.kill()
+                  process.wait()
+                  if input_stream is not None and not input_stream.closed:
+                      input_stream.close()
+                  process.stdout.close()
+                  process.stderr.close()
+                  fail_evidence(
+                      budget_failure,
+                      bytes(buffers[process.stderr]),
+                  )
+              remaining = evidence_git_deadline - time.monotonic()
+              try:
+                  returncode = process.wait(timeout=max(remaining, 0.0))
+              except subprocess.TimeoutExpired:
+                  process.kill()
+                  process.wait()
+                  if input_stream is not None and not input_stream.closed:
+                      input_stream.close()
+                  process.stdout.close()
+                  process.stderr.close()
+                  fail_evidence(
+                      f"Git exceeded {MAX_EVIDENCE_GIT_SECONDS} seconds while "
+                      f"{operation} {side} assurance evidence.",
+                      bytes(buffers[process.stderr]),
+                  )
+              listing = bytes(buffers[process.stdout])
+              stderr = bytes(buffers[process.stderr])
+              if charge_stdout:
+                  evidence_output_totals["stdout"] += len(listing)
+              evidence_output_totals["stderr"] += len(stderr)
+              if input_stream is not None and not input_stream.closed:
+                  input_stream.close()
+              process.stdout.close()
+              process.stderr.close()
+              acceptable = returncode == 0 or (no_match_ok and returncode == 1)
+              if not acceptable or stderr:
+                  fail_evidence(
+                      f"Could not complete Git while {operation} {side} "
+                      "assurance evidence.",
+                      stderr,
+                  )
+              return listing
+
+          def matching_blob_oids(treeish, scopes, side, *, regular_only):
+              """Find invariant-bearing paths, retaining the requested blob modes."""
+              prefix = os.fsencode(treeish) + b":"
+              matched_paths = set()
+              matches_by_batch = []
+              batches = scope_batches(scopes, side)
+              for scope_args in batches:
+                  grep_listing = bounded_process_output(
+                      [
+                          "git",
+                          "--literal-pathspecs",
+                          "grep",
+                          "-a",
+                          "-l",
+                          "-z",
+                          "-F",
+                          "INV-",
+                          treeish,
+                          "--",
+                          *scope_args,
+                      ],
+                      side,
+                      "locating invariant-bearing",
+                      no_match_ok=True,
+                  )
+                  batch_matches = set()
+                  records = [
+                      record for record in grep_listing.split(b"\0") if record
+                  ]
+                  for record in records:
+                      if not record.startswith(prefix) or len(record) == len(prefix):
+                          fail_evidence(
+                              f"Git returned a malformed {side} assurance grep record."
+                          )
+                      batch_matches.add(record[len(prefix) :])
+                  matched_paths.update(batch_matches)
+                  if len(matched_paths) > MAX_DISCOVERY_FILES:
+                      fail_evidence(
+                          f"The {side} invariant-bearing evidence set exceeds "
+                          f"{MAX_DISCOVERY_FILES:,} tracked entries."
+                      )
+                  matches_by_batch.append(batch_matches)
+              # Git grep never reports symlink blobs.  The broad merge-base
+              # cancellation side must still scan their short target-name
+              # payloads so symlink-to-regular transitions cannot expose an
+              # old invariant token.  HEAD is regular-only and may return
+              # immediately when grep found no text candidate.
+              if not matched_paths and regular_only:
+                  return []
+
+              oids_by_path = {}
+              for scope_args, batch_matches in zip(batches, matches_by_batch):
+                  if regular_only and not batch_matches:
+                      continue
+                  listing = bounded_process_output(
+                      [
+                          "git",
+                          "--literal-pathspecs",
+                          "ls-tree",
+                          "-r",
+                          "-z",
+                          treeish,
+                          "--",
+                          *scope_args,
+                      ],
+                      side,
+                      "enumerating invariant-bearing",
+                  )
+                  for record in (item for item in listing.split(b"\0") if item):
+                      evidence_work_totals["tree_records"] += 1
+                      if evidence_work_totals["tree_records"] > MAX_DISCOVERY_FILES:
+                          fail_evidence(
+                              "The combined merge-base and HEAD assurance "
+                              f"evidence enumeration exceeds {MAX_DISCOVERY_FILES:,} "
+                              "tracked tree records."
+                          )
+                      metadata, separator, path = record.partition(b"\t")
+                      fields = metadata.split()
+                      if not separator or not path or len(fields) != 3:
+                          fail_evidence(
+                              f"Git returned a malformed {side} assurance tree record."
+                          )
+                      baseline_symlink = (
+                          not regular_only
+                          and fields[1] == b"blob"
+                          and fields[0] == b"120000"
+                      )
+                      if path not in batch_matches and not baseline_symlink:
+                          continue
+                      mode, _kind, oid = fields
+                      # HEAD evidence is prose from regular files only.  The
+                      # merge-base cancellation set is deliberately broader
+                      # and includes symlink blobs. Gitlinks are commits.
+                      if _kind == b"blob" and (
+                          not regular_only or mode in (b"100644", b"100755")
+                      ):
+                          existing = oids_by_path.get(path)
+                          if existing is not None and existing != oid:
+                              fail_evidence(
+                                  f"Git returned conflicting {side} blob identities."
+                              )
+                          oids_by_path[path] = oid
+              return list(oids_by_path.values())
+
+          def load_regular_blobs(oids, side):
+              """Read unique blobs through the shared-deadline Git drain."""
+              unique_oids = sorted(set(oids))
+              if not unique_oids:
+                  return {}
+              request = b"".join(oid + b"\n" for oid in unique_oids)
+              # Each response adds one short header and one trailer around its
+              # blob. Bound that framing separately from the 64 MiB unique
+              # content budget; blob output is not charged as tree-listing data.
+              raw_limit = MAX_DISCOVERY_BYTES + len(unique_oids) * 128
+              batch = bounded_process_output(
+                  ["git", "cat-file", "--batch"],
+                  side,
+                  "reading invariant-bearing blobs for",
+                  stdin_bytes=request,
+                  stdout_limit=raw_limit,
+                  charge_stdout=False,
+                  stdout_label="blob output",
+              )
+              contents = {}
+              total_bytes = 0
+              offset = 0
+              for requested_oid in unique_oids:
+                  header_end = batch.find(b"\n", offset)
+                  if header_end < 0:
+                      fail_evidence(
+                          f"Git truncated a {side} assurance blob header."
+                      )
+                  fields = batch[offset:header_end].split()
+                  if (
+                      len(fields) != 3
+                      or fields[0] != requested_oid
+                      or fields[1] != b"blob"
+                  ):
+                      fail_evidence(
+                          f"Git returned a malformed {side} assurance blob header."
+                      )
+                  try:
+                      size = int(fields[2])
+                  except ValueError:
+                      fail_evidence(
+                          f"Git returned an invalid {side} assurance blob size."
+                      )
+                  if size < 0:
+                      fail_evidence(
+                          f"Git returned an invalid {side} assurance blob size."
+                      )
+                  total_bytes += size
+                  if total_bytes > MAX_DISCOVERY_BYTES:
+                      fail_evidence(
+                          f"Unique {side} assurance blob content exceeds "
+                          f"{MAX_DISCOVERY_BYTES:,} bytes."
+                      )
+                  data_start = header_end + 1
+                  data_end = data_start + size
+                  if data_end >= len(batch) or batch[data_end : data_end + 1] != b"\n":
+                      fail_evidence(
+                          f"Git truncated a {side} assurance blob."
+                      )
+                  contents[requested_oid] = batch[data_start:data_end]
+                  offset = data_end + 1
+              if offset != len(batch):
+                  fail_evidence(
+                      f"Git returned trailing {side} assurance blob output."
+                  )
+              return contents
+
+          def invariant_line_set(treeish, scopes, side, *, require_text):
+              """Return exact invariant lines, with strict eligibility on HEAD."""
+              oids = matching_blob_oids(
+                  treeish,
+                  scopes,
+                  side,
+                  regular_only=require_text,
+              )
+              contents = load_regular_blobs(oids, side)
+              logical_bytes = sum(len(contents[oid]) for oid in oids)
+              if logical_bytes > MAX_DISCOVERY_BYTES:
+                  fail_evidence(
+                      f"Logical {side} assurance content exceeds "
+                      f"{MAX_DISCOVERY_BYTES:,} bytes."
+                  )
+              lines = set()
+              for oid in oids:
+                  data = contents[oid]
+                  if require_text:
+                      # Candidate discovery deliberately uses `git grep -a`,
+                      # so PR-controlled attributes cannot suppress old-line
+                      # cancellation.  This deterministic classifier alone
+                      # decides HEAD eligibility: control-heavy blobs, invalid
+                      # UTF-8, and PDF containers cannot supply prose.  The
+                      # merge-base set intentionally skips this filter, making
+                      # cancellation a superset; deleting an unrelated binary
+                      # byte or PDF header cannot expose an old invariant line.
+                      if b"%PDF-" in data[:1024] or any(
+                          (
+                              byte < 0x20
+                              and byte not in (0x09, 0x0A, 0x0D)
+                          )
+                          or byte == 0x7F
+                          for byte in data
+                      ):
+                          continue
+                      try:
+                          data.decode("utf-8")
+                      except UnicodeDecodeError:
+                          continue
+                  for line in data.splitlines():
+                      if INVARIANT_LINE_RE.search(line):
+                          lines.add(line)
+              return lines
+
+          merge_base_sha = bounded_process_output(
+              ["git", "merge-base", base_sha, head_sha],
+              "pull-request",
+              "determining the merge base for",
+          ).strip()
+          if re.fullmatch(rb"[0-9a-fA-F]{40,64}", merge_base_sha) is None:
+              fail_evidence(
+                  "Git returned an invalid pull request merge base for "
+                  "assurance evidence."
+              )
+          merge_base_treeish = merge_base_sha.decode("ascii")
+
+          # Evidence is path-independent and branch-point-relative.  Every
+          # exact invariant-bearing line that existed anywhere at the merge
+          # base cancels, even after a rename, retained-source copy, mapping
+          # change, or file-type transition.  Only a genuinely new/changed
+          # strict-text line in a HEAD-active assurance blob survives.  The
+          # repository-wide baseline is deliberately conservative; a PR-body
+          # impact directive remains available for a legitimate relocation.
+          base_lines = invariant_line_set(
+              merge_base_treeish,
+              {"."},
+              "merge-base",
+              require_text=False,
+          )
+          head_lines = invariant_line_set(
+              head_sha,
+              impact_diff_scope,
+              "HEAD",
+              require_text=True,
+          )
+          net_new_lines = []
+          for line in sorted(head_lines - base_lines):
+              identifiers = sorted(set(INVARIANT_LINE_RE.findall(line)))
+              if identifiers:
+                  net_new_lines.append(b" ".join(identifiers))
+
+          diff_header = b""
+          if net_new_lines:
+              diff_header = (
+                  b"diff --git a/.aap-net-new-invariants "
+                  b"b/.aap-net-new-invariants\n"
+                  + f"@@ -0,0 +1,{len(net_new_lines)} @@\n".encode("ascii")
+              )
+          output_size = len(diff_header) + sum(
+              len(line) + 2 for line in net_new_lines
+          )
+          if output_size > MAX_EVIDENCE_OUTPUT_BYTES:
+              fail_evidence(
+                  "Net-new invariant evidence exceeds the assurance-diff "
+                  f"limit of {MAX_EVIDENCE_OUTPUT_BYTES:,} bytes."
+              )
           with open(os.path.join(tmp, "assurance-diff.txt"), "wb") as handle:
-              handle.write(diff.stdout)
-          EOF
+              if net_new_lines:
+                  handle.write(diff_header)
+                  for line in net_new_lines:
+                      handle.write(b"+" + line + b"\n")
 
       - name: Route impact and screen policy against the component map
         env:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           STRICT_DRIFT: ${{ inputs.strict-drift }}
         run: |
-          STRICT_FLAG=""
-          if [ "$STRICT_DRIFT" = "true" ]; then
-            STRICT_FLAG="--strict"
-          fi
-          BASE_FLAGS=""
+          DRIFT_ARGS=(
+            --adoption "$ADOPTION_FILE"
+            --changed-files "$RUNNER_TEMP/changed-files.z"
+            --pr-body "$RUNNER_TEMP/pr-body.txt"
+            --assurance-diff "$RUNNER_TEMP/assurance-diff.txt"
+          )
           if [ -f "$RUNNER_TEMP/base-adoption.yaml" ]; then
-            BASE_FLAGS="--base-adoption $RUNNER_TEMP/base-adoption.yaml --base-registers-root $RUNNER_TEMP/base-tree --project-root ."
+            DRIFT_ARGS+=(
+              --base-adoption "$RUNNER_TEMP/base-adoption.yaml"
+              --base-registers-root "$RUNNER_TEMP/base-tree"
+              --project-root .
+              --adoption-path-transition "$RUNNER_TEMP/adoption-path-transition.json"
+            )
           fi
-          # shellcheck disable=SC2086  # BASE_FLAGS/STRICT_FLAG split into flags on purpose
-          python .assurance-profile-pin/scripts/validate.py drift \
-            --adoption "$ADOPTION_FILE" \
-            --changed-files "$RUNNER_TEMP/changed-files.txt" \
-            --pr-body "$RUNNER_TEMP/pr-body.txt" \
-            --assurance-diff "$RUNNER_TEMP/assurance-diff.txt" \
-            $BASE_FLAGS $STRICT_FLAG
+          if [ "$STRICT_DRIFT" = "true" ]; then
+            DRIFT_ARGS+=(--strict)
+          fi
+          python -I .assurance-profile-pin/scripts/validate.py drift \
+            "${DRIFT_ARGS[@]}"
