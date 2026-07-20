@@ -22,6 +22,23 @@ enforcement remains tracked in #40).
   this profile" prompt into classify-first; and `PROFILE.md` §5
   clarifies that the smallest applicable set covers the system's actual
   nature. Documentation only — no schema or validator change.
+- **Existing tool output has a stated position in the core model.**
+  `docs/MAPPINGS.md` §5 (new, non-normative) shows how to reference what a
+  repository's tools already produce — specification workflows, tests,
+  scanners and code-review tools, agent change records, build attestations —
+  from the registers instead of restating their results by hand. Each tool
+  class is placed against what it does *not* establish, because an assurance
+  argument fails when a strong answer to one question is filed as the answer
+  to another: a review tool reporting no findings is coverage, not proof, and
+  an agent change record is evidence of the action, not of correctness. §5.2
+  binds an evidence reference to a revision, release, artifact, or deployment
+  (`PROFILE.md` §11) and covers the restricted case; §5.5 states what no tool
+  supplies — intent, claim wording, defeater disposition, residual acceptance
+  — and that an agent-drafted record carries human authority only when the
+  owner's own approval act anchors it (`PROFILE.md` §7). `README.md` and
+  `README.ko.md` route to it from the "complements your existing toolchain"
+  claim, which previously had nothing behind it. Documentation only — no
+  schema or validator change.
 - **Profile composition is now explicit and aligned with validation.**
   Every non-`archived` specialized profile implicitly inherits §6.1
   `core` obligations. For an active adopter, the canonical smallest
