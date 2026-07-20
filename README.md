@@ -75,6 +75,8 @@ The OpenDevs Agentic Assurance Profile is:
 - compatible with existing specification, issue, pull-request, test, CI, and release workflows;
 - a way to connect human intent, implementation controls, verification evidence, and residual uncertainty.
 
+Neighboring tool categories answer different questions. A specification workflow records what a change is meant to do. An analysis or code-review tool finds risk in the code as written. A provenance tool records what an agent actually did. This profile asks the question left over: **do the promises a human approved, and the risk that human accepted, still hold after the change?** Answering it needs artifacts that outlive any single change — which is why the unit is the repository rather than the pull request, and why the profile consumes the other categories' output as evidence instead of reproducing it.
+
 ## What this project is not
 
 It is not:
@@ -99,12 +101,16 @@ This profile is intentionally a thin coordination layer rather than a replacemen
 | `AGENTS.md` | Persistent instructions and reading order for coding agents |
 | Agent Skills / `SKILL.md` | Reusable task-specific procedures |
 | OpenSpec, Spec Kit, ADR, RFC, or equivalent | Change specification and decision workflow |
-| Tests, schemas, constraints, scanners, CI | Enforcement and verification mechanisms |
+| Tests, schemas, constraints, scanners, code-review tools, CI | Enforcement and verification mechanisms |
+| Agent change records and session logs | Provenance of what an agent read, ran, and changed |
+| SLSA, in-toto, or equivalent attestations | Build and artifact provenance for a release |
 | `SECURITY.md` and GitHub private vulnerability reporting | Confidential vulnerability intake and coordinated disclosure |
 | OpenSSF Security Insights | Machine-readable public description of security practices and posture |
 | This profile | Traceability among intent, claims, invariants, evidence, defeaters, and residuals |
 
 An adopting project should reuse what it already has. The profile should not create a parallel document system merely to rename existing artifacts.
+
+Where a mechanism above produces output, the profile references that output rather than regenerating it: a specification workflow supplies intent and change scope, verification tooling and attestations supply evidence, review findings supply defeater candidates. [docs/MAPPINGS.md §5](docs/MAPPINGS.md) shows how to reference that output from the registers without overstating what it proves — and which parts no tool supplies, because intent, claim wording, defeater disposition, and residual acceptance remain human decisions ([PROFILE.md §3](PROFILE.md)).
 
 ---
 
