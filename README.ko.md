@@ -8,6 +8,8 @@
 **저장소:** `MosslandOpenDevs/agentic-assurance-profile`  
 **현재 성숙도:** 참조 프로필이며 인증 제도가 아님
 
+**개발 방향:** [v0.5 작업 설계 및 실행 계획](docs/V0.5-DESIGN.md)
+
 코드 생성이 아무리 값싸져도 소프트웨어 개발에는 여전히 비싼 부분이 남습니다. 이 프로필은 프로젝트가 바로 그 부분을 잃지 않도록 돕습니다.
 
 - 이 시스템을 왜 이렇게 설계했는가
@@ -359,7 +361,8 @@ active 경로의 as-built system 복원, 동작 분류, active claim/invariant/r
 │   ├── DISCLOSURE-AND-ISSUES.md
 │   ├── GLOSSARY.md
 │   ├── MAPPINGS.md
-│   └── REVIEW-GUIDE.md
+│   ├── REVIEW-GUIDE.md
+│   └── V0.5-DESIGN.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── assurance-lite.schema.json

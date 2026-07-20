@@ -6,6 +6,8 @@
 **Repository:** `MosslandOpenDevs/agentic-assurance-profile`  
 **Current maturity:** reference profile, not a certification scheme
 
+**Development direction:** [v0.5 working design and delivery plan](docs/V0.5-DESIGN.md)
+
 > **Normative status:** [PROFILE.md](PROFILE.md) is the normative text. This README and all translations are informative summaries; where they disagree, PROFILE.md governs.
 
 The profile helps a project preserve the parts of software development that code generation does not make cheap:
@@ -359,7 +361,8 @@ Layout of this central repository:
 │   ├── DISCLOSURE-AND-ISSUES.md
 │   ├── GLOSSARY.md
 │   ├── MAPPINGS.md
-│   └── REVIEW-GUIDE.md
+│   ├── REVIEW-GUIDE.md
+│   └── V0.5-DESIGN.md
 ├── schemas/
 │   ├── adoption.schema.json
 │   ├── assurance-lite.schema.json
