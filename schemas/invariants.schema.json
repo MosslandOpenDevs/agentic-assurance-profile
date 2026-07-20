@@ -33,7 +33,7 @@
           "id": {
             "type": "string",
             "description": "Stable invariant ID, independent of GitHub Issue numbers.",
-            "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])",
             "minLength": 1
           },
           "title": {
@@ -96,14 +96,18 @@
             "type": "array",
             "description": "Assumptions under which the invariant holds.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
             }
           },
           "limitations": {
             "type": "array",
             "description": "Explicit limitations of the invariant.",
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
             }
           },
           "enforcement": {
@@ -138,7 +142,7 @@
             "description": "IDs of defeaters affecting this invariant.",
             "items": {
               "type": "string",
-              "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])"
             }
           },
           "residuals": {
@@ -146,7 +150,7 @@
             "description": "IDs of residuals affecting this invariant.",
             "items": {
               "type": "string",
-              "pattern": "^RES-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "pattern": "^RES-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])"
             }
           },
           "status": {
@@ -173,7 +177,49 @@
             "minLength": 1,
             "pattern": "\\S"
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "intent"
+              ],
+              "properties": {
+                "intent": {
+                  "required": [
+                    "classification"
+                  ],
+                  "properties": {
+                    "classification": {
+                      "enum": [
+                        "INTENDED",
+                        "COMPATIBILITY",
+                        "DEPRECATED"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "intent": {
+                  "required": [
+                    "authority"
+                  ],
+                  "properties": {
+                    "authority": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S"
+                    }
+                  }
+                }
+              },
+              "$comment": "INTENDED, COMPATIBILITY, and DEPRECATED are affirmative human intent dispositions and require a non-blank authority reference."
+            }
+          }
+        ]
       }
     }
   }

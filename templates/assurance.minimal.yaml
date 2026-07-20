@@ -1,0 +1,74 @@
+# OpenDevs Agentic Assurance — minimal lite assurance file (core adopters).
+#
+# The smallest complete `core` adoption in one file: purpose, non-goals, a
+# system description, at least one invariant, and at least one residual — the
+# required minimum at `core` (the `system` section may instead live in a
+# separate SYSTEM.md; see the note below).
+#
+# Placement: copy to the fixed lite path `.agentic-assurance/assurance.yaml`,
+# and add `layout: lite` to the configured adoption declaration (default:
+# `.agentic-assurance/adoption.yaml`).
+#
+# For an expanded reference showing the standard optional fields, the optional
+# `defeaters` section, and the local `extensions` namespace, see
+# templates/assurance.yaml and the split register templates
+# (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml,
+# templates/DEFEATERS.yaml). Register schemas permit project-local entry fields,
+# so no template attempts to enumerate every possible extension. Section items
+# use the same shapes as those files. To graduate to an active specialized
+# profile, move each present register array unchanged so IDs survive; move
+# inline `system` into the artifact mapped by `paths.system`; preserve `purpose`
+# and `non_goals` there or in another owner-approved local intent artifact; and
+# preserve or relocate `extensions` before dropping `layout: lite`. To
+# reclassify as `archived`,
+# instead write and obtain owner confirmation of all four PROFILE.md section
+# 6.6 facts in the mapped SYSTEM artifact. Prior active registers may remain as
+# optional history, but do not substitute for those facts.
+
+version: 1
+
+# One paragraph: what this system is for and the boundary of what it promises.
+# Human-approved intent — an agent must not rewrite it to match behavior.
+purpose: REPLACE_WITH_ONE_PARAGRAPH_PURPOSE
+
+# What this system deliberately does not do.
+non_goals:
+  - REPLACE_WITH_A_DELIBERATE_NON_GOAL
+
+# Identify the system, its principal responsibilities and material boundaries,
+# and known material limitations or unknowns. Alternatively delete this and
+# keep a separate SYSTEM.md at adoption.yaml `paths.system` — one of the two
+# must exist.
+system: |
+  REPLACE_WITH_SYSTEM_IDENTITY_RESPONSIBILITIES_BOUNDARIES_LIMITATIONS_AND_UNKNOWNS
+
+# At least one — the properties that must remain true. UNKNOWN is the honest
+# initial intent classification until human review; templates/INVARIANTS.yaml
+# documents the remaining optional fields.
+invariants:
+  - id: INV-EXAMPLE-001
+    title: REPLACE_WITH_INVARIANT_TITLE
+    statement: REPLACE_WITH_THE_PROPOSITION_THAT_MUST_HOLD
+    severity: critical
+    intent:
+      classification: UNKNOWN
+      # Required when classification is INTENDED, COMPATIBILITY, or DEPRECATED:
+      # authority must name the human decision granting that affirmative
+      # intent — a reviewed merge, a recorded review outcome, or an approved
+      # specification. It stays null only while classification is UNKNOWN or
+      # ACCIDENTAL, which are honest resting states (PROFILE.md §17).
+      authority: null
+    scope: REPLACE_WITH_BOUNDED_SYSTEM_SCOPE
+    status: UNKNOWN
+    disclosure: PUBLIC
+    owner: REPLACE_WITH_OWNER
+
+# At least one — known limitations, unverified assumptions, and remaining doubt.
+residuals:
+  - id: RES-EXAMPLE-001
+    summary: REPLACE_WITH_RESIDUAL_SUMMARY
+    impact: unknown
+    uncertainty: unknown
+    status: OPEN
+    disclosure: SUMMARY_ONLY
+    owner: REPLACE_WITH_OWNER

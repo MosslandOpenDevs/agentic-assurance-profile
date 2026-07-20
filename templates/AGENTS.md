@@ -1,6 +1,6 @@
 # Agent instructions
 
-> **Placement:** Copy this file to the root of an adopting repository as `AGENTS.md`, or merge its sections into an existing `AGENTS.md`. Replace every `REPLACE_WITH_` placeholder.
+> **Placement:** Copy this file to the root of an adopting repository as `AGENTS.md`, or merge its sections into an existing `AGENTS.md`. Replace every `REPLACE_WITH_` placeholder in applicable project-specific sections. Under the exclusive `archived` profile—retained solely for historical reference, not supported or intended for current use, and with no active operation, functional maintenance, or feature development—delete or explicitly mark inapplicable project-specific lines; do not alter the verbatim OpenDevs block. The sole permitted adaptation to that block is substituting the workflow's custom `adoption-file` path for `.agentic-assurance/adoption.yaml`, identically in both root files.
 >
 > **Normative source:** The "OpenDevs Agentic Assurance" section below is copied verbatim from `AGENTIC_ASSURANCE.md` §11 ("Root `AGENTS.md` integration"), which remains the normative source. If the two copies ever differ, §11 governs.
 
@@ -15,9 +15,9 @@ Before any material change, read:
 
 1. `AGENTIC_ASSURANCE.md`;
 2. `.agentic-assurance/adoption.yaml`;
-3. the project system specification and non-goals;
-4. affected claims, invariants, defeaters, and residuals;
-5. the active change specification.
+3. the project system artifact and applicable non-goals;
+4. affected claims, invariants, defeaters, and residuals, where applicable;
+5. the active change specification, when applicable.
 
 Human-approved project intent governs project purpose. The pinned upstream
 profile governs generic assurance obligations. Current implementation behavior
@@ -32,7 +32,7 @@ upstream pin. Report conflicts and unresolved uncertainty explicitly.
 
 REPLACE_WITH_ONE_PARAGRAPH_DESCRIPTION_OF_PURPOSE_USERS_AND_SCOPE
 
-Non-goals and the as-built system description live in `assurance/SYSTEM.md` or at the path recorded under `paths.system` in `.agentic-assurance/adoption.yaml` — except under `layout: lite`, where they are the `non_goals` and `system` fields of `.agentic-assurance/assurance.yaml`.
+For an active split adoption, non-goals and the as-built system description live in `assurance/SYSTEM.md` or at the `paths.system` location recorded in the configured adoption declaration. Under `layout: lite`, `non_goals` lives in `.agentic-assurance/assurance.yaml`; the system description may be its optional `system` field or the separately mapped system artifact. Under the exclusive `archived` profile, the mapped system artifact instead records the four historical facts required by PROFILE.md §6.6. Initial adoption and factual corrections or upkeep to the pin, stage, review record, and these instructions are archival-assurance metadata work, not functional maintenance.
 
 ## Build and test commands
 
@@ -48,7 +48,7 @@ Run the full test suite before describing a change as complete. Do not weaken, r
 
 - Code style: REPLACE_WITH_CODE_STYLE_RULES_OR_FORMATTER_COMMAND
 - Branches and commits: REPLACE_WITH_BRANCH_AND_COMMIT_CONVENTIONS
-- Change workflow: REPLACE_WITH_SPECIFICATION_WORKFLOW — must match `specification_workflow` in `.agentic-assurance/adoption.yaml`
+- Change workflow: REPLACE_WITH_SPECIFICATION_WORKFLOW — for an active adoption, must match `specification_workflow` in the configured adoption declaration; under `archived`, delete this line if that optional block is absent, or describe the archival-record correction and active-reclassification rule
 - Review: REPLACE_WITH_REVIEW_REQUIREMENTS
 
 Nested `AGENTS.md` files may impose stricter local rules but must not weaken the assurance adoption above.

@@ -1,7 +1,7 @@
 version: 1
 residuals:
   - id: RES-EXAMPLE-001
-    summary: Replace with a safe summary of remaining uncertainty.
+    summary: REPLACE_WITH_RESIDUAL_SUMMARY
     private_detail_location: null
     affected_claims: []
     affected_invariants: []
@@ -12,8 +12,10 @@ residuals:
     disclosure: SUMMARY_ONLY
     owner: REPLACE_WITH_OWNER
     accepted_by: null
-    accepted_at: null
-    # Optional disposition fields:
-    # acceptance_rationale: The human owner's recorded reason for an ACCEPTED disposition (expected when status is ACCEPTED).
-    # resolution_note: How a RESOLVED residual was closed, with a remediation reference (expected when status is RESOLVED).
-    review_after: YYYY-MM-DD
+    accepted_at: null  # completed human acceptance date; must not be future-dated
+    # Disposition fields (required for their corresponding status):
+    # Required when status is ACCEPTED:
+    # acceptance_rationale: The human acceptor's recorded reason for the disposition.
+    # Required when status is RESOLVED:
+    # resolution_note: How the residual was closed, with a remediation reference.
+    review_after: REPLACE_WITH_REVIEW_AFTER_DATE

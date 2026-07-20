@@ -13,10 +13,15 @@
 # binding becomes fully effective only once a second maintainer exists —
 # until then it is a declared intention, and the review record remains the
 # effective control.
+# Add explicit entries for every custom adoption, paths.*, workflow-root,
+# human-review-record, security-policy, and public-assurance-root location.
+# For a tracked symlink, cover the lexical link, resolved target, and target
+# parent or containing tree.
 
 AGENTS.md                         @REPLACE_WITH_OWNER_OR_TEAM
 AGENTIC_ASSURANCE.md              @REPLACE_WITH_OWNER_OR_TEAM
 /.agentic-assurance/              @REPLACE_WITH_OWNER_OR_TEAM
 /assurance/                       @REPLACE_WITH_OWNER_OR_TEAM
+/SECURITY.md                      @REPLACE_WITH_OWNER_OR_TEAM
 /.github/workflows/assurance.yml  @REPLACE_WITH_OWNER_OR_TEAM
 /.github/CODEOWNERS               @REPLACE_WITH_OWNER_OR_TEAM
