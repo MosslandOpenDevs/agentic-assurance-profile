@@ -52,6 +52,11 @@ invariants:
     severity: critical
     intent:
       classification: UNKNOWN
+      # Required when classification is INTENDED, COMPATIBILITY, or DEPRECATED:
+      # authority must name the human decision granting that affirmative
+      # intent — a reviewed merge, a recorded review outcome, or an approved
+      # specification. It stays null only while classification is UNKNOWN or
+      # ACCIDENTAL, which are honest resting states (PROFILE.md §17).
       authority: null
     scope: REPLACE_WITH_BOUNDED_SYSTEM_SCOPE
     status: UNKNOWN
