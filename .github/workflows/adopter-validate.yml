@@ -794,8 +794,11 @@ jobs:
           ADOPTION_FILE: ${{ inputs.adoption-file }}
           CALLER_REPOSITORY: ${{ github.repository }}
           CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+        # This step is Python, not shell. Keep isolated-mode execution while
+        # avoiding a multi-thousand-line Python heredoc being parsed by
+        # shellcheck through actionlint.
+        shell: python -I {0}
         run: |
-          python -I - <<'EOF'
           import datetime
           import json
           import math
@@ -2787,7 +2790,6 @@ jobs:
                   handle.write(diff_header)
                   for line in net_new_lines:
                       handle.write(b"+" + line + b"\n")
-          EOF
 
       - name: Route impact and screen policy against the component map
         env:

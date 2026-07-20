@@ -175,22 +175,90 @@ def run_validator(
     return completed.returncode, completed.stdout + completed.stderr
 
 
-def workflow_step_shell(step_name):
-    """Extract one reusable-workflow run block as executable shell text."""
+def workflow_step_spec(step_name):
+    """Return the declared shell and body for one reusable-workflow step."""
     workflow = (
         REPO_ROOT / ".github" / "workflows" / "adopter-validate.yml"
     ).read_text(encoding="utf-8")
     marker = f"      - name: {step_name}\n"
     section = workflow[workflow.index(marker) :]
     run_marker = "        run: |\n"
-    body = section[section.index(run_marker) + len(run_marker) :]
+    run_index = section.index(run_marker)
+    preamble = section[:run_index]
+    shell_prefix = "        shell: "
+    shell_lines = [
+        line[len(shell_prefix) :]
+        for line in preamble.splitlines()
+        if line.startswith(shell_prefix)
+    ]
+    if len(shell_lines) > 1:
+        raise AssertionError(f"workflow step {step_name!r} has multiple shells")
+    shell = shell_lines[0] if shell_lines else None
+    body = section[run_index + len(run_marker) :]
     lines = []
     for line in body.splitlines():
         if line.startswith("      - name:"):
             break
         lines.append(line[10:] if line.startswith("          ") else line)
     script = "\n".join(lines) + "\n"
+    return shell, script
+
+
+def workflow_step_shell(step_name):
+    """Extract one bash reusable-workflow run block for direct execution."""
+    shell, script = workflow_step_spec(step_name)
+    if shell is not None:
+        raise AssertionError(
+            f"workflow step {step_name!r} declares non-bash shell {shell!r}"
+        )
     return script.replace("python -", f"{shlex.quote(sys.executable)} -", 1)
+
+
+def run_workflow_step(
+    step_name,
+    *,
+    cwd,
+    env,
+    timeout,
+    script_replacements=(),
+):
+    """Execute one workflow body with the shell declared by that step."""
+    shell, script = workflow_step_spec(step_name)
+    for before, after in script_replacements:
+        if before not in script:
+            raise AssertionError(f"workflow fixture replacement not found: {before}")
+        script = script.replace(before, after, 1)
+    if shell is None:
+        command = [
+            "bash",
+            "-c",
+            script.replace(
+                "python -", f"{shlex.quote(sys.executable)} -", 1
+            ),
+        ]
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    if shell != "python -I {0}":
+        raise AssertionError(
+            f"workflow step {step_name!r} has unsupported test shell {shell!r}"
+        )
+    with tempfile.TemporaryDirectory(prefix="aap-workflow-step-") as temp_dir:
+        script_path = Path(temp_dir) / "step.py"
+        script_path.write_text(script, encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, "-I", str(script_path)],
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
 
 
 def write_yaml(path, document):
@@ -279,24 +347,12 @@ def run_workflow_materializer(
     if env_updates:
         env_values.update(env_updates)
     env = clean_env(env_values)
-    script = workflow_step_shell(
-        "Materialize the base tree and compute the assurance diff"
-    )
-    for before, after in script_replacements:
-        if before not in script:
-            raise AssertionError(f"workflow fixture replacement not found: {before}")
-        script = script.replace(before, after, 1)
-    completed = subprocess.run(
-        [
-            "bash",
-            "-c",
-            script,
-        ],
+    completed = run_workflow_step(
+        "Materialize the base tree and compute the assurance diff",
         cwd=repository,
         env=env,
-        capture_output=True,
-        text=True,
         timeout=60,
+        script_replacements=script_replacements,
     )
     return completed, runner_temp
 
@@ -5468,6 +5524,14 @@ class TestStrictPolicyInputs(ValidatorTestCase):
             validator_calls,
         )
 
+    def test_workflow_materializer_uses_an_isolated_python_shell(self):
+        shell, script = workflow_step_spec(
+            "Materialize the base tree and compute the assurance diff"
+        )
+        self.assertEqual(shell, "python -I {0}")
+        self.assertNotIn("python -I - <<'EOF'", script)
+        compile(script, "<workflow-materializer>", "exec")
+
     def test_workflow_rejects_unencodable_policy_paths_without_traceback(self):
         root = self.make_tmp()
         repository = root / "repo"
@@ -6091,12 +6155,10 @@ class TestStrictPolicyInputs(ValidatorTestCase):
                             "RUNNER_TEMP": str(root / "runner-temp"),
                         }
                     )
-                    completed = subprocess.run(
-                        ["bash", "-c", workflow_step_shell(step_name)],
+                    completed = run_workflow_step(
+                        step_name,
                         cwd=repository,
                         env=env,
-                        capture_output=True,
-                        text=True,
                         timeout=10,
                     )
                     output = completed.stdout + completed.stderr
@@ -6120,8 +6182,8 @@ class TestStrictPolicyInputs(ValidatorTestCase):
             "Materialize the base tree and compute the assurance diff",
         ):
             with self.subTest(step=step_name):
-                completed = subprocess.run(
-                    ["bash", "-c", workflow_step_shell(step_name)],
+                completed = run_workflow_step(
+                    step_name,
                     cwd=repository,
                     env=clean_env(
                         {
@@ -6133,8 +6195,6 @@ class TestStrictPolicyInputs(ValidatorTestCase):
                             "RUNNER_TEMP": str(root / "runner-temp"),
                         }
                     ),
-                    capture_output=True,
-                    text=True,
                     timeout=10,
                 )
                 output = completed.stdout + completed.stderr
