@@ -1,21 +1,32 @@
 # OpenDevs Agentic Assurance — single-file lite layout (core adopters).
 #
-# What this is: the entire local assurance record for a `core` adoption in one
-# file — purpose, non-goals, invariants, and residuals — instead
-# of the split assurance/ directory.
+# What this is: the assurance register for a `core` adoption in one file —
+# purpose, non-goals, a system description (inline here or separately mapped),
+# invariants, and residuals — instead of the split assurance/ directory.
 #
-# Placement: copy this file to `.agentic-assurance/assurance.yaml` in the
-# adopting repository, next to `adoption.yaml`.
+# Placement: copy this file to the fixed lite path
+# `.agentic-assurance/assurance.yaml` in the adopting repository.
 #
-# How to declare it: add `layout: lite` to `.agentic-assurance/adoption.yaml`.
-# Without that line the default split layout applies and this file is ignored.
+# How to declare it: add `layout: lite` to the configured adoption declaration
+# (default: `.agentic-assurance/adoption.yaml`). Without that line the default
+# split layout applies and this file is ignored.
 #
 # When to graduate: the lite layout is valid only for the `core` profile.
 # Any other profile — `service`, `trust-critical`, `data-curation`,
-# `agent-runtime`, or `archived` — requires the split layout. Split-out
-# preserves IDs: move the section arrays into assurance/INVARIANTS.yaml,
-# assurance/RESIDUALS.yaml, and assurance/DEFEATERS.yaml unchanged, and drop
-# `layout: lite`.
+# `agent-runtime`, or `archived` — requires the split layout.
+#
+# For an active specialized profile, preserve IDs by moving each present
+# register array unchanged into assurance/INVARIANTS.yaml,
+# assurance/RESIDUALS.yaml, or assurance/DEFEATERS.yaml. Move inline `system`
+# into the artifact mapped by `paths.system`; preserve `purpose` and `non_goals`
+# there or in another owner-approved local intent artifact; preserve or
+# deliberately relocate `extensions`. Drop `layout: lite` only after all of
+# that content is retained.
+#
+# For `archived`, do not use active registers as its contract. Write all four
+# PROFILE.md section 6.6 facts in the mapped SYSTEM artifact and obtain owner
+# confirmation. Prior active registers may remain as optional history, but do
+# not substitute for those facts. Then drop `layout: lite`.
 #
 # Section items use exactly the same shapes as the split register templates
 # (templates/INVARIANTS.yaml, templates/RESIDUALS.yaml, templates/DEFEATERS.yaml).
@@ -31,15 +42,16 @@ purpose: REPLACE_WITH_ONE_PARAGRAPH_PURPOSE
 non_goals:
   - REPLACE_WITH_A_DELIBERATE_NON_GOAL
 
-# A short as-built system description (PROFILE.md section 6.1). This shipped
-# reference keeps the four-file lite path complete. An adopter may instead
-# delete this field and keep a separate SYSTEM.md at adoption.yaml
+# Identify the system, its principal responsibilities and material boundaries,
+# and known material limitations or unknowns (PROFILE.md section 6.1). This
+# shipped reference keeps the four-file lite path complete. An adopter may
+# instead delete this field and keep a separate SYSTEM.md at adoption.yaml
 # `paths.system`; one of the two must exist.
 system: |
-  REPLACE_WITH_A_SHORT_AS_BUILT_DESCRIPTION
+  REPLACE_WITH_SYSTEM_IDENTITY_RESPONSIBILITIES_BOUNDARIES_LIMITATIONS_AND_UNKNOWNS
 
 # Required at core (at least one; 5-15 typical); same fields as
-# assurance/INVARIANTS.yaml — graduating to split is a copy.
+# assurance/INVARIANTS.yaml, so active graduation moves this array unchanged.
 invariants:
   - id: INV-EXAMPLE-001
     title: REPLACE_WITH_INVARIANT_TITLE
@@ -75,10 +87,12 @@ residuals:
     disclosure: SUMMARY_ONLY
     owner: REPLACE_WITH_OWNER
     accepted_by: null
-    accepted_at: null
-    # Optional disposition fields:
-    # acceptance_rationale: The human owner's recorded reason for an ACCEPTED disposition (expected when status is ACCEPTED).
-    # resolution_note: How a RESOLVED residual was closed, with a remediation reference (expected when status is RESOLVED).
+    accepted_at: null  # completed human acceptance date; must not be future-dated
+    # Disposition fields (required for their corresponding status):
+    # Required when status is ACCEPTED:
+    # acceptance_rationale: The human acceptor's recorded reason for the disposition.
+    # Required when status is RESOLVED:
+    # resolution_note: How the residual was closed, with a remediation reference.
     review_after: REPLACE_WITH_REVIEW_AFTER_DATE
 
 # Optional: concrete reasons a claim may be false or incomplete. Same fields
@@ -90,7 +104,7 @@ residuals:
 #     affected_invariants: []
 #     evidence: []
 #     status: OPEN
-#     # Optional when the defeater is closed:
+#     # Required when status is MITIGATED, RESOLVED, or WITHDRAWN:
 #     # resolution: REPLACE_WITH_HOW_THE_DEFEATER_WAS_RESOLVED_MITIGATED_OR_WITHDRAWN
 #     disclosure: PUBLIC
 #     owner: REPLACE_WITH_OWNER

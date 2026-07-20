@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MosslandOpenDevs/agentic-assurance-profile/main/schemas/defeaters.schema.json",
   "title": "Agentic Assurance Profile defeater register",
-  "description": "Schema for a defeater register (default location `assurance/DEFEATERS.yaml`). Each entry is a concrete reason a claim or assurance argument may be false, incomplete, stale, or inapplicable (PROFILE.md sections 2 and 12).",
+  "description": "Schema for a defeater register (default location `assurance/DEFEATERS.yaml`). Each entry is a concrete reason a claim or assurance argument may be false, incomplete, stale, or inapplicable (PROFILE.md sections 2 and 12). A MITIGATED, RESOLVED, or WITHDRAWN disposition must record non-blank resolution grounds.",
   "type": "object",
   "required": [
     "version",
@@ -30,7 +30,7 @@
           "id": {
             "type": "string",
             "description": "Stable defeater ID, independent of GitHub Issue numbers.",
-            "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+            "pattern": "^DEF-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])",
             "minLength": 1
           },
           "statement": {
@@ -44,7 +44,7 @@
             "description": "IDs of claims this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "pattern": "^CLAIM-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])",
               "minLength": 1
             }
           },
@@ -53,7 +53,7 @@
             "description": "IDs of invariants this defeater affects.",
             "items": {
               "type": "string",
-              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$",
+              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])",
               "minLength": 1
             }
           },
@@ -77,7 +77,7 @@
           },
           "resolution": {
             "type": "string",
-            "description": "How a RESOLVED, MITIGATED, or WITHDRAWN defeater was closed (what changed, and where).",
+            "description": "How a MITIGATED, RESOLVED, or WITHDRAWN defeater was dispositioned (what changed, and where); required for each of those statuses.",
             "minLength": 1,
             "pattern": "\\S"
           },
@@ -101,7 +101,38 @@
             "format": "date",
             "description": "Date (YYYY-MM-DD) after which the defeater must be reviewed."
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "enum": [
+                    "MITIGATED",
+                    "RESOLVED",
+                    "WITHDRAWN"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "resolution"
+              ],
+              "properties": {
+                "resolution": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              },
+              "$comment": "A non-OPEN defeater disposition requires non-blank resolution grounds."
+            }
+          }
+        ]
       }
     }
   }

@@ -34,7 +34,7 @@ A mechanism that prevents or blocks violation of an invariant — a database con
 
 ### Verification (검증)
 
-A mechanism that checks whether declared properties and controls behave as claimed — tests, static analysis, reproducible inspection, migration verification, runtime assertions, monitoring, or independent reproduction. The profile's slogan: **tests verify; controls enforce** — and a critical invariant should have both. Example: a test that replays an expired session token and asserts the request is rejected. ([PROFILE.md §2.5](../PROFILE.md))
+A mechanism that checks whether declared properties and controls behave as claimed — tests, static analysis, reproducible inspection, migration verification, runtime assertions, monitoring, or independent reproduction. The profile's slogan: **tests verify; controls enforce**. Every active severity-`critical` invariant recorded `VERIFIED` must name at least one enforcement and one verification reference. Under the `service` profile, **every** severity-`critical` invariant must name at least one of each regardless of conclusion status; other non-service critical invariants should have both. Example: a test that replays an expired session token and asserts the request is rejected. ([PROFILE.md §2.5](../PROFILE.md))
 
 ### Evidence (증거)
 
@@ -50,7 +50,7 @@ A known limitation, unverified assumption, accepted inconsistency, unsupported c
 
 ### Human acceptance (인간의 수용)
 
-The named human owner's explicit, recorded decision to carry a risk or approve a contract — the end of the chain, and the one link an agent can never supply. Critical residuals must have explicit human acceptance, recorded with the accepter's name and date; an agent must not accept a critical residual on the owner's behalf. Example: the owner writes "accepted, single-server deployment is our reality this year" and the register records their name and the date. ([PROFILE.md §2](../PROFILE.md), [§3](../PROFILE.md), [§12](../PROFILE.md), [§15](../PROFILE.md))
+The named human owner's explicit, recorded decision to carry a risk or approve a contract — the end of the chain, and the one link an agent can never supply. A residual with `impact: critical` that is carried as `ACCEPTED` must have explicit human-owner acceptance, recorded with the accepter's name, date, and rationale; `RESOLVED` is the alternative when remediation removed the risk and the register records its grounds. An agent must not accept a critical residual on the owner's behalf. Example: the owner writes "accepted, single-server deployment is our reality this year" and the register records their name and the date. ([PROFILE.md §2](../PROFILE.md), [§3](../PROFILE.md), [§12](../PROFILE.md), [§15](../PROFILE.md))
 
 ## 2. Easily confused pairs
 
@@ -66,13 +66,13 @@ A **defeater** (반증 요인) is a concrete reason a claim might be false — a
 
 ### 2.3 Accept vs resolve (residual dispositions)
 
-**Accept** (수용) records that the owner knowingly carries the risk: the residual stays real, and the register records `accepted_by` (who), `accepted_at` (when), and ideally an `acceptance_rationale` (why). **Resolve** means the risk was removed by a fix: the limitation no longer exists, and the register records a `resolution_note` pointing at the remediation. Accepting is a human decision about an unchanged world; resolving is a changed world. A residual must not be closed solely because no recent incident was observed — quiet is not a fix. See [templates/RESIDUALS.yaml](../templates/RESIDUALS.yaml) for the fields. ([PROFILE.md §12](../PROFILE.md))
+**Accept** (수용) records that a human knowingly carries the risk: the residual stays real, and the register records `accepted_by` (who), a non-future `accepted_at` (when), and `acceptance_rationale` (why). Acceptance of a critical residual belongs to the human owner. **Resolve** means the risk was removed by a fix: the limitation no longer exists, and the register records a `resolution_note` pointing at the remediation. Accepting is a human decision about an unchanged world; resolving is a changed world. A residual must not be closed solely because no recent incident was observed — quiet is not a fix. See [templates/RESIDUALS.yaml](../templates/RESIDUALS.yaml) for the fields. ([PROFILE.md §12](../PROFILE.md))
 
 Related Korean caution: **adoption** (채택) — taking the profile into a repository — and **acceptance** (수용) — an owner's decision to carry a residual — are different acts; keep the glosses distinct.
 
 ### 2.4 Enforcement vs verification
 
-**Enforcement** (강제 수단) prevents violation: a database constraint makes the invalid state impossible. **Verification** (검증) checks that a property holds: a test tries to produce the invalid state and observes the refusal. **Tests verify; controls enforce** ([PROFILE.md §2.5](../PROFILE.md)). A test suite with no enforcing control means the invariant holds only as long as everyone keeps running (and passing) the tests; a control with no verification means nobody has checked the control actually works. A critical invariant should have both.
+**Enforcement** (강제 수단) prevents violation: a database constraint makes the invalid state impossible. **Verification** (검증) checks that a property holds: a test tries to produce the invalid state and observes the refusal. **Tests verify; controls enforce** ([PROFILE.md §2.5](../PROFILE.md)). A test suite with no enforcing control means the invariant holds only as long as everyone keeps running (and passing) the tests; a control with no verification means nobody has checked the control actually works. Every active severity-`critical` invariant recorded `VERIFIED` must name at least one of each. Under the `service` profile, every severity-`critical` invariant must name at least one of each regardless of conclusion status; other non-service critical invariants should have both.
 
 ## 3. Status vocabularies
 
@@ -110,7 +110,7 @@ The same honesty rule applies: intent-`UNKNOWN` is a valid resting state, and on
 | Status | Meaning |
 |---|---|
 | `OPEN` | Recorded, no disposition yet. |
-| `ACCEPTED` | A named human decided to carry the risk (`accepted_by`, `accepted_at`). |
+| `ACCEPTED` | A named human decided to carry the risk and recorded why (`accepted_by`, `accepted_at`, `acceptance_rationale`). |
 | `RESOLVED` | The limitation was removed by a fix (`resolution_note`). |
 
 ### Defeater statuses ([PROFILE.md §12](../PROFILE.md); [schemas/defeaters.schema.json](../schemas/defeaters.schema.json))
@@ -119,8 +119,11 @@ The same honesty rule applies: intent-`UNKNOWN` is a valid resting state, and on
 |---|---|
 | `OPEN` | The counterargument stands unanswered. |
 | `MITIGATED` | Its force is reduced but not eliminated. |
-| `RESOLVED` | It was answered — refuted or fixed. |
-| `WITHDRAWN` | It turned out not to apply. |
+| `RESOLVED` | It no longer applies because evidence or a fix answered it. |
+| `WITHDRAWN` | It was recorded in error or is outside the applicable scope. |
+
+Every non-`OPEN` defeater must record non-blank resolution or disposition
+grounds; the status label alone is not a closure record.
 
 ### Disclosure classes ([PROFILE.md §13](../PROFILE.md))
 
@@ -150,33 +153,33 @@ Claim wording must not exceed the support of its evidence tier — an `OPERATOR_
 
 ### Adoption (채택)
 
-Taking the profile into a repository: pinning the upstream profile, creating the local artifacts, and running the review workflow. Creating the files alone is not adoption — adoption is complete only when the pin, human-approved intent, claims and invariants, evidence links, explicit unknowns, and residual ownership are all live in the project's normal change process. ([PROFILE.md §5](../PROFILE.md), [§16](../PROFILE.md); [ADOPTION.md §6](ADOPTION.md))
+Taking the profile into a repository: pinning the upstream profile, creating the applicable local artifacts, and running the applicable review workflow. Creating the files alone is not adoption. For an active profile, adoption is complete only when the pin, human-approved intent, claims and invariants, evidence links, explicit unknowns, and residual ownership are all live in the project's normal change process. For exclusive `archived`, those active-system conditions are replaced by the owner-confirmed reference-only eligibility and all four §6.6 facts in the mapped system artifact. ([PROFILE.md §5](../PROFILE.md), [§6.6](../PROFILE.md), [§16](../PROFILE.md); [ADOPTION.md §6](ADOPTION.md))
 
 ### Adoption stage (채택 단계)
 
 How far an adoption has progressed, declared by the adopter in the optional `adoption_stage` field of `adoption.yaml`. The declaration is self-made and self-binding: nobody awards a stage, the validator enforces exactly the stage declared, and declaring a stage the repository does not meet fails the build. Advancing the stage is a human owner's act, recorded like a review outcome; an absent field means `DRAFT`. The three stages:
 
-- `DRAFT` — work in progress; placeholders and `UNKNOWN` are allowed in the assurance registers (the adoption declaration itself must be complete at every stage).
-- `HUMAN_REVIEWED` — no placeholders remain, and a completed human review is recorded with date, reviewer, and record.
-- `CONFORMANT` — additionally, review dates are fresh, every critical invariant's intent is decided, and at least one attributable approval (who, where, when) is on record.
+- `DRAFT` — work in progress; baseline schema, required artifacts, and applicable semantic checks pass, while placeholders and `UNKNOWN` remain allowed where the register schemas permit them (the adoption declaration itself must be complete at every stage).
+- `HUMAN_REVIEWED` — the stage-defined completion placeholders are gone, and a completed, non-future human review is recorded with date, reviewer, and an existing durable record. Every active critical invariant has a recorded intent classification; `UNKNOWN` is allowed at this stage.
+- `CONFORMANT` — additionally, at least one attributable, non-future approval (who, where, when) on or after the review date attests the full claim (`covers` omitted, or containing `CONFORMANCE`). For an active adoption, review dates are fresh and every critical invariant's intent is neither `UNKNOWN` nor `ACCIDENTAL`; exclusive `archived` instead uses its §17 historical conditions, even if it retains old active registers. Only this explicit, human-approved declaration asserts full conformance; the validator's green result establishes its mechanical subset, not the truth of the whole claim.
 
 ([PROFILE.md §17](../PROFILE.md); [ADOPTION.md §3.8](ADOPTION.md))
 
 ### Archaeology (고고학적 복원)
 
-The read-only reconstruction of an existing repository that initial adoption must begin with: recovering purpose, entities, trust boundaries, claims, candidate invariants, enforcement, evidence, ambiguous behavior, defeaters, and gaps — from what actually exists, before changing anything. Example: reading the schema, migrations, tests, and CI history to reconstruct what the system enforces today, without touching functional code. ([PROFILE.md §7](../PROFILE.md); [ADOPTION.md §4.1](ADOPTION.md))
+The read-only assessment of an existing repository that initial adoption must begin with, based on what actually exists before changing anything. For an active profile, it reconstructs purpose, entities, trust boundaries, claims, candidate invariants, enforcement, evidence, ambiguous behavior, defeaters, and gaps. For exclusive `archived`, it instead establishes reference-only eligibility and reconstructs the four required historical facts. Example: reading the schema, migrations, tests, and CI history without touching functional code. ([PROFILE.md §7](../PROFILE.md); [ADOPTION.md §4.1](ADOPTION.md))
 
 ### Brownfield (기존 저장소 채택)
 
-Adoption of a repository that already exists and already behaves — as opposed to greenfield, a repository adopting from the start. Most adoption is brownfield, which is why the archaeology stage exists: the intent behind existing behavior must be recovered and reviewed, not assumed. ([PROFILE.md §7](../PROFILE.md); [ADOPTION.md §4](ADOPTION.md))
+Adoption of a repository that already exists and already has history — as opposed to greenfield, a repository adopting from the start. Most adoption is brownfield, which is why the archaeology stage exists: active-system intent and behavior must be recovered and reviewed rather than assumed, while an exclusive `archived` adoption must establish its reference-only eligibility and historical facts from evidence. ([PROFILE.md §7](../PROFILE.md); [ADOPTION.md §4](ADOPTION.md))
 
 ### Conformance (적합)
 
-The bounded statement that a specific revision or release represents its contracts, controls, evidence, counterarguments, and remaining uncertainty according to the profile. It is deliberately modest: conformance does not mean the project is universally secure or bug-free, and it is not a security certification. Example: "revision `abc1234` conforms" means its promises and its doubts are both inspectable at that revision — not that it has no bugs. ([PROFILE.md §17](../PROFILE.md), [§1](../PROFILE.md))
+The bounded statement that a specific revision or release represents the obligations of its selected profile. For an active adoption, its contracts, controls, evidence, counterarguments, and remaining uncertainty are represented according to the profile. For exclusive `archived`, conformance instead means the repository's reference-only eligibility and all four §6.6 historical facts are represented and owner-confirmed; it makes no claim of current operational assurance. It is deliberately modest: conformance does not mean the project is universally secure or bug-free, and it is not a security certification. ([PROFILE.md §17](../PROFILE.md), [§1](../PROFILE.md))
 
 ### Pin (고정)
 
-Fixing the adopted profile to an exact version **and** full 40-character commit SHA in `.agentic-assurance/adoption.yaml`, so that "the profile" always means one immutable text. A floating branch like `main` is never a valid sole reference, and an agent must not move the pin silently — upgrades are explicit reviewed changes. ([PROFILE.md §16](../PROFILE.md); [ADOPTION.md §2](ADOPTION.md))
+Fixing the adopted profile to an exact version **and** full 40-character commit SHA in the configured adoption declaration (default: `.agentic-assurance/adoption.yaml`), so that "the profile" always means one immutable text. A floating branch like `main` is never a valid sole reference, and an agent must not move the pin silently — upgrades are explicit reviewed changes. ([PROFILE.md §16](../PROFILE.md); [ADOPTION.md §2](ADOPTION.md))
 
 ### Remediation (보완)
 

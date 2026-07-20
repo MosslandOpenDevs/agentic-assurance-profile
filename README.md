@@ -86,7 +86,7 @@ It is not:
 - a public vulnerability ledger;
 - a reason to publish secrets, exploitable attack paths, sensitive topology, personal data, or unpatched findings.
 
-**Conformance means that promises, controls, evidence, and remaining doubt are represented according to the adopted profile. It does not mean “no vulnerabilities exist.”**
+**For an active adoption, conformance means that promises, controls, evidence, and remaining doubt are represented according to the adopted profile. For exclusive `archived`, it means that reference-only eligibility and the four required historical facts are represented and owner-confirmed—not that current operational assurance exists. Neither means “no vulnerabilities exist.”**
 
 ---
 
@@ -235,7 +235,7 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 **Adoption begins by classifying the profile, not by copying files.** Which active profiles apply — or whether the exclusive `archived` profile applies instead — is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). Every specialized active profile inherits the `core` obligations: for an active adopter, declare `[core]` when none applies; otherwise canonically list the fired specialized profiles without `core`. The layout follows from that classification — never from the repository's size.
 
-At `core` alone, adoption is four files — the lite layout, declared with `layout: lite` in `adoption.yaml`, keeps all assurance content (purpose, non-goals, at least one invariant, and at least one residual) in a single `assurance.yaml`:
+At `core` alone, adoption has four required profile files. The lite layout, declared with `layout: lite` in `adoption.yaml`, concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description in a single `assurance.yaml`; the system description may instead be supplied by a recorded mapping to an existing artifact:
 
 ```text
 AGENTS.md
@@ -283,9 +283,9 @@ The upstream profile must be pinned by version and full commit SHA. An adopting 
 | `trust-critical` | Identity, authorization, privacy, security, financial, governance, or public-verifiability claims |
 | `data-curation` | Externally sourced, editorial, scored, classified, or recommended data |
 | `agent-runtime` | Model-driven agents or workflows operating in production |
-| `archived` | Reference-only repositories with no active operation, maintenance, or feature development |
+| `archived` | Repositories retained solely for historical reference, not supported or intended for current use, with no active operation, functional maintenance, or feature development |
 
-`service`, `trust-critical`, `data-curation`, and `agent-runtime` inherit all `core` obligations even when `core` is omitted from `profiles:`. `archived` is declared alone and records its four required historical facts in the system artifact mapped by `paths.system` (default `assurance/SYSTEM.md`).
+`service`, `trust-critical`, `data-curation`, and `agent-runtime` inherit all `core` obligations even when `core` is omitted from `profiles:`. `archived` is declared alone and records its four required historical facts in the system artifact mapped by `paths.system` (default `assurance/SYSTEM.md`). That artifact must be non-empty at every stage; from `HUMAN_REVIEWED`, none of the four exact shipped archived prompt markers may remain.
 
 ### Brownfield adoption sequence
 
@@ -295,22 +295,24 @@ For an existing repository, start here and continue through step 8 only if class
 2. inspect existing specifications, tests, workflows, policies, and release controls;
 3. reconstruct the as-built system without changing functional code;
 4. classify conclusions as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED`;
-5. obtain human review of purpose, non-goals, critical claims, critical invariants, and ambiguous behavior;
+5. obtain human review of purpose and non-goals; critical claims and invariants; behavior classified as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`; critical residuals; and public-claim limitations;
 6. record conformance gaps and residuals;
 7. remediate through separate, scoped Issues and pull requests;
 8. bind evidence to a commit, artifact digest, release, or deployment identifier.
 
 For a candidate `archived` repository, use this narrower path instead:
 
-1. collect evidence that the repository has no active operation, maintenance, or feature development;
-2. declare `[archived]` alone and record all four §6.6 facts in the system artifact mapped by `paths.system`: no active operation, maintenance, or feature development; historical purpose; known material limitations; and the last supported revision or release (or explicitly that none exists);
+1. collect evidence that the repository is retained solely for historical reference, is not supported or intended for current use, and has no active operation, functional maintenance, or feature development;
+2. declare `[archived]` alone and record all four §6.6 facts in the system artifact mapped by `paths.system`: that reference-only and inactive status; historical purpose; known material limitations; and the last supported revision or release (or explicitly that none exists);
 3. obtain the human owner's confirmation of the archived eligibility, the artifact mapping, and each of the four facts using [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md).
 
 The active path's as-built reconstruction, behavior classification, active claim/invariant/residual registers, and remediation plan do not apply to an `archived` adoption. Do not create empty active artifacts as stand-ins.
 
+Initial adoption, factual corrections, and upkeep of the pin, stage, review record, or agent-instruction metadata do not by themselves count as functional maintenance. Changing code, dependencies, or behavior to support current use does; reclassify under the applicable active profiles before that work.
+
 Creating the files alone is not adoption.
 
-**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), declaring `[core]` only for an active classification with no specialized trigger and selecting `archived` only as an exclusive alternative when evidence shows no active operation, maintenance, or feature development; (3) then follow the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
+**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), declaring `[core]` only for an active classification with no specialized trigger and selecting `archived` only as an exclusive alternative when evidence establishes the full reference-only eligibility above; (3) then follow the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
 
 See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 

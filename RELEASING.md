@@ -2,14 +2,14 @@
 
 This document defines how the profile is versioned and released, the exact lifecycle of the root `VERSION` file, and the repository settings that must be in place before the first release. Decision authority over releases is defined in [GOVERNANCE.md](GOVERNANCE.md); the semantic-versioning rules that classify each change are defined in [PROFILE.md](PROFILE.md) §16.
 
-Release identifiers have the form `vMAJOR.MINOR.PATCH`. Pre-releases have the form `vMAJOR.MINOR.PATCH-rc.N`.
+Release identifiers have the form `vMAJOR.MINOR.PATCH`. Pre-releases have the form `vMAJOR.MINOR.PATCH-rc.N`. Numeric identifiers use ASCII decimal digits, have no leading zero unless the identifier is exactly zero, and release candidates start at `rc.1`.
 
 ## 1. The `VERSION` file lifecycle
 
-The root [`VERSION`](VERSION) file contains a single line and moves through exactly three states:
+The root [`VERSION`](VERSION) file contains exactly one token line (with at most one terminal newline and no surrounding whitespace or additional lines) and moves through exactly three states:
 
-1. **`unreleased`** — from repository creation until the first release commit. This is the current state.
-2. **The exact tag string** — set by the release pull request, so that the release commit, and only the release commit, carries the identifier that will be tagged: for example `v0.1.0`, or `v0.1.0-rc.1` for a pre-release.
+1. **`unreleased`** — from repository creation until the first release commit. This was the initial pre-first-release state; after the first release it remains valid only in historical pilot commits.
+2. **The exact tag string** — set by the release pull request. Its branch commit may carry the candidate identifier, but only the tagged merge commit is the canonical release and adopter pin: for example `v0.1.0`, or `v0.1.0-rc.1` for a pre-release.
 3. **A development identifier ending in `-dev`** — set by the first commit after tagging:
    - after a release `vX.Y.Z`, the follow-up commit sets `VERSION` to `vX.Y.(Z+1)-dev` (for example `v0.1.1-dev` immediately after `v0.1.0`);
    - after a pre-release `vX.Y.Z-rc.N`, the follow-up commit sets `VERSION` to `vX.Y.Z-dev`, because development continues toward the final `vX.Y.Z`.
@@ -18,11 +18,11 @@ The development identifier is a placeholder, not a commitment: the next release 
 
 This lifecycle gives the `VERSION` file a precise meaning at every commit in the history:
 
-- a commit whose `VERSION` is a bare release identifier is a release commit;
+- a commit whose `VERSION` is a bare release identifier is a release-candidate commit; it is the canonical release commit only when the matching immutable tag points to it;
 - a commit whose `VERSION` ends in `-dev` lies between releases and must never be pinned;
 - a commit whose `VERSION` is `unreleased` predates the first release.
 
-Adopters may pin only commits whose `VERSION` content equals their declared `upstream.version`: release commits once releases exist, or `unreleased` with a full commit SHA during the pre-first-release pilot phase. Conformance checking fails when the pinned version does not match the `VERSION` file at the pinned commit (PROFILE.md §16); `scripts/validate.py adopter` performs this comparison when given a pinned profile checkout. The `-dev` suffix is only ever valid in this repository's `VERSION` file, never in an adopter pin.
+Adopters may pin only commits whose `VERSION` content equals their declared `upstream.version`: the canonical commit carrying the matching immutable release tag once releases exist, or `unreleased` with a full commit SHA during the pre-first-release pilot phase. Conformance checking fails when the pinned version does not match the `VERSION` file at the pinned commit (PROFILE.md §16); `scripts/validate.py adopter` performs this comparison when given a pinned profile checkout. When that checkout carries Git metadata, it also requires `HEAD == upstream.commit`, requires the running validator to be that checkout's validator, and rejects modified, substituted, or untracked validation resources under `VERSION`, `requirements-ci.txt`, `scripts/`, and `schemas/`. A source archive without Git metadata produces an explicit warning because only its `VERSION`, not its commit identity or worktree cleanliness, can be bound mechanically. The `-dev` suffix is only ever valid in this repository's `VERSION` file, never in an adopter pin.
 
 ## 2. Release ritual
 

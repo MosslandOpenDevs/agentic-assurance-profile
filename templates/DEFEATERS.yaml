@@ -6,8 +6,8 @@ defeaters:
     affected_invariants: []
     evidence: []
     status: OPEN
-    # Optional when the defeater is closed:
-    # resolution: How a RESOLVED, MITIGATED, or WITHDRAWN defeater was closed (what changed, and where).
+    # Required when status is MITIGATED, RESOLVED, or WITHDRAWN:
+    # resolution: How the defeater was dispositioned (what changed, and where).
     disclosure: PUBLIC
     owner: REPLACE_WITH_OWNER
     review_after: REPLACE_WITH_REVIEW_AFTER_DATE

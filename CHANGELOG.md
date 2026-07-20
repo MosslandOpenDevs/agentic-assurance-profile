@@ -6,8 +6,9 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 A usability-focused minor: makes adoption harder to get wrong at the
 entry point, turns the invariant register into a `core` obligation, and
-hardens the `archived` profile (exclusivity + a required mapped system
-artifact; full §6.6 field enforcement tracked in #40).
+hardens the `archived` profile (exclusivity + a required non-empty mapped
+system artifact + an untouched-template guard; semantic §6.6 content
+enforcement remains tracked in #40).
 
 - **Profile classification is now an explicit first step of adoption.**
   `docs/ADOPTION.md` §4.0 ("Classify the profile first") makes profile
@@ -32,9 +33,11 @@ artifact; full §6.6 field enforcement tracked in #40).
   facts in the system artifact resolved from `paths.system` (default
   `assurance/SYSTEM.md`). This closes the gap where the validator enforced
   exclusivity and artifact placement more strongly than the authoritative
-  profile text. Content-level checking of those four facts remains deferred
-  to #40; the owner review guide and system template now provide the explicit
-  human backstop in the meantime.
+  profile text. The validator rejects an empty archived system artifact at
+  every stage and, at `HUMAN_REVIEWED` or `CONFORMANT`, any of the four exact
+  shipped archived placeholders. It still does not determine whether replacement prose states
+  all four facts or is truthful; that structured semantic enforcement remains
+  #40, with the owner review guide as the explicit content backstop.
 - **At least one invariant is now required at `core`** (previously an
   obligation only from `service`). `PROFILE.md` §6.1, the lite envelope
   schema (`invariants` now required), and the split-layout file-presence
@@ -55,6 +58,265 @@ artifact; full §6.6 field enforcement tracked in #40).
   no adoption silently inherits a `core` default. (This is a completion
   guard; detecting a *wrong* profile against the actual code remains the
   under-classification backstop, tracked in #41.)
+- **The normative stage and entry-artifact contracts are now explicit.**
+  `PROFILE.md` §17 defines the cumulative `DRAFT`, `HUMAN_REVIEWED`, and
+  `CONFORMANT` ladder rather than leaving its substance only in the adoption
+  guide and schema descriptions. DRAFT includes applicable semantic checks;
+  HUMAN_REVIEWED requires a recorded classification (UNKNOWN allowed) for
+  every active critical invariant. Independently of review stage, every active
+  `VERIFIED` critical invariant needs at least one enforcement and one
+  verification reference; under `service`, every critical invariant needs
+  both references regardless of conclusion status. A conformance claim requires an explicit
+  `adoption_stage: CONFORMANT`, where no critical residual remains `OPEN`, no
+  claim or critical invariant is `CONTRADICTED`, every `VERIFIED` critical
+  invariant has evidence, every critical invariant has an intent other than
+  `UNKNOWN` or `ACCIDENTAL`, and public repositories carry no `RESTRICTED` or
+  `EMBARGOED` register entry. At every stage, placeholder substitution remains
+  schema-only: it cannot fabricate an invariant mechanism or authority, a
+  residual acceptance/resolution record, or a closed-defeater resolution.
+  Closed defeater meanings and their mandatory non-blank disposition grounds
+  are now normative in §12. §17 also distinguishes the adopter's
+  human-approved full normative claim from the validator's structural and
+  mechanically decidable subset. §6.1 now expressly
+  requires root `AGENTIC_ASSURANCE.md` and root `AGENTS.md` reading-order
+  artifacts, and defines one system-description content minimum regardless of
+  lite, split, or mapped layout. The fuller §7 reconstruction remains the
+  normal `SHOULD`, not a mapping-only hard requirement.
+- **Input and path handling now fail closed and remain resource-bounded.**
+  Duplicate mapping keys in YAML or JSON are rejected instead of silently
+  using the last value. YAML merge keys are rejected before PyYAML can expand
+  a merge-alias DAG; ordinary anchors and aliases remain supported under the
+  logical-node bound, including for pre-v0.4 last-key-wins base comparison.
+  Policy YAML is normalized to the JSON-compatible data
+  model used by the schemas: binary, set/ordered-map, cyclic, and non-finite
+  values are rejected, while YAML dates are normalized to ISO strings.
+  Non-finite JSON constants and non-UTF-8 policy inputs are rejected; every
+  policy YAML input is limited to 5,242,880 bytes and
+  100,000 logical nodes after alias expansion, preventing compact alias-DAG
+  denial of service. Policy JSON is limited to 10,485,760 bytes, 256 nesting
+  levels, and 500,000 nodes; YAML and JSON numeric source tokens are limited to
+  4,096 characters on every supported Python version. Invalid implicit YAML
+  dates and other scalar-constructor failures now produce controlled diagnostics
+  rather than tracebacks. Adopter-owned prose and review files read directly by
+  the validator are each limited to 5,242,880 bytes: the two root assurance
+  guides, mapped system artifact, required service threat model, and declared
+  human-review record. The self-check matrix now includes Python 3.14 while
+  retaining 3.10 as the compatibility floor. Self-check meta-validates every JSON Schema and scans
+  tracked filenames losslessly even when a filename contains a newline;
+  schema references use an explicit offline registry, so an unresolved or
+  remote `$ref` fails with a controlled diagnostic without network access;
+  malformed approval timestamps and HTTP(S) approval URLs are checked
+  explicitly at every stage rather than depending on optional JSON Schema
+  format packages. They produce ordinary diagnostics rather than a parser
+  traceback; approval URLs must name a host, contain no user information, use
+  a numeric in-range port when one is present, use a DNS/IPv4-style or
+  bracketed hexadecimal IPv6 host, and contain only valid percent escapes and
+  RFC 3986 path/query/fragment characters under the profile's deliberately
+  narrow ASCII HTTP(S) URL grammar (percent-encoded path/query/fragment data
+  must decode as UTF-8; internationalized hosts use an ASCII IDNA A-label
+  spelling; the complete RFC 3986 host surface is not claimed).
+  Public metadata pointers `security.restricted_record` and residual
+  `private_detail_location` now share a bounded non-actionable ASCII label
+  grammar (letters, digits, dot, underscore, and hyphen; at most 128
+  characters), so syntactically actionable URLs, slash paths, and `@` account
+  identifiers cannot pass merely because they are nonblank. The validator
+  cannot determine whether an otherwise valid opaque label is itself a secret;
+  never place a secret there. Replace an actionable locator with a public label
+  such as `external_private_system` and keep the locator only in the restricted
+  system.
+  Non-empty policy strings made only of separators
+  or invisible format characters are rejected with their JSON path instead of
+  satisfying a required semantic value. Release identifiers use canonical
+  ASCII SemVer numbers (no leading zero; release candidates start at `rc.1`),
+  and `VERSION` is one exact token line with no surrounding whitespace or
+  additional lines. Full-string schema tokens (repository slugs, commits, stable IDs,
+  and references) use true end-of-input assertions so a final newline cannot
+  bypass their grammar.
+  Filesystem artifact/root fields require repository-relative lexical paths
+  (an absolute spelling is rejected even when it points inside the project),
+  are limited to 4,096 characters, and `paths:` is limited to 256 mappings,
+  and component routing globs must use the same canonical path domain:
+  absolute spellings and empty, `.` or `..` components now fail instead of
+  silently matching nothing. Duplicate component globs and IDs remain accepted
+  for v0.3 compatibility and count toward routing limits. Every explicitly
+  carried lite mapping plus a present DRAFT review-record
+  path receives the same containment/trust check as an active artifact. Every
+  trust-checked artifact/root field and every active routing glob in
+  `components[].paths` rejects C0 controls and DEL; `components[].tests` is
+  recorded metadata, not a trust-checked or routing path field in this release.
+  An inferred profile checkout becomes a trust root and its `VERSION` is
+  compared with the adoption pin. A Git-backed profile checkout must also have
+  `HEAD == upstream.commit`, must execute that checkout's real
+  `scripts/validate.py`, and must have clean consumed validation resources at
+  that HEAD (`VERSION`, `requirements-ci.txt`, `scripts/`, and `schemas/`,
+  including untracked files under the resource directories). `PROFILE.md` §16
+  now states explicitly that a release or pre-release SHA is the matching
+  published tag's target and that a published tag cannot be deleted, moved, or
+  reused; this documents the already-enforced canonical tag rule and adds no
+  new adopter action or workflow behavior. An archive
+  without Git metadata emits an explicit warning that only `VERSION`, not
+  commit identity or resource cleanliness, was verified. Adopter artifacts must resolve
+  inside the project boundary without
+  resolving into Git metadata (`.git`), the pinned profile checkout, or the
+  schema tree, including case- or normalization-alias spellings on filesystems
+  that treat those names as identical. A rejected lite assurance path is not
+  reopened by reviewed-stage placeholder scanning. Portable relative symlinks
+  whose every hop remains inside the adopting project continue to work and now
+  emit a CODEOWNERS warning naming the lexical path, resolved target, and
+  target parent that need owner coverage. Absolute symlinks and relative
+  escape-then-reentry spellings fail even when they happen to resolve inside
+  HEAD, because a detached BASE worktree would give them a different identity.
+- **Pull-request routing is bounded and safe at its inputs and CI sinks.**
+  The drift job explicitly checks out the pull request's head SHA rather than
+  GitHub's default synthetic merge ref, keeping HEAD-side policy reads aligned
+  with the SHA used for changed-file and evidence diffs.
+  Component path globs now use a dynamic-programming matcher instead of a
+  backtracking regular expression. Count and length limits are supplemented by
+  20,000,000-cell aggregate glob-work and 20,000,000-unit impact-directive-scan
+  budgets; the changed-file list, PR body, and assurance diff are capped at
+  33,554,432, 1,048,576, and 20,971,520 bytes respectively, so many
+  individually valid inputs cannot recreate an unbounded CI workload. In PR
+  routing, changed-file records must be canonical repository-relative Git
+  paths (with one legacy leading `./` normalized); absolute paths, escapes,
+  repeated prefixes, and `.`/`..` or empty components fail closed instead of
+  silently missing a component glob. In PR
+  prose, impact IDs, a `none` directive and its mandatory `Reason:`, and an
+  optional `Assurance policy change:` acknowledgment count only inside a
+  leading top-level directive block before ordinary visible content. The block
+  contains exactly one impact declaration when impact is asserted, starting
+  with either `Assurance impact: INV-A, INV-B` (comma-separated exact IDs) or
+  `Assurance impact: none`; duplicate, conflicting, or malformed impact lines
+  invalidate the declaration. A `Reason:` or policy-change explanation must
+  contain visible plain-text content; zero-width characters, entities that
+  decode only to invisible characters, and empty inline HTML do not count.
+  HTML comments may precede it, but arbitrary
+  mentions, headings, blockquotes, links, code examples, and later directives
+  do not count. Raw-HTML child prose remains visible ordinary content but can
+  never become a top-level directive or reading-order line, including when an
+  HTML entity decodes to a newline. Only physical LF/CRLF records delimit
+  directives and diff lines; Unicode line separators remain content. A
+  policy-only acknowledgment may begin the block; combined
+  declarations must use the published impact → optional reason → optional
+  policy order, and an out-of-order line invalidates the block. Component
+  globs must contain non-whitespace text and use canonical repository-relative
+  path components. Untrusted component names and verdicts are encoded before
+  reaching ordinary terminal output, Actions log lines, annotations, or
+  Markdown summaries, so controls and unpaired surrogates cannot forge a
+  result line or crash output. The reusable
+  workflow resolves every head adoption path inside the adopter project before
+  reading it, rejects an absolute configured `adoption-file`, excludes Git
+  metadata and the pinned profile checkout, and reserves each trusted checkout
+  destination only after an `lstat` nonexistence check so an adopter symlink
+  cannot redirect checkout writes. It runs all
+  trusted Python readers and validators in isolated mode so adopter-root Python
+  modules cannot shadow dependencies, validates
+  the complete release-version grammar before writing an output or constructing
+  a Git refspec, and safely encodes declaration paths in workflow commands. For
+  base comparison it recovers the literal prior input from the base version of
+  the actual caller identified by `github.workflow_ref`, so a file that merely
+  pre-existed at a new HEAD destination cannot replace the real baseline. A
+  fallback identity scan streams Git's NUL-delimited output and is fail-closed
+  at 100,000 tracked records, 64 MiB of raw listing data, 64 MiB of lexical file
+  surface, or 16 declaration candidates. Every tracked record is charged before
+  file-type, containment, or trusted-path filters, while an in-tree symlink and its tracked target
+  share one resolved declaration identity so aliases cannot create false
+  ambiguity. Base/head transition metadata also binds the lexical adoption path
+  to its contained resolved target; unchanged policy paths cannot be silently
+  retargeted. Each job requires the exact canonical reusable-workflow path
+  followed by its lowercase 40-hex `job.workflow_sha`; a suffix match cannot
+  disguise a tag, branch, or different workflow. Changed-file production now invokes explicit rename and
+  retained-source copy detection, reports each source/destination once, and
+  caps raw name-status input before reading it. The CI assurance evidence diff
+  is synthesized from exact invariant-bearing lines in regular, deterministic
+  strict-text blobs reached by impact-eligible **HEAD-active** bindings. HEAD
+  symlinks, gitlinks, control-heavy or invalid-UTF-8 blobs, and PDF containers
+  cannot provide prose. Every exact line found anywhere in the pull request's
+  merge-base tree is subtracted through a deliberately broader cancellation
+  set (including binary and symlink blobs), so rename, retained copy,
+  remapping, file-type/text-eligibility transition, similarity heuristics, or
+  a later base-tip deletion cannot make unchanged policy look new. The
+  repository-wide subtraction is conservative and the synthetic diff exposes
+  only canonical IDs. Evidence enumeration deduplicates and ancestor-collapses
+  pathspecs, batches them below argv limits, and drains Git's output pipes
+  concurrently. All evidence Git operations, including `cat-file` blob reads,
+  share one 60-second deadline. Merge-base and HEAD enumeration together share
+  aggregate 64 MiB listing, 1 MiB diagnostic, and 100,000 tracked-tree-record
+  bounds. Base bindings and every explicit path remain
+  trust-checked for policy comparison. A workflow or public-assurance directory
+  binding whose final resolved target is the repository root — whether written
+  `.` or reached through a permitted in-project symlink — is also trust-checked
+  but cannot contribute positive evidence, so an ID placed in ordinary source
+  cannot satisfy its own routing gate. Within lite,
+  moving the effective system description between the inline field and a
+  mapped/default artifact is now a gated policy relocation even when `layout`
+  and the dormant path spelling stay unchanged. Standalone register-policy
+  comparison now also requires `--base-registers-root`, `--project-root`, and
+  `--base-adoption` together; the two roots must exist, be directories, and
+  resolve to distinct non-overlapping trees, so one-sided, missing, aliased,
+  or ancestor/descendant-overlapping inspection fails closed. Standalone unified-diff evidence ignores added
+  symlink/gitlink payloads and cancels exact deleted lines against additions.
+- **The pre-v0.4 starter-row policy-diff exception is exact and migration
+  scoped.** It applies only to a policy comparison that actually moves the pin
+  from an `unreleased` pilot commit or v0.1.x–v0.3.x to v0.4 or later, and
+  exempts only a register row equal to the complete entry object actually
+  shipped in those templates. Partial completion, a changed default, extra
+  project metadata, a generic `REPLACE_WITH_` string, or replacing completed
+  prose with a marker cannot hide that transition or a later deletion hop. A
+  comparison without that pre-v0.4 → v0.4+ pin transition, including one
+  whose base is already v0.4 or later, receives no legacy exemption.
+- **Pre-v0.4 declarations remain comparable while they are repaired.** For the
+  reusable workflow's BASE materialization only, a canonical pre-v0.4 or
+  `unreleased` base that strict parsing rejects may be reconstructed through
+  the bounded historical SafeLoader data surface: duplicate keys retain
+  last-key-wins behavior, merge keys are expanded only under the logical-node
+  bound, and scalar legacy extension keys are normalized to collision-checked
+  JSON strings. Direct standalone `--base-adoption` comparison supports only
+  the narrower duplicate-key last-wins migration case and otherwise fails
+  closed. This also
+  preserves historically valid blank project-owner data and mixed
+  active-plus-`archived` profile declarations long enough to compare their
+  policy. Recursive, non-finite, oversized, colliding, or unsupported values
+  still fail closed. The v0.4 head must use the strict JSON data model, remove
+  duplicate/merge/non-string-key syntax, complete project identity, and choose
+  either the exclusive `[archived]` profile or a valid active set;
+  compatibility never validates the historical shape on HEAD.
+- **Stage and policy-diff inputs now fail closed.** Explicit malformed stage
+  values on either side of a drift comparison are errors rather than being
+  omitted or coerced to `DRAFT`. Profile comparison uses the effective profile
+  set, including the `core` inherited by specialized active profiles, so
+  equivalent declarations do not report a false removal and a real inherited
+  obligation cannot disappear silently. The declaration diff also protects
+  committed project identity, approval provenance, specification workflow,
+  security policy, restricted-record label, public-assurance root, issue
+  controls, and effective
+  default-normalized artifact paths; `archived` → active is a neutral explicit
+  profile-mode reclassification gate. A completed `human_review.date` may
+  advance for a re-review but cannot be removed, invalidated, or backdated.
+- **Policy comparison now preserves its own routing and approval semantics.**
+  Moving the adoption declaration is a gated policy change because the new
+  path may escape existing CODEOWNERS coverage. When the configured HEAD path
+  is absent on the base, the reusable workflow strict-loads tracked regular
+  files regardless of extension or YAML spelling and accepts only a unique
+  canonical AAP declaration signature; ambiguity fails closed. Approval
+  provenance comparison now includes normalized `covers` scope (omission is
+  equivalent to `[CONFORMANCE]`), so a previously full approval cannot be
+  silently narrowed. Git changed paths remain NUL-separated through component
+  routing, preserving embedded newlines and edge spaces. Recorded residual or
+  defeater closure grounds are protected while a closed disposition remains;
+  reopening still remains a non-finding. The explicit acknowledgment remains
+  stage-proportional: it can downgrade a DRAFT finding to a warning, but a
+  HUMAN_REVIEWED or CONFORMANT finding remains an error even when acknowledged.
+- **Previously documentary active-adoption fields now have structural
+  backstops.** Active declarations require a material-change
+  `specification_workflow` with a project-local root; project identity and the
+  required root instruction/adoption files must be non-empty; and from
+  `HUMAN_REVIEWED`, `human_review.record` must resolve to an existing,
+  non-empty project artifact. Review, approval, and residual-acceptance dates
+  may not be in the future (date-only values allow the civil date possible in
+  UTC+14), and at least one CONFORMANT approval must be on or after the review
+  date. Approval URLs and dates are also checked for HTTP(S) and ISO/RFC 3339
+  shape. These checks validate presence and syntax, not the truth or forge
+  state of a review or approval.
 
 #### Adopter impact / upgrade actions
 
@@ -71,33 +333,159 @@ artifact; full §6.6 field enforcement tracked in #40).
   records the governing owner's interpretation of SemVer's `0.x`
   initial-development latitude for this project; it does not claim that
   SemVer universally assigns every such change to a minor release.
+- **Audit and complete every active §6.1 system description before the pin
+  upgrade.** Whether it is inline under lite or stored at `paths.system`, the
+  description must identify the system being assured, its principal
+  responsibilities and material boundaries, and known material limitations or
+  unknowns. Fill any missing part and have the human owner review that prose.
+  The validator checks presence, non-emptiness, and reviewed-stage template
+  markers; it does not semantically parse those content elements, so a green
+  check cannot substitute for that review.
 - `layout: lite` is now **`core`-only**; `archived` (and every other
   non-`core` profile) uses the split layout. The lite envelope's
   required fields (purpose, non-goals, invariants, residuals) are shaped
   for `core`, not archived's §6.6 obligations. This **removes previously
   valid `archived` + `lite` support** — a deliberate compatibility
   change in this release, not the repair of a pre-existing bug. No live
-  adopter uses `archived`.
+  adopter uses `archived`. When moving from lite to an active specialized
+  profile, preserve the register arrays and IDs, move inline system prose to
+  `paths.system`, preserve `purpose` and `non_goals` there or in another
+  owner-approved local intent artifact, and preserve or deliberately relocate
+  `extensions` before dropping `layout`. A move to `archived` instead requires the owner-confirmed
+  four §6.6 facts in the mapped system artifact; retained active registers are
+  optional history and do not substitute for that archived record.
+- Adopter files that relied on **last-key-wins duplicate YAML/JSON**, YAML merge
+  keys, or non-JSON-compatible YAML values (binary, set/ordered-map, cyclic, or
+  non-finite values); a non-finite JSON number; non-UTF-8 policy text; an
+  artifact symlink escaping the project (including into Git metadata (`.git`)
+  or the pinned profile checkout); an absolute artifact/root path or a path
+  containing C0 controls or DEL; a non-canonical `components[].paths` glob
+  with an empty, `.` or `..` component; an approval URL with no host, user
+  information, a malformed port, or an invalid percent escape; a repository
+  slug, commit, stable ID, or reference whose scalar value ends in a newline;
+  or an explicitly malformed stage now fail closed. Remove duplicate and merge
+  keys by materializing an explicit mapping; represent YAML policy as ordinary
+  JSON-model scalars, arrays, and mappings; move artifacts into the adopting
+  project; encode policy text as UTF-8; make artifact/root locations and
+  component globs canonical repository-relative paths; repair URL ports and
+  percent escapes; rewrite an affected schema token as a single-line scalar
+  whose value has no terminal newline; and repair the stage declaration.
+  The reusable workflow can still compare a direct upgrade from a pre-v0.4 or
+  `unreleased` base by materializing the legacy declaration's bounded
+  historical SafeLoader result long enough to detect policy weakening,
+  including last-value duplicate keys, merge keys, and safely normalizable
+  scalar extension keys; direct standalone comparison provides only the
+  duplicate-key last-wins subset. Every file in the v0.4 head must be strict,
+  unambiguous JSON-model YAML. Likewise, replace a
+  legacy mixed active-plus-`archived` profile list with either `[archived]`
+  alone or the complete applicable active set; the compatibility reader does
+  not validate the old mixed form on the head.
+  Replace an absolute or escape-and-reentry policy symlink with a portable
+  relative in-repository link. When `--profile-checkout` is omitted, the VERSION-bearing root
+  inferred from `--schemas` is now the same trust boundary and its `VERSION`
+  must match the adopter pin. Use a real Git checkout at `upstream.commit` for
+  local validation; a Git-backed checkout at another HEAD, running a different
+  validator, or carrying dirty validation resources now fails, while a source
+  archive warns that its commit identity and resource cleanliness cannot be
+  established.
+- A policy YAML file over 5,242,880 bytes or whose aliases represent more than
+  100,000 logical nodes now fails. Policy JSON over 10,485,760 bytes, 256
+  nesting levels, or 500,000 nodes also fails with a controlled diagnostic.
+  Each directly read adopter-owned prose/review file is likewise capped at
+  5,242,880 bytes: root `AGENTIC_ASSURANCE.md`, root `AGENTS.md`, the mapped
+  system artifact, required service threat model, and `human_review.record`.
+  Component routing is limited to 256
+  components, 256 path globs and 256 invariant IDs per component, 20,000
+  changed paths, 1,024 characters per glob, and 4,096 characters per changed
+  path. Aggregate glob matching and impact-directive scanning each have a
+  20,000,000-work-unit budget. Split an oversized policy or change, and reduce
+  or narrow an oversized component map; routing input files are additionally
+  capped at 33,554,432 bytes (changed paths), 1,048,576 bytes (PR body), and
+  20,971,520 bytes (assurance diff). Aliases are not a way around the
+  logical-node limit.
 - **The `archived` profile is now partially enforced** (previously a
   no-op). `archived` must be declared **exclusively** — `[core, archived]`
   and any other active-plus-archived set is now an error, since a
-  repository with no active operation, maintenance, or feature development
-  cannot also carry an active obligation. An `archived` adoption must also
-  carry the mapped `system` artifact; this is a **file-existence guard**,
-  not full §6.6 enforcement — a present-but-empty `SYSTEM.md` still passes,
-  and the four §6.6 statements (no active operation, maintenance, or feature
-  development; historical purpose; known limitations; last supported revision
-  or release, or explicit none) are **not yet mechanically checked**.
-  Selecting `archived` now also emits a warning that these four
-  statements need human confirmation. Structured, field-level enforcement
-  is tracked in #40. `docs/REVIEW-GUIDE.md` now makes the four confirmations
-  and `paths.system` resolution an owner checklist, and
-  `templates/SYSTEM.md` exposes four archived-only prompts while telling
-  active adopters to remove that section.
+  repository retained solely for historical reference, not supported or
+  intended for current use, and without active operation, functional
+  maintenance, or feature development cannot also carry an active obligation.
+  An `archived` adoption must carry a non-empty mapped `system` artifact at
+  every stage, including `DRAFT`. At `HUMAN_REVIEWED` or `CONFORMANT`, each of
+  the four exact archived template markers is additionally rejected, so an
+  untouched template cannot pass. This is still a
+  **completion guard, not full §6.6 enforcement**: arbitrary replacement prose
+  is not parsed for all four facts and is not checked for truth. Structured,
+  field-level enforcement remains #40. `docs/REVIEW-GUIDE.md` makes the four
+  confirmations and `paths.system` resolution an owner checklist. Initial
+  adoption, factual correction, pin/stage/review upkeep, and agent-instruction
+  metadata do not by themselves count as functional maintenance; code,
+  dependency, or behavior work supporting current use requires reclassification.
+- **Stage tightening can require adopter edits.** A `CONFORMANT` active
+  adopter whose critical invariant is classified `ACCIDENTAL` must either
+  record the behavior as a gap/residual rather than an invariant, choose a
+  non-accidental intended classification with human authority, or lower the
+  claimed stage. At HUMAN_REVIEWED, every active critical invariant now needs
+  a recorded classification (`UNKNOWN` remains valid), and every affirmative
+  `INTENDED`/`COMPATIBILITY`/`DEPRECATED` classification needs human authority.
+  At every active stage, a severity-`critical` invariant recorded `VERIFIED`
+  needs at least one enforcement and one verification reference.
+  Every `ACCEPTED` residual now needs `accepted_by`, a non-future `accepted_at`,
+  and `acceptance_rationale`; every `RESOLVED` residual needs
+  `resolution_note`. The already-enforced rule that a `MITIGATED`, `RESOLVED`,
+  or `WITHDRAWN` defeater needs non-blank `resolution` grounds is now encoded
+  in its schema and labeled as status-conditional in both starter templates.
+  Reviewed adopters must also add a real project-local
+  review record if `human_review.record` previously named a missing or empty
+  path; active adopters must declare their existing material-change workflow.
+- **Completed human acts cannot be future-dated.** Repair a future
+  `human_review.date`, approval `at`, or residual `accepted_at`. Date-only
+  values allow the current civil date possible in UTC+14; timestamp values use
+  their stated offset. A retained residual acceptance remains subject to this
+  rule under `archived`; archiving cannot make a future-dated completed act
+  valid. At CONFORMANT, ensure at least one attributable approval has a civil
+  date on or after `human_review.date`. `review_after` schedules now use the
+  same host-independent UTC+14 latest-civil-date boundary, so local and CI
+  runners in different time zones cannot disagree about whether one has passed.
+- **Scoped approvals no longer imply full conformance approval.** An approval
+  with no `covers` list still attests the full claim. If `covers` is present,
+  add the reserved `CONFORMANCE` token for that approval to satisfy the
+  CONFORMANT gate; a list containing only individual IDs is intentionally too
+  narrow.
+- **Complete the newly enforced declaration and root-file fields before the
+  pin upgrade.** `project.name` and `project.human_owner` must be non-blank,
+  and `project.repository` must be an `owner/name` slug. Root
+  `AGENTIC_ASSURANCE.md` and root `AGENTS.md` must be non-empty and contain the
+  exact assurance-guide and adoption-declaration references in one canonical
+  visible ordered block (hidden comments, code, and HTML do not satisfy it),
+  using the same custom `adoption-file` path in both when applicable.
+  Approval records need a non-blank approver, an absolute HTTP(S) review URL,
+  a valid non-future date/timestamp, and full conformance scope when used for
+  `CONFORMANT`; the qualifying approval's civil date must not precede the
+  human-review date.
+- **Required service threat models now have content guards.** A service
+  adopter's mapped `THREAT_MODEL` must be non-empty at every stage and, from
+  HUMAN_REVIEWED, must not retain a generic `REPLACE_WITH_` template marker.
+- **Default and custom declaration/artifact paths need coordinated owner
+  binding.** Confirm that the effective owner-review boundary covers both root
+  instruction files, the CI caller, the effective adoption declaration, every
+  effective artifact location selected under `paths:` (including standard
+  defaults), `specification_workflow.root`, `human_review.record`,
+  `security.policy`, and `security.public_assurance_root`. Put a non-default
+  `adoption-file` path in the reading order in both root files. When CODEOWNERS
+  is the mechanism, merge the shipped rules for the standard locations and add
+  explicit rules for every custom location; the shipped template now also
+  covers its adoption template's default `SECURITY.md`. A later declaration-path
+  move is now a stage-proportional policy finding, as is rewriting an existing
+  approval's normalized `covers` scope. For any covered location implemented
+  as a symlink, cover the lexical link itself (including
+  retargeting), the resolved target, and the target's parent or containing tree;
+  CODEOWNERS does not follow the validator's symlink resolution. The new
+  validator warning makes that requirement visible but cannot prove that code
+  owner review or branch protection is enabled.
 - **Date placeholders are caught at `HUMAN_REVIEWED`.** An unfilled
   `review_after: REPLACE_WITH_REVIEW_AFTER_DATE` in a register now fails
   from `HUMAN_REVIEWED` on, like every other `REPLACE_WITH_` token. The
-  v0.3.x `review_after: YYYY-MM-DD` sentinel remains a path-scoped
+  pre-v0.4 `review_after: YYYY-MM-DD` sentinel remains a path-scoped
   compatibility alias: DRAFT still tolerates it in residual and defeater
   entries, while `HUMAN_REVIEWED` rejects it. A literal `YYYY-MM-DD`
   elsewhere remains ordinary adopter data. The policy diff preserves both
@@ -106,13 +494,16 @@ artifact; full §6.6 field enforcement tracked in #40).
   treated as aliases during policy comparison: migration in either direction
   is neutral, while replacing a real date with either sentinel remains a
   weakening finding in split and lite layouts.
-- **All seven v0.3.x prose starter prompts are stage-compatible without
+- **All seven pre-v0.4 prose starter prompts are stage-compatible without
   becoming false-green.** The exact legacy strings with the `Replace with`
   prefix in claim `text`/`scope`, invariant `title`/`statement`/`scope`, defeater
   `statement`, and residual `summary` remain tolerated at `DRAFT` but
-  fail at `HUMAN_REVIEWED` and `CONFORMANT`. Matching is scoped to those
-  original register fields, so identical literal adopter data elsewhere
-  is not reclassified as a placeholder.
+  fail at `HUMAN_REVIEWED` and `CONFORMANT`. Stage matching is scoped to those
+  original register fields regardless of the pinned base version, so identical
+  literal adopter data elsewhere is not reclassified as a placeholder.
+  Separately, the policy-diff exemption for deleting an otherwise unchanged
+  legacy starter row applies only to an actual direct upgrade from
+  `unreleased` or v0.1.x–v0.3.x to v0.4.0 or later.
 - **Split-template self-check now enforces profile obligations as well as
   entry semantics.** Empty split invariant or residual starter registers
   can no longer leave the central self-check green; they are checked with
@@ -126,7 +517,7 @@ artifact; full §6.6 field enforcement tracked in #40).
   “copied verbatim” promise while leaving self-check green.
 - **The expanded lite reference is complete for its documented standard
   surface without claiming to enumerate local extensions.** It now shows
-  the optional defeater `resolution` field and top-level `extensions`
+  the status-conditional defeater `resolution` field and top-level `extensions`
   namespace. Template and adoption prose call it an expanded standard-field
   reference rather than “every field.”
 

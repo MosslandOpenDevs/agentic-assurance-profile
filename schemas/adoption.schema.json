@@ -10,6 +10,20 @@
     "profiles"
   ],
   "additionalProperties": true,
+  "$defs": {
+    "repositoryRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?=[\\s\\S]*\\S)(?!/)(?!\\.$)(?!\\.\\.(?:/|$))(?![\\s\\S]*[\\u0000-\\u001F\\u007F])"
+    },
+    "repositoryRelativeRoot": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?=[\\s\\S]*\\S)(?!/)(?!\\.\\.(?:/|$))(?![\\s\\S]*[\\u0000-\\u001F\\u007F])"
+    }
+  },
   "properties": {
     "upstream": {
       "type": "object",
@@ -24,17 +38,17 @@
         "repository": {
           "type": "string",
           "description": "Upstream profile repository as owner/name.",
-          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$(?![\\s\\S])"
         },
         "version": {
           "type": "string",
-          "description": "Pinned profile version: `unreleased` before the first tagged release, otherwise a release tag `vMAJOR.MINOR.PATCH` or pre-release `vMAJOR.MINOR.PATCH-rc.N`. The `-dev` suffix is only valid in the central repository's VERSION file, never in an adopter pin.",
-          "pattern": "^(unreleased|v\\d+\\.\\d+\\.\\d+(-rc\\.\\d+)?)$"
+          "description": "Pinned profile version: `unreleased` before the first tagged release, otherwise a release tag `vMAJOR.MINOR.PATCH` or pre-release `vMAJOR.MINOR.PATCH-rc.N`. Numeric identifiers use ASCII digits without leading zeros (except zero itself), and N starts at 1. The `-dev` suffix is only valid in the central repository's VERSION file, never in an adopter pin.",
+          "pattern": "^(?:unreleased|v(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-rc\\.[1-9][0-9]*)?)$(?![\\s\\S])"
         },
         "commit": {
           "type": "string",
           "description": "Full 40-character lowercase hexadecimal commit SHA of the pinned upstream profile.",
-          "pattern": "^[0-9a-f]{40}$"
+          "pattern": "^[0-9a-f]{40}$(?![\\s\\S])"
         }
       }
     },
@@ -50,21 +64,26 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "Human-readable project name."
+          "description": "Non-blank human-readable project name.",
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "repository": {
           "type": "string",
-          "description": "Adopting repository as owner/name."
+          "description": "Adopting repository as owner/name.",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$(?![\\s\\S])"
         },
         "human_owner": {
           "type": "string",
-          "description": "Named human owner or governing body with the authority defined in PROFILE.md section 3."
+          "description": "Non-blank named human owner or governing body with the authority defined in PROFILE.md section 3.",
+          "minLength": 1,
+          "pattern": "\\S"
         }
       }
     },
     "profiles": {
       "type": "array",
-      "description": "Selected adoption profiles (PROFILE.md section 5). Use the smallest applicable set. Every non-archived specialized profile (`service`, `trust-critical`, `data-curation`, `agent-runtime`) implicitly inherits all core obligations whether or not `core` is listed. For an active adopter, canonically declare `[core]` when no specialized profile applies; otherwise list every applicable specialized profile and omit `core` (explicitly including it is permitted but changes no obligation). `archived` is exclusive, must be declared alone, and applies only with no active operation, maintenance, or feature development.",
+      "description": "Selected adoption profiles (PROFILE.md section 5). Use the smallest applicable set. Every non-archived specialized profile (`service`, `trust-critical`, `data-curation`, `agent-runtime`) implicitly inherits all core obligations whether or not `core` is listed. For an active adopter, canonically declare `[core]` when no specialized profile applies; otherwise list every applicable specialized profile and omit `core` (explicitly including it is permitted but changes no obligation). `archived` is exclusive, must be declared alone, and applies only when the repository is retained solely for historical reference, is not supported or intended for current use, and has no active operation, functional maintenance, or feature development. Initial adoption and factual corrections or upkeep to the pin, stage, review record, and agent instructions are archival-assurance metadata work, not functional maintenance.",
       "minItems": 1,
       "uniqueItems": true,
       "items": {
@@ -79,7 +98,7 @@
       }
     },
     "adoption_stage": {
-      "description": "Self-declared adoption stage; absent means DRAFT. Stages are self-binding: the validator enforces the declared stage's requirements as errors, so declaring a stage the artifacts do not meet fails validation. DRAFT adds no requirements (placeholders and UNKNOWN classifications are allowed in the assurance registers; the adoption declaration itself must be complete at every stage — validation always errors on an unfilled placeholder in adoption.yaml). HUMAN_REVIEWED requires no unfilled REPLACE_WITH_ placeholder anywhere in the adoption file or any loaded register. It also rejects the path-scoped v0.3.x compatibility placeholders: YYYY-MM-DD at residual/defeater review_after, and the seven exact legacy starter strings with the `Replace with` prefix at their original claim, invariant, defeater, and residual fields; the same literal text elsewhere remains ordinary adopter data. HUMAN_REVIEWED also requires a `human_review` block with non-empty `date`, `reviewer`, and `record`. CONFORMANT additionally requires that passed `review_after` dates are treated as errors, that every severity-critical invariant has a decided (non-UNKNOWN) `intent.classification`, and that `human_review.approvals` carries at least one attributable entry (`approver`, `review_url`, `at`).",
+      "description": "Self-declared, self-binding adoption stage; absent means DRAFT, and each stage includes the stages below it. DRAFT requires the baseline schema, required artifacts, and every applicable stage-independent semantic check; work-in-progress placeholders and UNKNOWN register values may remain where their schemas permit them, but the adoption declaration must be complete, the exclusive archived profile's mapped system artifact must already be non-empty, every active VERIFIED critical invariant must name at least one enforcement and one verification reference, every service critical invariant must name both regardless of conclusion status, and every INTENDED, COMPATIBILITY, or DEPRECATED invariant intent must name a non-blank authority. HUMAN_REVIEWED additionally requires a dated human_review naming the reviewer and a non-empty in-project review record; it rejects unfilled shipped placeholders in the adoption declaration and, for an active adoption, loaded active registers, requires the active system description and other required active prose (currently a service threat model) to be non-empty and free of generic REPLACE_WITH_ markers, and requires an intent classification for each active critical invariant. For the exclusive archived profile, retained historical active registers do not reintroduce those active completion conditions; the mapped system artifact remains subject to the all-stage non-empty rule and must now also contain none of the four exact archived prompt markers shipped in templates/SYSTEM.md. CONFORMANT additionally requires a full-scope, attributable, non-future approval (approver, absolute HTTP(S) review_url, and ISO 8601 at whose written civil date is on or after human_review.date); omitting covers denotes full scope, while a present covers list must include CONFORMANCE. An active CONFORMANT adoption must have no overdue review_after date, no critical residual left OPEN, no CONTRADICTED claim, no CONTRADICTED critical invariant, non-empty evidence on every VERIFIED critical invariant, and an intent other than UNKNOWN or ACCIDENTAL on every critical invariant. Retained historical active registers under archived do not reintroduce those active conditions. At CONFORMANT, a public repository may not carry RESTRICTED or EMBARGOED register entries; when repository visibility is undeclared, validation treats it as public conservatively. Completed human acts in human_review.date, approval at, and residual accepted_at may never be future-dated; date-only values are allowed only through the latest civil date currently possible in UTC+14. A green validator result establishes only the implemented structural and mechanically decidable subset, not the truth or completeness of the full human-approved normative conformance claim.",
       "enum": [
         "DRAFT",
         "HUMAN_REVIEWED",
@@ -87,7 +106,7 @@
       ]
     },
     "layout": {
-      "description": "Assurance artifact layout. Absent or `split` (the default): one file per applicable artifact, with register files at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only when `core` is the sole declared profile. Every specialized profile and the exclusive `archived` profile use the split layout. Graduating from lite to split preserves IDs: move each section array into its own register file (for example `assurance/INVARIANTS.yaml`) and drop this key.",
+      "description": "Assurance artifact layout. Absent or `split` (the default): one file per applicable artifact, with register files at the `paths` locations. `lite`: a single `.agentic-assurance/assurance.yaml` (assurance-lite.schema.json) holding purpose, non-goals, an optional system description, and the register sections — valid only when `core` is the sole declared profile. Every specialized profile and the exclusive `archived` profile use the split layout. To graduate to an active specialized profile, preserve IDs by moving each present register array unchanged into its split register, move inline system prose into the artifact mapped by `paths.system`, preserve purpose/non_goals there or in another owner-approved local intent artifact, and preserve or deliberately relocate extensions before dropping this key. To reclassify as archived, instead write and obtain owner confirmation of all four PROFILE.md section 6.6 facts in the mapped system artifact; retained active registers are optional history and do not substitute for those facts. Drop this key only after the applicable target contract is represented.",
       "enum": [
         "split",
         "lite"
@@ -101,15 +120,20 @@
         "date": {
           "type": "string",
           "format": "date",
-          "description": "Date (YYYY-MM-DD) of the completed human review."
+          "description": "Civil date (YYYY-MM-DD) of the completed human review. A completed review cannot be future-dated; because a date carries no offset, the validator allows the date currently possible in UTC+14.",
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "reviewer": {
           "type": "string",
-          "description": "The human reviewer or reviewing body."
+          "description": "The non-blank human reviewer or reviewing body.",
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "record": {
-          "type": "string",
-          "description": "Repository-relative path to the durable review record."
+          "$ref": "#/$defs/repositoryRelativePath",
+          "description": "Non-blank repository-relative path to the durable review record. C0 control characters and DEL are not permitted.",
+          "minLength": 1
         },
         "notes": {
           "type": "string",
@@ -117,7 +141,7 @@
         },
         "approvals": {
           "type": "array",
-          "description": "Attributable approvals backing the review; at least one is required at stage CONFORMANT. Each entry names the approver, a durable review URL (for example an approved pull-request review), and when the approval was given. The validator checks shape and non-emptiness only; verifying that the URL really is an approved review by a non-author remains a manual step until future tooling verifies it against the forge API.",
+          "description": "Attributable approvals backing the review. At stage CONFORMANT, at least one non-future entry whose written civil date is on or after human_review.date must approve the full conformance scope: omit covers to denote full scope, or include the reserved CONFORMANCE token when covers is present. Each entry names the approver, an absolute HTTP(S) URL for a durable review record (for example an approved pull-request review), and when the approval was given. The validator checks shape, scope token, and temporal relations; verifying that the URL resolves to an approval by a non-author remains a manual step until future tooling verifies it against the forge API.",
           "minItems": 1,
           "items": {
             "type": "object",
@@ -131,23 +155,38 @@
               "approver": {
                 "type": "string",
                 "minLength": 1,
+                "pattern": "\\S",
                 "description": "The approving human, for example a forge handle."
               },
               "review_url": {
                 "type": "string",
                 "minLength": 1,
-                "description": "URL of the durable approval record (for example an approved pull-request review). Not dereferenced or verified by the validator."
+                "format": "uri",
+                "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://(?:\\[[0-9A-Fa-f:.]+\\]|[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)(?::[0-9]+)?(?:/(?:[A-Za-z0-9._~!$&'()*+,;=:@-]|%[0-9A-Fa-f]{2})*)*(?:\\?(?:[A-Za-z0-9._~!$&'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})*)?(?:#(?:[A-Za-z0-9._~!$&'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})*)?$(?![\\s\\S])",
+                "description": "Absolute URL of the durable approval record (for example an approved pull-request review), under the profile's deliberately narrow ASCII HTTP(S) grammar: a DNS/IPv4-style hostname or bracketed hexadecimal IPv6 literal, no user information, an optional numeric in-range port, and valid RFC 3986 path/query/fragment characters and percent escapes. This is narrower than the complete RFC 3986 reg-name/IP-literal surface. Non-ASCII path/query/fragment data must be valid UTF-8 percent-encoding; an internationalized hostname must use an ASCII IDNA A-label (punycode) spelling accepted by the narrow hostname grammar. The URL is not dereferenced, and its approval state or authorship is not verified by the validator."
               },
               "at": {
-                "type": "string",
-                "minLength": 1,
-                "description": "When the approval was given (ISO 8601 date or timestamp)."
+                "description": "When the approval was given, as an ISO 8601 full date or RFC 3339 date-time. It cannot be future-dated. At CONFORMANT, at least one approval's written civil date must be on or after human_review.date; a date-only value is allowed through the date currently possible in UTC+14 because it has no offset.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$(?![\\s\\S])"
+                  },
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$(?![\\s\\S])"
+                  }
+                ]
               },
               "covers": {
                 "type": "array",
-                "description": "Optional list of artifact paths or stable IDs the approval covers.",
+                "description": "Optional approval scope. Omission means the full conformance declaration; when present, list artifact paths or stable IDs and include the reserved CONFORMANCE token for this entry to satisfy the full-CONFORMANT approval gate.",
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
                 }
               },
               "rule": {
@@ -161,7 +200,11 @@
     },
     "specification_workflow": {
       "type": "object",
-      "description": "The existing specification or change workflow reused for material changes (PROFILE.md section 9).",
+      "description": "The existing specification or change workflow reused for material changes (PROFILE.md section 9). Required for every active profile and optional for the exclusive archived profile.",
+      "required": [
+        "system",
+        "root"
+      ],
       "additionalProperties": false,
       "properties": {
         "system": {
@@ -175,46 +218,55 @@
           ]
         },
         "root": {
-          "type": "string",
-          "description": "Repository-relative path to the workflow's root directory or entry document."
+          "$ref": "#/$defs/repositoryRelativeRoot",
+          "description": "Non-blank repository-relative path to the workflow's root directory or entry document. C0 control characters and DEL are not permitted.",
+          "minLength": 1
         }
       }
     },
     "paths": {
       "type": "object",
-      "description": "Mappings from profile artifacts to repository-relative paths. Omitted keys use the default `assurance/` layout. For the archived profile, the resolved `system` artifact must contain all four PROFILE.md section 6.6 facts. Additional mappings are permitted (see docs/MAPPINGS.md).",
+      "maxProperties": 256,
+      "description": "Mappings from profile artifacts to repository-relative paths, limited to 256 entries and 4,096 characters per path so trust checking and pull-request evidence routing remain bounded. C0 control characters and DEL are not permitted in any mapped path. Under split, omitted known keys use the default `assurance/` locations. Lite replaces the known split artifacts with `.agentic-assurance/assurance.yaml`; implicit split defaults are inactive except that `paths.system` falls back to `assurance/SYSTEM.md` when lite has no nonblank inline system. Every explicitly carried path remains containment- and symlink-retarget checked in either layout. For the archived profile, the resolved `system` artifact must be non-empty at every stage and contain all four PROFILE.md section 6.6 facts. At HUMAN_REVIEWED and CONFORMANT, the validator additionally rejects unchanged archived template markers, but it does not establish the truth of the statements or perform structured semantic parsing; that stronger enforcement remains tracked in issue #40. Additional mappings are permitted within the same bound (see docs/MAPPINGS.md).",
       "properties": {
         "system": {
-          "type": "string",
-          "description": "Repository-relative system artifact path (default `assurance/SYSTEM.md`). Under the exclusive archived profile, this artifact is the required location for the four PROFILE.md section 6.6 facts."
+          "$ref": "#/$defs/repositoryRelativePath",
+          "description": "Repository-relative system artifact path (default `assurance/SYSTEM.md`). Under the exclusive archived profile, this artifact is the required location for the four PROFILE.md section 6.6 facts; the interim validator requires non-empty content at every stage and additionally rejects unchanged archived prompt markers at HUMAN_REVIEWED and CONFORMANT, but does not establish semantic truth.",
+          "minLength": 1
         },
         "invariants": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         },
         "claims": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         },
         "defeaters": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         },
         "residuals": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         },
         "threat_model": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         },
         "evidence": {
-          "type": "string"
+          "$ref": "#/$defs/repositoryRelativePath"
         }
       },
       "additionalProperties": {
-        "type": "string"
+        "$ref": "#/$defs/repositoryRelativePath"
       }
     },
     "components": {
       "type": "object",
-      "description": "Optional impact-routing map: named components binding repository path globs to the invariant IDs they protect. The pull-request drift check flags a change that touches a component's paths unless the added lines of the assurance-artifact diff reference one of the component's invariant IDs, the pull-request description mentions all of them, or the description carries an explicit no-impact statement (docs/ADOPTION.md section 3.7).",
+      "description": "Optional impact-routing map: named components binding repository path globs to the invariant IDs they protect. The pull-request drift check flags a change that touches a component's paths unless the added lines of the assurance-artifact diff reference one of the component's invariant IDs, or the leading top-level PR-body directive block contains exactly one impact directive: `Assurance impact: INV-A, INV-B` listing every mapped invariant as comma-separated exact IDs, or `Assurance impact: none` accompanied by a top-level `Reason:` line with visible plain-text content (docs/ADOPTION.md section 3.7). Duplicate, conflicting, or malformed impact lines invalidate that declaration; zero-width-only text, invisible-only entities, and empty inline HTML do not supply a reason or policy-change explanation. HTML comments and fenced code are excluded before the block is evaluated; the first ordinary visible line ends it. Arbitrary invariant mentions or directives after ordinary content do not satisfy routing. Count, length, and aggregate runtime work limits keep pull-request-controlled routing polynomial and resource-bounded.",
       "minProperties": 1,
+      "maxProperties": 256,
+      "propertyNames": {
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "\\S"
+      },
       "additionalProperties": {
         "type": "object",
         "required": [
@@ -225,20 +277,25 @@
         "properties": {
           "paths": {
             "type": "array",
-            "description": "Gitwildmatch-style globs (`**/`, `**`, `*`, `?`) matched against repository-relative changed-file paths.",
+            "description": "Canonical repository-relative Gitwildmatch-style globs (`**/`, `**`, `*`, `?`) matched against canonical repository-relative changed-file paths. Absolute spellings and empty, `.` or `..` slash-delimited components are invalid because they cannot soundly address that path domain. Each glob is limited to 1,024 characters, and C0 control characters and DEL are not permitted, so pull-request routing remains resource-bounded. Duplicate entries remain accepted for v0.3 compatibility and count toward the limit.",
             "minItems": 1,
+            "maxItems": 256,
             "items": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^(?=[\\s\\S]*\\S)(?!/)(?!\\.{1,2}(?:/|$))(?![\\s\\S]*/\\.{1,2}(?:/|$))(?![\\s\\S]*//)(?![\\s\\S]*/$)(?![\\s\\S]*[\\u0000-\\u001F\\u007F])"
             }
           },
           "invariants": {
             "type": "array",
-            "description": "Invariant IDs this component carries. Each must exist in the invariant register (split or lite layout).",
+            "description": "Invariant IDs this component carries. Each must exist in the invariant register (split or lite layout). Duplicate entries remain accepted for v0.3 compatibility and count toward the limit.",
             "minItems": 1,
+            "maxItems": 256,
             "items": {
               "type": "string",
-              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$"
+              "maxLength": 256,
+              "pattern": "^INV-[A-Z0-9]+(-[A-Z0-9]+)*-[0-9]{3}$(?![\\s\\S])"
             }
           },
           "tests": {
@@ -257,16 +314,21 @@
       "additionalProperties": false,
       "properties": {
         "policy": {
-          "type": "string",
-          "description": "Repository-relative path to the security policy."
+          "$ref": "#/$defs/repositoryRelativePath",
+          "description": "Repository-relative path to the security policy. C0 control characters and DEL are not permitted.",
+          "minLength": 1
         },
         "public_assurance_root": {
-          "type": "string",
-          "description": "Repository-relative root of the public assurance artifacts."
+          "$ref": "#/$defs/repositoryRelativeRoot",
+          "description": "Repository-relative root of the public assurance artifacts. C0 control characters and DEL are not permitted.",
+          "minLength": 1
         },
         "restricted_record": {
           "type": "string",
-          "description": "Non-actionable label for where the restricted security record lives (for example `external_private_system`)."
+          "description": "Bounded non-actionable identifier (not a repository path, URL, account, or secret) for where the restricted security record lives (for example `external_private_system`). Use only ASCII letters, digits, dot, underscore, and hyphen.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
         }
       }
     },
@@ -281,13 +343,45 @@
         },
         "public_security_issues_allowed": {
           "type": "boolean",
-          "description": "Whether potentially exploitable findings may be filed as public Issues. Must be false for public repositories."
+          "const": false,
+          "description": "Whether potentially exploitable findings may be filed as public Issues. Must be false: PROFILE.md requires private reporting for potentially exploitable findings."
         },
         "closing_requires_artifact_update": {
           "type": "boolean",
+          "const": true,
           "description": "Whether closing a material Issue requires the related artifact, evidence, defeater, and residual updates to be complete."
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "profiles"
+        ],
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "core",
+                "service",
+                "trust-critical",
+                "data-curation",
+                "agent-runtime"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "specification_workflow"
+        ]
+      }
+    }
+  ]
 }

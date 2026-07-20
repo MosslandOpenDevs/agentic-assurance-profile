@@ -16,7 +16,12 @@ project:
 # an option. For an active adopter, use `core` only when no specialized trigger
 # fires. If any fire, list all fired specialized profiles and normally omit
 # `core`; they inherit every core obligation whether or not it is written.
-# `archived` is the exclusive alternative and must appear alone.
+# `archived` is the exclusive alternative and must appear alone. It applies
+# only when the repository is retained solely for historical reference, is not
+# supported or intended for current use, and has no active operation,
+# functional maintenance, or feature development. Initial adoption and factual
+# corrections or upkeep to this pin, stage, review record, and agent instructions
+# are archival-assurance metadata work, not functional maintenance.
 profiles:
   - REPLACE_WITH_CLASSIFIED_PROFILE
   # active, with no specialized trigger:
@@ -29,7 +34,8 @@ profiles:
   # - archived  # archived is exclusive — declare it alone
 
 # layout: lite
-# (single-file core layout — put purpose/non-goals/invariants/residuals in
+# (single-file core layout — put purpose/non-goals, a system description,
+#  invariants, and residuals in
 #  .agentic-assurance/assurance.yaml; start from templates/assurance.minimal.yaml,
 #  or templates/assurance.yaml for an expanded standard-field reference. Any
 #  profile other than core requires the default split layout. Under lite, also
@@ -46,11 +52,15 @@ profiles:
 #  change without its invariants being addressed; see docs/ADOPTION.md §3.7.)
 
 # adoption_stage: DRAFT
-# (optional self-declared stage, enforced as declared: DRAFT (register
-#  placeholders allowed — the adoption declaration itself must be complete at
-#  every stage) → HUMAN_REVIEWED (no register placeholders, review recorded)
+# (optional self-declared stage, enforced as declared: DRAFT (schema, required
+#  artifacts, and applicable semantic checks pass; register placeholders are
+#  allowed — the adoption declaration itself must be complete at every stage)
+#  → HUMAN_REVIEWED (active registers completed; archived SYSTEM markers
+#  replaced; non-future review recorded; active critical intent recorded,
+#  with UNKNOWN allowed)
 #  → CONFORMANT
-#  (fresh review dates, decided critical intents, attributable approval).
+#  (active review dates fresh; critical intent neither UNKNOWN nor ACCIDENTAL;
+#  at least one non-future attributable approval on/after the review date).
 #  Absent means DRAFT; declaring a stage you do not meet fails validation;
 #  see docs/ADOPTION.md §3.8.)
 
@@ -82,7 +92,7 @@ issue_integration:
   public_security_issues_allowed: false
   closing_requires_artifact_update: true
 
-# Optional pointer to the most recent completed human review (docs/ADOPTION.md
+# Optional pointer to the most recent completed, non-future human review (docs/ADOPTION.md
 # section 4.3; normative authority/review rules are PROFILE.md sections 3 and 7)
 # and its durable record. Additional keys are permitted for local conventions.
 # human_review:
@@ -90,9 +100,11 @@ issue_integration:
 #   reviewer: REPLACE_WITH_REVIEWER
 #   record: REPLACE_WITH_PATH_TO_DURABLE_REVIEW_RECORD
 #   notes: REPLACE_WITH_REVIEW_OUTCOME_SUMMARY
-#   approvals:                  # at least one entry is required at CONFORMANT (docs/ADOPTION.md §3.8)
+#   approvals:                  # at CONFORMANT at least one entry must attest the full claim (docs/ADOPTION.md §3.8)
 #     - approver: REPLACE_WITH_APPROVER
 #       review_url: REPLACE_WITH_APPROVED_REVIEW_URL
-#       at: YYYY-MM-DD
-#       covers: [ REPLACE_WITH_COVERED_IDS ]   # optional: what the approval covers
+#       at: REPLACE_WITH_APPROVAL_DATE_OR_TIMESTAMP  # completed act; not future; at CONFORMANT one approval must be on/after human_review.date
+#       # Optional: omit covers for full scope; when present, CONFORMANCE is
+#       # required for an explicit full-claim attestation.
+#       covers: [ CONFORMANCE, REPLACE_WITH_COVERED_IDS ]
 #       rule: REPLACE_WITH_LOCAL_REVIEW_RULE   # optional: the local review rule it satisfies

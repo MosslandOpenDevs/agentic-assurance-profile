@@ -12,7 +12,7 @@ You are the named human owner of a repository — the person the profile's autho
 
 ## What arrives
 
-At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**. For a small active `core` repository the whole draft may be a single file — `.agentic-assurance/assurance.yaml`, the lite layout of [ADOPTION.md §3.0](ADOPTION.md) — and the four active-adoption decision families below apply however many files carry them. An `archived` adoption takes the separate, narrower path in decision 1; it does not pretend that the other three active-system decisions apply.
+At some point your agent finishes its archaeology of the repository and hands you an **adoption proposal**: a summary of what it found, drafts of the assurance artifacts, and a set of questions. It arrives on a branch, as an **unmerged draft pull request**. For a small active `core` repository, the project-specific assurance register content may be concentrated in `.agentic-assurance/assurance.yaml`, the lite layout of [ADOPTION.md §3.0](ADOPTION.md); the proposal still contains the four required files (`AGENTS.md`, `AGENTIC_ASSURANCE.md`, `adoption.yaml`, and `assurance.yaml`). The four active-adoption decision families below apply however the content is laid out. An `archived` adoption takes the separate, narrower path in decision 1; it does not pretend that the other three active-system decisions apply.
 
 **Nothing in that proposal is decided yet, and the pull request must not be merged until you have answered the decisions below — merging the pull request IS your act of acceptance.** ([ADOPTION.md §4.3](ADOPTION.md))
 
@@ -28,18 +28,18 @@ For an active repository, the proposal reduces to four kinds of decision. For an
 
 The profile has an active baseline (`core`), specialized active profiles (`service`, `trust-critical`, `data-curation`, and `agent-runtime`), and the exclusive `archived` alternative ([PROFILE.md §5](../PROFILE.md)). Your agent proposes a set; you confirm or trim it.
 
-**A good answer for an active repository** is the smallest set that covers what the repository *genuinely is* — `[core]` if no specialized trigger fires; otherwise every fired specialized profile. Specialized profiles inherit all `core` obligations even when `core` is omitted, so `[service]` is the canonical declaration for a service-only trigger; adding `core` is permitted but changes no obligation. The agent should have proposed this set from evidence, not defaulted to `core` ([ADOPTION.md §4.0](ADOPTION.md)); your job is to confirm the triggers it fired and trim any the evidence does not support. This is not modesty for its own sake: every profile adds obligations the validator enforces on every future push ([ADOPTION.md §3.6](ADOPTION.md)). Selecting `trust-critical` "to be safe" when the repository makes no such claim adds mandatory claims you may not want — but *under*-selecting a repository that genuinely is trust-critical is the more dangerous error, because it quietly turns off the checks that repository needs. Trim what the evidence does not support; keep what it does.
+**A good answer for an active repository** is the smallest set that covers what the repository *genuinely is* — `[core]` if no specialized trigger fires; otherwise every fired specialized profile. Specialized profiles inherit all `core` obligations even when `core` is omitted, so `[service]` is the canonical declaration for a service-only trigger; adding `core` is permitted but changes no obligation. The agent should have proposed this set from evidence, not defaulted to `core` ([ADOPTION.md §4.0](ADOPTION.md)); your job is to confirm the triggers it fired, trim any the evidence does not support, **and add any applicable trigger the proposal missed**. This is not modesty for its own sake: every profile adds obligations the repository must meet and selects the structural and mechanically decidable gates the validator can enforce on future pushes; the remaining semantics stay with human review ([ADOPTION.md §3.6](ADOPTION.md), [§3.8](ADOPTION.md)). Selecting `trust-critical` "to be safe" when the repository makes no such claim adds mandatory claims you may not want — but *under*-selecting a repository that genuinely is trust-critical is the more dangerous error, because it quietly turns off the checks that repository needs. Trim what the evidence does not support; keep what it does; add what it missed.
 
-**If the proposal says `archived`, use this checklist instead.** `archived` must be the only declared profile. Open the system artifact resolved from `.agentic-assurance/adoption.yaml`'s `paths.system` mapping (default `assurance/SYSTEM.md`) and personally confirm that it records all four facts:
+**If the proposal says `archived`, use this checklist instead.** `archived` must be the only declared profile. Open the system artifact resolved from the configured adoption declaration's `paths.system` mapping (default declaration: `.agentic-assurance/adoption.yaml`; default artifact: `assurance/SYSTEM.md`) and personally confirm that it records all four facts:
 
-- the repository has no active operation, maintenance, or feature development;
+- the repository is retained solely for historical reference, is not supported or intended for current use, and has no active operation, functional maintenance, or feature development;
 - its historical purpose;
 - its known material limitations;
 - its last supported revision or release, or an explicit statement that none exists.
 
-The current validator checks that `archived` is exclusive and that the system artifact exists, then warns for human confirmation; it does **not** yet determine whether these four statements are present or truthful. Until structured content enforcement lands in [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), this checklist and your recorded review are the content backstop. If the repository is still operated, maintained, or receiving feature development, reject `archived` and classify the active profiles instead.
+The current validator checks that `archived` is exclusive and that the mapped system artifact exists and is non-empty. At `HUMAN_REVIEWED` or `CONFORMANT`, it also rejects an untouched template by detecting any of the four exact shipped markers: `REPLACE_WITH_ARCHIVED_OPERATION_MAINTENANCE_AND_FEATURE_DEVELOPMENT_STATUS`, `REPLACE_WITH_ARCHIVED_HISTORICAL_PURPOSE`, `REPLACE_WITH_ARCHIVED_MATERIAL_LIMITATIONS`, and `REPLACE_WITH_ARCHIVED_LAST_SUPPORTED_REVISION_OR_RELEASE_OR_EXPLICIT_NONE`. These are completion guards only: the validator does **not** yet determine whether replacement prose actually states all four facts or whether it is truthful. Until structured content enforcement lands in [#40](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/40), this checklist and your recorded review are the semantic backstop. If the repository is supported or intended for current use, is still operated, receives functional maintenance, or receives feature development, reject `archived` and classify the active profiles instead. Initial adoption, factual corrections, and upkeep of assurance metadata do not by themselves count as functional maintenance.
 
-**With your answer,** the agent records the profile list in `.agentic-assurance/adoption.yaml`; for `archived`, it also records the four confirmed facts in the mapped system artifact. Continuous validation holds the repository to the declared shape, while your review supplies the archived content confirmation that validation does not yet perform.
+**With your answer,** the agent records the profile list in the configured adoption declaration; for `archived`, it also records the four confirmed facts in the mapped system artifact. Continuous validation holds the repository to the declared shape, while your review supplies the archived content confirmation that validation does not yet perform.
 
 ### 2. Intent confirmation of critical invariants
 
@@ -47,15 +47,23 @@ The current validator checks that `archived` is exclusive and that the system ar
 
 The archaeology finds behaviors: the code limits login attempts, expires sessions after an hour, rejects duplicate emails. The code proves what the system *does*; it cannot prove what you *want* ([PROFILE.md §4](../PROFILE.md)). So each critical behavior comes to you as a question, currently marked `UNKNOWN`.
 
-**A good answer** is one plain sentence per item: "yes, that's what I want", "no, that's an accident — it shouldn't do that", or "actually I want Y instead". When you confirm one, it moves from `UNKNOWN` to `INTENDED` **with you recorded as the authority** — your decision, not the code's age, is what makes it intended.
+**A good answer** is one plain sentence per item, using the classification that matches the decision:
+
+- `INTENDED` — "yes, that's what I want";
+- `ACCIDENTAL` — "no, that's an accident — it shouldn't do that";
+- `COMPATIBILITY` — "we do not want this as the new design, but this named compatibility obligation still requires it";
+- `DEPRECATED` — "support this only through the approved removal path";
+- `UNKNOWN` — "I cannot decide this yet from the information available."
+
+"Actually I want Y instead" classifies the current X honestly and creates the scoped change needed to establish Y; it does not rewrite current behavior into intended behavior. An `INTENDED`, `COMPATIBILITY`, or `DEPRECATED` answer records you as the authority for that affirmative disposition — your decision, not the code's age, supplies the authority.
 
 **It is normal to leave some items `UNKNOWN`.** `UNKNOWN` is an honest recorded answer, not a failure grade ([Glossary §3](GLOSSARY.md)); you can confirm the five behaviors you have real opinions about and leave the rest for a later pass.
 
-**Documents in the repository do not count as your approval.** In an agent-built repository the comments, READMEs, and design notes were mostly written by agents too — an agent citing "the docs say this is intentional" may be citing another agent. Your agent is expected to check who authored such prose before treating it as intent — and a document *without* agent markers is not necessarily human-written either, since many agents leave no trace. Either way, it is your answer in this review — not any committed text — that turns `UNKNOWN` into `INTENDED`.
+**Documents in the repository do not count as your approval.** In an agent-built repository the comments, READMEs, and design notes were mostly written by agents too — an agent citing "the docs say this is intentional" may be citing another agent. Your agent is expected to check who authored such prose before treating it as intent — and a document *without* agent markers is not necessarily human-written either, since many agents leave no trace. Either way, it is your answer in this review — not any committed text — that settles the classification and supplies any required human authority.
 
 **Fewer is stronger.** A healthy register holds roughly 5–15 invariants — the things that must never break. If your agent brings you thirty, ask it to rank them and keep the top tier; every entry you confirm is something you will re-examine whenever a change touches it.
 
-**With your answer,** the agent updates the intent classification in the invariants file, citing you as the authority.
+**With your answer,** the agent updates the intent classification in the invariants file and, for `INTENDED`, `COMPATIBILITY`, or `DEPRECATED`, records you as the human authority.
 
 ### 3. Residual disposition
 
@@ -63,7 +71,7 @@ The archaeology finds behaviors: the code limits login attempts, expires session
 
 The proposal will list residuals: things that are imperfect and known to be imperfect ([Glossary §1](GLOSSARY.md)). For each one you have three answers:
 
-- **Accept** — you knowingly carry the risk. This is an explicit recorded decision: the register stores your name (`accepted_by`), the date (`accepted_at`), and your reason, plus a review date after which the question comes back.
+- **Accept** — you knowingly carry the risk. This is an explicit recorded decision: the register stores your name (`accepted_by`), the non-future date (`accepted_at`), and your reason, plus a review date after which the question comes back.
 - **Reject** — you disagree that this is tolerable; it becomes work to schedule.
 - **Remediate** — fix it now; the agent scopes a separate change for it.
 
@@ -101,7 +109,7 @@ If a question is unclear, make the agent rephrase until it is a question about y
 - **Your answers become a durable review record** — not just chat history. The decisions land in the artifacts and in a review record (for example under `assurance/reviews/`), and merging the pull request becomes the durable evidence that the review happened ([ADOPTION.md §4.3](ADOPTION.md)).
 - **Remediations arrive as separate, scoped pull requests** — one concern each, reviewable on its own, referencing the gap it closes ([ADOPTION.md §4.4](ADOPTION.md)). The adoption proposal itself stays a proposal; fixes don't sneak into it.
 - **Accepted residuals come back to you.** Each carries a `review_after` date; when it passes, the question returns — "still true? still acceptable?" — because accepting a risk once is not accepting it forever ([PROFILE.md §12](../PROFILE.md)).
-- **Advancing the adoption stage is your act** ([ADOPTION.md §3.8](ADOPTION.md)). The adoption stays `DRAFT` until you complete this review. It becomes `HUMAN_REVIEWED` when your review is recorded — no placeholders left, your name and the review record in the file. It becomes `CONFORMANT` only when you also stand behind the review dates, have decided the intent of every critical invariant, and an approval that names who approved, where, and when is on record. Declaring a stage is a promise the validator enforces: declare one you don't meet and the build goes red.
+- **Advancing the adoption stage is your act** ([ADOPTION.md §3.8](ADOPTION.md)). The adoption stays `DRAFT` until you complete this review. It becomes `HUMAN_REVIEWED` when your non-future review is recorded — the stage-defined completion placeholders are gone, your name and the review record are present, that record exists in the project, and every active critical invariant has a recorded classification (`UNKNOWN` is allowed). It becomes `CONFORMANT` only when an attributable, non-future approval on or after the review date attests the full claim (`covers` omitted, or containing `CONFORMANCE`) and all applicable §6/§17 conditions are met; for an active adoption, that also means current review dates and an intent other than `UNKNOWN` or `ACCIDENTAL` for every critical invariant. The exclusive archived path uses its historical conditions instead. Only an explicit, human-approved `CONFORMANT` declaration asserts the full normative claim; a green validator check covers its mechanical subset, not its truth. Declaring a stage is a promise the validator enforces: declare one you don't meet and the build goes red.
 
 ## A worked example
 
