@@ -133,6 +133,24 @@ jobs:
     outputs:
       adoption_stage: ${{ steps.pin.outputs.adoption_stage }}
     steps:
+      # Fail closed on an unsupported triggering event. The drift job is gated
+      # on `pull_request`; under `pull_request_target` — or any other event —
+      # it would silently skip, leaving the structural checks green with no
+      # pull-request policy comparison having run at all. A skipped gate must
+      # never read as a passed one, so an unsupported caller event fails here
+      # instead.
+      - name: Verify supported triggering event
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          case "$EVENT_NAME" in
+            pull_request | push) ;;
+            *)
+              echo "::error::Unsupported triggering event '${EVENT_NAME}'. Call this workflow from 'pull_request' or 'push' only; on any other event (for example 'pull_request_target') the pull-request policy comparison does not run and a green result would not mean the change was compared against the base branch."
+              exit 1
+              ;;
+          esac
+
       - name: Check out adopting repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -718,12 +736,25 @@ jobs:
       # or copy lists BOTH source and destination (with --name-only a rename
       # out of a mapped path would only show the destination and escape the
       # component's globs), and NUL separation keeps unusual filenames intact.
+      #
+      # --find-copies-harder is kept deliberately: a copy out of a mapped path
+      # whose source was NOT modified in the same change is invisible without
+      # it, and that is exactly the escape this step exists to close. It makes
+      # every tracked file a candidate source, so Git can hit its rename limit
+      # and skip detection entirely on a large repository — which this step
+      # then fails, because a skipped detection silently drops the guarantee.
+      # An explicit renameLimit raises the ceiling before that happens rather
+      # than buying headroom by weakening detection.
       - name: Compute changed files (rename-safe)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if ! git diff -M -C --find-copies-harder --name-status -z \
+          # Defined here, not as a step env: an unset or empty value would
+          # reach Git as `diff.renameLimit=` and abort the whole diff with a
+          # bad-config error rather than the rename-limit path this handles.
+          RENAME_LIMIT=20000
+          if ! git -c diff.renameLimit="$RENAME_LIMIT" diff -M -C --find-copies-harder --name-status -z \
             "$BASE_SHA...$HEAD_SHA" \
             > "$RUNNER_TEMP/name-status.z" \
             2> "$RUNNER_TEMP/name-status.err"
@@ -732,7 +763,8 @@ jobs:
             exit 1
           fi
           if [ -s "$RUNNER_TEMP/name-status.err" ]; then
-            echo "::error::Git reported diagnostics while detecting renames/copies; changed-file routing cannot safely continue."
+            cat "$RUNNER_TEMP/name-status.err" >&2
+            echo "::error::Git could not complete rename/copy detection for this pull request (diagnostics above). Routing cannot continue without it: a rename out of a mapped path would otherwise appear only as an addition and escape that component's globs. Raise diff.renameLimit above ${RENAME_LIMIT} for this repository, or split the change."
             exit 1
           fi
 
@@ -844,6 +876,12 @@ jobs:
           MAX_DISCOVERY_FILES = 100_000
           MAX_DISCOVERY_LISTING_BYTES = 64 * 1024 * 1024
           MAX_DISCOVERY_BYTES = 64 * 1024 * 1024
+          # Deliberately NOT bounded per file. A declaration padded past any
+          # plausible per-file cap is still a declaration, so skipping large
+          # files would let a base declaration go undiscovered and turn this
+          # fallback fail-open. When the aggregate budget is exhausted the
+          # scan fails closed instead; the remedy is to pin the caller so
+          # exact recovery succeeds and this scan never runs.
           MAX_DISCOVERY_DECLARATIONS = 16
           MAX_POLICY_PATH_MAPPINGS = 256
           MAX_POLICY_PATH_LENGTH = 4096
@@ -2099,7 +2137,12 @@ jobs:
                                   "Bounded base declaration discovery exceeds "
                                   f"its {MAX_DISCOVERY_BYTES // (1024 * 1024)} "
                                   "MiB byte budget; policy comparison cannot "
-                                  "safely be skipped.",
+                                  "safely be skipped. This fallback only runs "
+                                  "when the base caller's adoption declaration "
+                                  "cannot be recovered exactly — pin the caller "
+                                  "workflow and set its `adoption-file` input "
+                                  "explicitly so recovery succeeds and this "
+                                  "scan is not needed.",
                               )
                               raise SystemExit(1)
 
