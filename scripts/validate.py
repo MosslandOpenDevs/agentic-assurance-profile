@@ -1938,6 +1938,12 @@ def has_required_reading_order(text: str, adoption_reference: str) -> bool:
     return False
 
 
+ROOT_GUIDE_FILES = ("AGENTIC_ASSURANCE.md", "AGENTS.md")
+
+# Lite-envelope fields that are prose, not structured register data.
+LITE_PROSE_KEYS = ("system", "purpose", "non_goals")
+
+
 def check_root_reading_order(
     project_root: Path,
     adoption_reference: str,
@@ -1945,7 +1951,7 @@ def check_root_reading_order(
     excluded_roots: tuple[Path, ...] = (),
 ) -> None:
     """Require nonempty root guides with the canonical visible reading order."""
-    for name in ("AGENTIC_ASSURANCE.md", "AGENTS.md"):
+    for name in ROOT_GUIDE_FILES:
         text = read_project_text_file(
             project_root / name,
             project_root,
@@ -4156,13 +4162,42 @@ def check_adoption_stage(
     scan_targets: list[tuple[str, Path, bool]] = []
     if active and adoption.get("layout") == "lite":
         if isinstance(lite_document, dict):
-            for json_path, value in find_register_placeholder_strings(
-                lite_document
-            ):
+            # `system`, `purpose`, and `non_goals` are prose carrying the same
+            # obligation as split-layout SYSTEM.md, so they follow the prose
+            # rule — a named REPLACE_WITH_ marker — rather than the structured
+            # substring rule that is correct for IDs, owners, and scopes.
+            # Without the split, identical prose passes in the split layout and
+            # fails in lite, and the error quotes the adopter's whole paragraph
+            # instead of the token that needs replacing.
+            structured = {
+                key: value
+                for key, value in lite_document.items()
+                if key not in LITE_PROSE_KEYS
+            }
+            for json_path, value in find_register_placeholder_strings(structured):
                 report.error(
                     f"stage HUMAN_REVIEWED: unfilled placeholder {value!r} "
                     f"in {LITE_ASSURANCE_PATH} at {json_path}"
                 )
+            for key in LITE_PROSE_KEYS:
+                value = lite_document.get(key)
+                entries = value if isinstance(value, list) else [value]
+                for index, item in enumerate(entries):
+                    if not isinstance(item, str):
+                        continue
+                    found = PROSE_PLACEHOLDER_RE.search(item)
+                    if found is None:
+                        continue
+                    location = (
+                        f"$.{key}[{index}]"
+                        if isinstance(value, list)
+                        else f"$.{key}"
+                    )
+                    report.error(
+                        "stage HUMAN_REVIEWED: unfilled placeholder "
+                        f"{found.group(0)!r} in {LITE_ASSURANCE_PATH} "
+                        f"at {location}"
+                    )
     elif active:
         for kind in REGISTER_KINDS:
             relative = paths.get(kind)
@@ -4258,6 +4293,32 @@ def check_adoption_stage(
             report.error(
                 "stage HUMAN_REVIEWED: unfilled placeholder "
                 f"{found.group(0)!r} in the mapped {prose_name} artifact"
+            )
+
+    # The two root guides are required of every adoption, archived included
+    # (check_root_reading_order), so they carry the same obligation: an
+    # untouched upstream template is not a completed adoption. Scan the raw
+    # text rather than visible prose only — the declaration sample fenced in
+    # `AGENTIC_ASSURANCE.md` is part of what an adopter fills in, and both
+    # pilot adoptions do fill it.
+    for name in ROOT_GUIDE_FILES:
+        candidate = project_root / name
+        if not candidate.is_file():
+            continue  # check_root_reading_order reports absence/non-file shape
+        text = read_project_text_file(
+            candidate,
+            project_root,
+            report,
+            f"stage HUMAN_REVIEWED: root {name}",
+            excluded_roots,
+        )
+        if text is None:
+            continue
+        found = PROSE_PLACEHOLDER_RE.search(text)
+        if found is not None:
+            report.error(
+                "stage HUMAN_REVIEWED: unfilled placeholder "
+                f"{found.group(0)!r} in root {name}"
             )
 
     # HUMAN_REVIEWED (also CONFORMANT): a completed human review on record.

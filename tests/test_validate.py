@@ -1245,6 +1245,121 @@ class TestAdopterPlaceholders(ValidatorTestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("stage HUMAN_REVIEWED: unfilled placeholder", out)
 
+    def test_placeholder_in_root_guide_fails_at_human_reviewed(self):
+        # The root guides are the two files an agent is directed to read first,
+        # and v0.4.0 makes them required artifacts. An untouched upstream
+        # template there is not a completed adoption, so the reviewed-stage
+        # scan must cover them exactly as it covers the mapped system artifact.
+        for name in ("AGENTIC_ASSURANCE.md", "AGENTS.md"):
+            with self.subTest(root_guide=name):
+                root = self.make_tmp()
+                adoption = baseline_adoption()
+                adoption["adoption_stage"] = "HUMAN_REVIEWED"
+                adoption["human_review"] = human_review_block()
+                adoption_path = build_split_project(
+                    root, adoption, baseline_registers()
+                )
+                guide = Path(root) / name
+                guide.write_text(
+                    guide.read_text(encoding="utf-8")
+                    + "\n\nBuild: REPLACE_WITH_BUILD_COMMAND\n",
+                    encoding="utf-8",
+                )
+                code, out = self.run_adopter(root, adoption_path)
+                self.assertEqual(code, 1, out)
+                self.assertIn(
+                    "unfilled placeholder 'REPLACE_WITH_BUILD_COMMAND' "
+                    f"in root {name}",
+                    out,
+                )
+
+    def test_placeholder_in_root_guide_passes_at_draft(self):
+        # DRAFT tolerates it, like every other shipped placeholder.
+        root = self.make_tmp()
+        adoption_path = build_split_project(
+            root, baseline_adoption(), baseline_registers()
+        )
+        guide = Path(root) / "AGENTS.md"
+        guide.write_text(
+            guide.read_text(encoding="utf-8")
+            + "\n\nBuild: REPLACE_WITH_BUILD_COMMAND\n",
+            encoding="utf-8",
+        )
+        code, out = self.run_adopter(root, adoption_path)
+        self.assertEqual(code, 0, out)
+
+    def test_shipped_root_guides_do_not_pass_a_reviewed_adoption(self):
+        # The regression that motivated the scan: an adopter could copy both
+        # root guides verbatim, leave every marker unfilled, and still be told
+        # CONFORMANT. Assert the shipped templates really do carry markers, so
+        # this stays a test of the validator and not of a fixture.
+        for name in ("AGENTIC_ASSURANCE.md", "AGENTS.md"):
+            with self.subTest(root_guide=name):
+                shipped = (REPO_ROOT / "templates" / name).read_text(
+                    encoding="utf-8"
+                )
+                self.assertRegex(shipped, r"REPLACE_WITH_\w+")
+                root = self.make_tmp()
+                adoption = baseline_adoption()
+                adoption["adoption_stage"] = "HUMAN_REVIEWED"
+                adoption["human_review"] = human_review_block()
+                adoption_path = build_split_project(
+                    root, adoption, baseline_registers()
+                )
+                (Path(root) / name).write_text(shipped, encoding="utf-8")
+                code, out = self.run_adopter(root, adoption_path)
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"in root {name}", out)
+
+    def test_lite_prose_placeholder_verdict_matches_split_layout(self):
+        # The lite `system` field carries the same obligation as split-layout
+        # SYSTEM.md, so the same prose must reach the same verdict in both.
+        # A bare `REPLACE_WITH_` prefix is prose (a completed artifact quotes
+        # the convention); a named marker is an unfilled placeholder.
+        cases = (
+            (
+                "bare prefix is prose",
+                "Replace every REPLACE_WITH_ prompt that applies.",
+                0,
+                None,
+            ),
+            (
+                "named marker is unfilled",
+                "REPLACE_WITH_PURPOSE_USERS_AND_SCOPE",
+                1,
+                "REPLACE_WITH_PURPOSE_USERS_AND_SCOPE",
+            ),
+        )
+        for label, prose, expected_code, marker in cases:
+            with self.subTest(case=label, layout="lite"):
+                adoption = baseline_lite_adoption()
+                adoption["adoption_stage"] = "HUMAN_REVIEWED"
+                adoption["human_review"] = human_review_block()
+                assurance = baseline_lite_assurance()
+                assurance["system"] = prose
+                code, out = self.run_lite(adoption, assurance)
+                self.assertEqual(code, expected_code, out)
+                if marker is not None:
+                    self.assertIn(f"unfilled placeholder {marker!r}", out)
+                    # The token is reported, not the adopter's whole paragraph.
+                    self.assertIn("at $.system", out)
+
+            with self.subTest(case=label, layout="split"):
+                root = self.make_tmp()
+                adoption = baseline_adoption()
+                adoption["adoption_stage"] = "HUMAN_REVIEWED"
+                adoption["human_review"] = human_review_block()
+                adoption_path = build_split_project(
+                    root, adoption, baseline_registers()
+                )
+                (Path(root) / "assurance" / "SYSTEM.md").write_text(
+                    f"# System\n\n{prose}\n", encoding="utf-8"
+                )
+                code, out = self.run_adopter(root, adoption_path)
+                self.assertEqual(code, expected_code, out)
+                if marker is not None:
+                    self.assertIn(f"unfilled placeholder {marker!r}", out)
+
     def test_date_placeholder_in_register_fails_at_human_reviewed(self):
         # An unfilled `review_after` date sentinel is a placeholder too — caught
         # at HUMAN_REVIEWED, like any REPLACE_WITH_ token.
