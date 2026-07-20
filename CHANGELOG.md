@@ -2,7 +2,7 @@
 
 All notable changes to the OpenDevs Agentic Assurance Profile will be documented here.
 
-## Unreleased (v0.4.0 target)
+## v0.4.0 — 2026-07-20
 
 A usability-focused minor: makes adoption harder to get wrong at the
 entry point, turns the invariant register into a `core` obligation, and
