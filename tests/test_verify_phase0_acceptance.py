@@ -1,9 +1,10 @@
-"""Black-box tests for ``scripts/verify_phase0_acceptance.py``.
+"""Tests for ``scripts/verify_phase0_acceptance.py``.
 
-The suite is standard-library only.  Every case builds a synthetic Git
-repository with a candidate ``--no-ff`` merge, a separate acceptance-only
-``--no-ff`` merge, and a later consumer commit.  Hashes are calculated here,
-independently of the verifier, so the tests do not share its implementation.
+The standard-library-only black-box cases build synthetic Git repositories
+with separate candidate and acceptance merges.  One shallow-safe component
+case also checks the committed manifest, ledger, and local corpus roots for
+contract compatibility.  Fixture hashes are calculated independently of the
+verifier so the black-box tests do not share its implementation.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import copy
 import hashlib
 import json
 import os
+import runpy
 import shlex
 import shutil
 import stat
@@ -43,6 +45,10 @@ LEDGER_SHAPE_REVISION = "phase0-synthetic-candidate-1"
 CASE_ID = "core-seed-pass"
 CONDITION_KEY = "phase0.internal.synthetic.core-seed-satisfied"
 AUTHORITY_SOURCE_ID = "synthetic-v0.4.0-release"
+
+VERIFIER_NAMESPACE = runpy.run_path(
+    str(VERIFIER), run_name="_phase0_acceptance_verifier_component"
+)
 
 
 def raw_sha256(data: bytes) -> str:
@@ -119,6 +125,74 @@ def json_bytes(value: object) -> bytes:
     return (
         json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
+
+
+def repository_git_bytes(*args: str) -> bytes:
+    """Read current-HEAD objects without requiring pre-HEAD history."""
+
+    return subprocess.check_output(
+        ["git", "--no-replace-objects", "-C", str(REPO_ROOT), *args],
+        stdin=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        env={
+            **os.environ,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_NO_LAZY_FETCH": "1",
+        },
+    )
+
+
+def committed_file_bytes(relative: str) -> bytes:
+    """Read one artifact from the current committed tree."""
+
+    return repository_git_bytes("show", f"HEAD:{relative}")
+
+
+def committed_directory_tree_record(
+    scope: str,
+    root_id: str,
+    source_path: str,
+) -> dict:
+    """Independently calculate a corpus record from current-HEAD blobs."""
+
+    output = repository_git_bytes(
+        "ls-tree",
+        "-r",
+        "-z",
+        "--full-tree",
+        "HEAD",
+        "--",
+        f":(top,literal){scope}",
+    )
+    prefix = scope + "/"
+    records: list[dict[str, object]] = []
+    for raw_entry in output.split(b"\0"):
+        if not raw_entry:
+            continue
+        metadata, raw_path = raw_entry.split(b"\t", 1)
+        mode, object_type, oid = metadata.decode("ascii").split(" ")
+        path = raw_path.decode("utf-8")
+        if mode != "100644" or object_type != "blob":
+            raise AssertionError(f"committed corpus has unsupported entry: {path}")
+        if not path.startswith(prefix):
+            raise AssertionError(f"committed corpus path escaped scope: {path}")
+        relative = path[len(prefix) :]
+        data = repository_git_bytes("cat-file", "blob", oid)
+        records.append(
+            {
+                "path": relative,
+                "size": len(data),
+                "sha256": raw_sha256(data),
+            }
+        )
+    records.sort(key=lambda record: str(record["path"]).encode("ascii"))
+    return {
+        "root_id": root_id,
+        "source": {"kind": "corpus_directory", "path": source_path},
+        "file_count": len(records),
+        "byte_count": sum(int(record["size"]) for record in records),
+        "tree_sha256": canonical_records_sha256(records),
+    }
 
 
 class SyntheticAcceptanceRepository:
@@ -603,6 +677,7 @@ class TestPhase0AcceptanceVerifier(unittest.TestCase):
         decision_commit: Optional[str] = None,
         decision_id: str = DECISION_ID,
         decision_path: str = DECISION_PATH,
+        repo_root: Optional[Path] = None,
         extra_env: Optional[dict[str, str]] = None,
     ) -> subprocess.CompletedProcess[str]:
         env = {
@@ -617,7 +692,7 @@ class TestPhase0AcceptanceVerifier(unittest.TestCase):
                 sys.executable,
                 str(VERIFIER),
                 "--repo-root",
-                str(repository.root),
+                str(repo_root or repository.root),
                 "--expected-repository",
                 EXPECTED_REPOSITORY,
                 "--consumer-base",
@@ -721,7 +796,141 @@ class TestPhase0AcceptanceVerifier(unittest.TestCase):
                     "factual-review-classes",
                 ],
             )
+            self.assertEqual(
+                payload.get("unverified_preconditions"),
+                [
+                    "verifier-executable-provenance",
+                    "git-executable-provenance",
+                    "local-repository-origin",
+                    "expected-repository-argument-authority",
+                ],
+            )
+            self.assertEqual(
+                payload.get("unverified_authority_predicates"),
+                [
+                    "semantic-authority-reference-validity",
+                    "published-release-tag-state",
+                    "github-release-pr-state",
+                    "github-release-workflow-run-state",
+                ],
+            )
+            observations = payload.get("local_observations")
+            self.assertIsInstance(observations, dict)
+            self.assertEqual(
+                observations.get("verifier_executable_path"),
+                str(VERIFIER.resolve()),
+            )
+            self.assertEqual(
+                observations.get("repository_root"),
+                str(repository.root.resolve()),
+            )
+            self.assertTrue(Path(observations["git_executable_path"]).is_absolute())
+            self.assertRegex(observations.get("git_version", ""), r"^git version ")
             self.assertEqual(before, after)
+
+    def test_current_manifest_ledger_and_local_corpus_are_component_compatible(
+        self,
+    ) -> None:
+        artifact_scope = "tests/characterization/v0.4.0"
+        manifest_bytes = committed_file_bytes(f"{artifact_scope}/manifest.json")
+        ledger_bytes = committed_file_bytes(
+            f"{artifact_scope}/expected-outcomes.json"
+        )
+        strict_json = VERIFIER_NAMESPACE["strict_json"]
+        verify_ledger = VERIFIER_NAMESPACE["verify_ledger"]
+        manifest = strict_json(manifest_bytes, "current committed manifest")
+        ledger = strict_json(ledger_bytes, "current committed ledger")
+
+        self.assertEqual(
+            manifest.get("document_kind"), "phase0_fixture_manifest_scaffold"
+        )
+        self.assertEqual(manifest.get("status"), "PROPOSED_NOT_ACCEPTED")
+        self.assertIs(manifest.get("public_contract"), False)
+        self.assertIs(manifest.get("coverage_complete"), False)
+        self.assertEqual(
+            manifest.get("digest", {}).get("algorithm"),
+            "sha256-over-canonical-root-records-described-in-README",
+        )
+        reference = manifest.get("reference")
+        self.assertIsInstance(reference, dict)
+        self.assertIsInstance(reference.get("release"), str)
+        for field in (
+            "annotated_tag_object_sha1",
+            "peeled_commit_sha1",
+            "validator_git_blob_sha1",
+            "requirements_git_blob_sha1",
+        ):
+            self.assertRegex(reference.get(field, ""), r"^[0-9a-f]{40}$")
+        root_records = manifest.get("root_records")
+        self.assertIsInstance(root_records, list)
+        self.assertTrue(root_records)
+        actual_digest_records: list[dict[str, str]] = []
+        source_kind_counts = {"corpus_directory": 0, "git_commit": 0}
+        root_ids: set[str] = set()
+        for record in root_records:
+            self.assertIsInstance(record, dict)
+            root_id = record.get("root_id")
+            self.assertIsInstance(root_id, str)
+            self.assertTrue(root_id)
+            root_id.encode("ascii")
+            self.assertNotIn(root_id, root_ids)
+            root_ids.add(root_id)
+            self.assertIs(type(record.get("file_count")), int)
+            self.assertGreaterEqual(record["file_count"], 1)
+            self.assertIs(type(record.get("byte_count")), int)
+            self.assertGreaterEqual(record["byte_count"], 1)
+            self.assertRegex(record.get("tree_sha256", ""), r"^[0-9a-f]{64}$")
+            source = record.get("source")
+            self.assertIsInstance(source, dict)
+            source_kind = source.get("kind")
+            self.assertIn(source_kind, source_kind_counts)
+            source_kind_counts[source_kind] += 1
+            if source_kind == "corpus_directory":
+                actual = committed_directory_tree_record(
+                    f"{artifact_scope}/{source['path']}",
+                    root_id,
+                    source["path"],
+                )
+                self.assertEqual(actual, record)
+                tree_sha256 = actual["tree_sha256"]
+            else:
+                self.assertEqual(source.get("scope"), ".")
+                self.assertRegex(source.get("commit_sha1", ""), r"^[0-9a-f]{40}$")
+                self.assertRegex(source.get("git_tree_sha1", ""), r"^[0-9a-f]{40}$")
+                self.assertRegex(record.get("tree_sha256", ""), r"^[0-9a-f]{64}$")
+                tree_sha256 = record["tree_sha256"]
+            actual_digest_records.append(
+                {"root_id": root_id, "tree_sha256": tree_sha256}
+            )
+
+        self.assertEqual(
+            source_kind_counts,
+            {"corpus_directory": 6, "git_commit": 1},
+        )
+        self.assertEqual(
+            corpus_sha256(actual_digest_records),
+            manifest["digest"]["corpus_sha256"],
+        )
+        cases = manifest.get("cases")
+        self.assertIsInstance(cases, list)
+        self.assertTrue(cases)
+        manifest_case_ids: set[str] = set()
+        for case in cases:
+            self.assertIsInstance(case, dict)
+            case_id = case.get("case_id")
+            self.assertIsInstance(case_id, str)
+            self.assertTrue(case_id)
+            case_id.encode("ascii")
+            self.assertNotIn(case_id, manifest_case_ids)
+            manifest_case_ids.add(case_id)
+            self.assertIn(case.get("input_root_id"), root_ids)
+        ledger_case_ids, coverage = verify_ledger(
+            ledger,
+            raw_sha256(manifest_bytes),
+            manifest_case_ids,
+        )
+        self.assertEqual(ledger_case_ids, manifest_case_ids)
+        self.assertEqual(coverage, ledger["coverage"])
 
     def test_caller_git_environment_redirections_are_ignored(self) -> None:
         with SyntheticAcceptanceRepository() as repository:
@@ -778,6 +987,7 @@ class TestPhase0AcceptanceVerifier(unittest.TestCase):
                     encoding="utf-8",
                 )
                 wrapper.chmod(0o755)
+                expected_wrapper_path = str(wrapper.resolve())
                 completed = self.run_verifier(
                     repository,
                     extra_env={
@@ -793,6 +1003,21 @@ class TestPhase0AcceptanceVerifier(unittest.TestCase):
             payload = self.parse_payload(completed)
             self.assertEqual(completed.returncode, 0, payload)
             self.assertEqual(payload.get("offline_binding"), "VERIFIED")
+            self.assertEqual(
+                payload["local_observations"]["git_executable_path"],
+                expected_wrapper_path,
+            )
+
+    def test_nested_repo_root_is_rejected(self) -> None:
+        with SyntheticAcceptanceRepository() as repository:
+            nested = repository.root / "nested" / "directory"
+            nested.mkdir(parents=True)
+            completed = self.run_verifier(repository, repo_root=nested)
+            payload = self.assert_rejected(completed)
+            self.assertEqual(
+                payload.get("error"),
+                "--repo-root must exactly name the non-bare repository top-level",
+            )
 
     def test_decision_cannot_self_declare_acceptance(self) -> None:
         mutations = {

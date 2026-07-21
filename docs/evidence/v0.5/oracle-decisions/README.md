@@ -22,6 +22,13 @@ repository-object and byte-binding predicates; it cannot grant acceptance.
 4. A later **implementation PR** may consume only material whose byte-identical
    decision record is already present on its base branch.
 
+For this internal format, each candidate and acceptance PR must land as an
+ordinary Git merge commit with exactly two parents: the final canonical-main
+base first and the reviewed PR head second. Squash and rebase merges are
+unsupported because they erase that boundary. Repository settings that still
+permit those strategies are an external process risk, not a condition this
+offline verifier can repair.
+
 A narrower decision may accept the semantic ledger revision after step 1 while
 recording `implementation_parity_authorized: false`. That decision preserves a
 reviewed semantic baseline but does not permit an implementation comparison.
@@ -75,7 +82,9 @@ is no implicit `latest` lookup.
 
 The repository's internal offline verifier mechanizes only the bounded subset
 described below. The external authority predicates remain a review contract,
-and no CI consumer is added.
+and no operational acceptance or parity CI consumer is added. Regression CI
+does check that the committed candidate artifacts remain component-compatible
+with the internal verifier; that check grants no authority.
 
 ## Slice 3 offline binding verifier
 
@@ -101,6 +110,16 @@ decision bytes from the worktree or index, or select an implicit latest
 decision. Missing objects, shallow history, unsafe or ambiguous paths, parse
 failures, and binding mismatches are controlled failures rather than permission
 to fall back to current files.
+
+The `local_observations` fields `verifier_executable_path`,
+`git_executable_path`, `git_version`, and `repository_root` are diagnostics,
+not provenance. The
+verifier and Git executable provenance, local repository origin, and authority
+of the caller's expected-repository argument remain unverified preconditions. A
+successful run must not promote those observations into a trust claim. JSON
+names them under `unverified_preconditions` as
+`verifier-executable-provenance`, `git-executable-provenance`,
+`local-repository-origin`, and `expected-repository-argument-authority`.
 
 The selected decision path must be introduced for the first time by the named
 acceptance merge. A path that appeared earlier on the acceptance base's
@@ -142,6 +161,17 @@ the factual review classes are authentic. JSON lists these as
 `protected-canonical-main`, `github-acceptance-pr-state`,
 `factual-human-decision-maker`, and `factual-review-classes`. Green automation
 or exit `0` cannot upgrade any of them.
+
+It also does not establish the semantic validity of the ledger's authority
+references or the factual published-release, GitHub release-PR, and release
+workflow state they describe. JSON records these under
+`unverified_authority_predicates` as
+`semantic-authority-reference-validity`, `published-release-tag-state`,
+`github-release-pr-state`, and `github-release-workflow-run-state`. Completing
+the authority graph, adding an
+aggregate resource budget, and separating binding failure from verifier
+indeterminacy in a stable exit taxonomy are deferred requirements before any
+authoritative consumer or CI gate.
 
 The Slice 3 implementation accepts only the semantic-only, non-successor shape:
 `decision = ACCEPT_SEMANTIC_LEDGER_REVISION`,

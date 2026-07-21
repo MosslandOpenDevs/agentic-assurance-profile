@@ -20,6 +20,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import sys
 from typing import Any
@@ -58,6 +59,20 @@ UNVERIFIED_EXTERNAL_PREDICATES = [
     "github-acceptance-pr-state",
     "factual-human-decision-maker",
     "factual-review-classes",
+]
+
+UNVERIFIED_PRECONDITIONS = [
+    "verifier-executable-provenance",
+    "git-executable-provenance",
+    "local-repository-origin",
+    "expected-repository-argument-authority",
+]
+
+UNVERIFIED_AUTHORITY_PREDICATES = [
+    "semantic-authority-reference-validity",
+    "published-release-tag-state",
+    "github-release-pr-state",
+    "github-release-workflow-run-state",
 ]
 
 
@@ -190,7 +205,44 @@ class GitObjects:
         self.repo_root = repo_root.resolve()
         if not self.repo_root.is_dir():
             fail("--repo-root must name an existing directory")
-        self._run(["rev-parse", "--git-dir"])
+
+        selected_git = shutil.which("git")
+        if selected_git is None:
+            fail("cannot resolve a Git executable from PATH")
+        try:
+            git_executable = Path(selected_git).resolve(strict=True)
+        except OSError as exc:
+            fail(f"cannot resolve the selected Git executable: {exc}")
+        require(
+            git_executable.is_file() and os.access(git_executable, os.X_OK),
+            "selected Git executable is not an executable file",
+        )
+        self.git_executable = git_executable
+
+        bare = self._run(["rev-parse", "--is-bare-repository"]).stdout.strip()
+        require(bare in {b"true", b"false"}, "cannot determine whether the repository is bare")
+        require(bare == b"false", "bare repositories are unsupported")
+        top_level_bytes = self._run(["rev-parse", "--show-toplevel"]).stdout.rstrip(
+            b"\r\n"
+        )
+        require(top_level_bytes, "cannot determine the repository top-level")
+        try:
+            top_level = Path(os.fsdecode(top_level_bytes)).resolve(strict=True)
+        except OSError as exc:
+            fail(f"cannot resolve the repository top-level: {exc}")
+        require(
+            top_level == self.repo_root,
+            "--repo-root must exactly name the non-bare repository top-level",
+        )
+        self.repository_top_level = top_level
+
+        version_bytes = self._run(["--version"]).stdout.strip()
+        require(version_bytes and len(version_bytes) <= 200, "cannot determine a bounded Git version")
+        try:
+            self.git_version = version_bytes.decode("ascii", "strict")
+        except UnicodeDecodeError:
+            fail("Git version output is not ASCII")
+
         shallow = self._run(["rev-parse", "--is-shallow-repository"]).stdout.strip()
         require(shallow in {b"true", b"false"}, "cannot determine whether the repository is shallow")
         require(shallow == b"false", "shallow repositories are unsupported")
@@ -233,7 +285,7 @@ class GitObjects:
             }
         )
         command = [
-            "git",
+            str(self.git_executable),
             "--no-replace-objects",
             "-C",
             str(self.repo_root),
@@ -1024,6 +1076,14 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         "implementation_parity_authorized": False,
         "verified": VERIFIED_CHECKS,
         "unverified_external_predicates": UNVERIFIED_EXTERNAL_PREDICATES,
+        "local_observations": {
+            "verifier_executable_path": str(Path(__file__).resolve()),
+            "git_executable_path": str(git.git_executable),
+            "git_version": git.git_version,
+            "repository_root": str(git.repository_top_level),
+        },
+        "unverified_preconditions": UNVERIFIED_PRECONDITIONS,
+        "unverified_authority_predicates": UNVERIFIED_AUTHORITY_PREDICATES,
     }
 
 
@@ -1051,6 +1111,14 @@ def emit_success(result: dict[str, Any], output_format: str) -> None:
     print("OFFLINE BINDING VERIFIED; EFFECTIVE ACCEPTANCE NOT ESTABLISHED")
     print(f"decision: {result['decision_id']}")
     print(f"candidate: {result['candidate_commit_sha1']}")
+    observations = result["local_observations"]
+    print(
+        "observed Git: "
+        f"{observations['git_executable_path']} ({observations['git_version']})"
+    )
+    print(f"observed verifier: {observations['verifier_executable_path']}")
+    print(f"observed repository root: {observations['repository_root']}")
+    print("toolchain and repository-origin preconditions remain unverified")
     print("external authority predicates remain unverified")
 
 

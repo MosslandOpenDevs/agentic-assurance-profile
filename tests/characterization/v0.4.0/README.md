@@ -8,12 +8,13 @@ their outcomes. It does not complete Phase 0 or issue #49, authorize a parity
 exception, define a public JSON contract, or establish stable finding/check
 identifiers.
 
-No validator, workflow, schema, template, CI job, or parity test assertion
-consumes these files. The Slice 3 internal offline verifier may read their
-bound Git-object bytes only to check repository and hash bindings; it does not
-evaluate the expectations, grant acceptance, or authorize implementation
-parity. The v0.4.0 executable is comparison evidence, not the authority for the
-proposed expectations.
+No validator, workflow, schema, template, acceptance gate, or parity test
+consumes these files. Slice 3 regression CI checks only that the committed
+manifest, ledger, and local corpus roots remain component-compatible with the
+internal verifier. The verifier itself may read bound Git-object bytes only to
+check repository and hash bindings; neither path evaluates the expectations,
+grants acceptance, or authorizes implementation parity. The v0.4.0 executable
+is comparison evidence, not the authority for the proposed expectations.
 
 ## The three separate artifacts
 
@@ -191,6 +192,17 @@ remains `NOT_ESTABLISHED`. It supports semantic-only decisions with no
 successor and no parity projection, authenticates no external human or GitHub
 authority predicate, and is not a CI consumer. Self-reported `accepted: true`
 or `status: ACCEPTED` fields are invalid and cannot upgrade that result.
+
+Candidate and acceptance boundaries require ordinary exactly-two-parent merge
+commits; squash and rebase merges are unsupported even if repository settings
+permit them. Reported Git executable/version and repository-root identities are
+diagnostic observations; verifier/Git provenance, repository origin, and the
+authority of the expected-repository argument are not established.
+Authority-reference semantics and the factual published-release, GitHub
+release-PR, and workflow state remain unverified. Full authority-graph
+verification, aggregate resource budgeting, and a stable
+failure-versus-indeterminate exit taxonomy are required before an authoritative
+consumer.
 
 The current internal implementation applies Git subprocess timeouts and checks
 tree counts and sizes after output is returned, but it has no streaming Git

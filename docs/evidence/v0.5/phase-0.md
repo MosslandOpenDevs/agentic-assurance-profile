@@ -68,7 +68,21 @@ parity material, or work that cannot fit the cap. Exit `0` from the internal
 tool means `offline_binding = VERIFIED`, not effective acceptance. Protected
 canonical-main state, GitHub acceptance-PR state, the factual human decision
 maker, and factual review classes remain explicitly unverified external
-predicates. This slice adds no CI consumer.
+predicates. Candidate and acceptance PR boundaries are supported only when each
+lands as an ordinary exactly-two-parent merge commit; squash and rebase merges
+are unsupported, and repository settings that permit them remain an external
+process risk. This slice adds no operational acceptance or parity CI consumer;
+regression CI checks only component compatibility of the committed candidate
+artifacts and grants no authority.
+
+Selected Git executable/version and repository-root identities are diagnostic
+observations. Verifier and Git provenance, repository origin, and the authority
+of the expected-repository argument are not established. The semantic validity
+of authority references and the factual published-release, GitHub release-PR,
+and release workflow state also remain unverified. Full authority-graph
+verification, an aggregate resource budget, and a stable
+failure-versus-indeterminate exit taxonomy are deferred before any authoritative
+consumer.
 
 The candidate manifest, ledger, corpus, and all identities below remain
 byte-for-byte unchanged by Slice 3.
