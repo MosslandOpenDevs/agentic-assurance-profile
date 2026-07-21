@@ -6,7 +6,7 @@
 - **Tracking issue:** [#43](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/43)
 - **Acceptance:** maintainer review and merge of the exact review-candidate
   head in the linked pull request
-- **Acceptance record:** pending
+- **Acceptance record:** [Draft PR #64](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/64)
 - **Acceptance review class:** pending; record the factual class from
   [`GOVERNANCE.md`](../../../GOVERNANCE.md) before merge
 - **Recorded:** 2026-07-21
