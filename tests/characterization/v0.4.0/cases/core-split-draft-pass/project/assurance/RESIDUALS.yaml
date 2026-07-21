@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "residuals": [
+    {
+      "id": "RES-CORE-001",
+      "summary": "Example residual",
+      "impact": "low",
+      "uncertainty": "low",
+      "status": "OPEN",
+      "disclosure": "PUBLIC",
+      "owner": "Example Owner"
+    }
+  ]
+}

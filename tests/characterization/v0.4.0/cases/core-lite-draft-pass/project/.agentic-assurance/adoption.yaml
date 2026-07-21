@@ -1,0 +1,20 @@
+{
+  "upstream": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "version": "v0.4.0",
+    "commit": "00e2fe46d4eb01a4147f149851a48a3017cbb796"
+  },
+  "project": {
+    "name": "Phase 0 Core Lite Seed",
+    "repository": "example/phase0-core-lite",
+    "human_owner": "Example Owner"
+  },
+  "profiles": [
+    "core"
+  ],
+  "layout": "lite",
+  "specification_workflow": {
+    "system": "minimal",
+    "root": "AGENTIC_ASSURANCE.md"
+  }
+}

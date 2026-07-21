@@ -1,0 +1,32 @@
+{
+  "upstream": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "version": "v0.4.0",
+    "commit": "00e2fe46d4eb01a4147f149851a48a3017cbb796"
+  },
+  "project": {
+    "name": "Phase 0 Transition Seed",
+    "repository": "example/phase0-transition",
+    "human_owner": "Example Owner"
+  },
+  "profiles": [
+    "core"
+  ],
+  "adoption_stage": "CONFORMANT",
+  "human_review": {
+    "date": "2026-07-19",
+    "reviewer": "Example Owner",
+    "record": "docs/reviews/transition-review.md",
+    "approvals": [
+      {
+        "approver": "example-reviewer",
+        "review_url": "https://example.invalid/reviews/transition-1",
+        "at": "2026-07-20"
+      }
+    ]
+  },
+  "specification_workflow": {
+    "system": "minimal",
+    "root": "AGENTIC_ASSURANCE.md"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "upstream": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "version": "v0.4.0",
+    "commit": "00e2fe46d4eb01a4147f149851a48a3017cbb796"
+  },
+  "project": {
+    "name": "Phase 0 Drift Routing Seed",
+    "repository": "example/phase0-drift-routing",
+    "human_owner": "Example Owner"
+  },
+  "profiles": [
+    "core"
+  ],
+  "specification_workflow": {
+    "system": "minimal",
+    "root": "AGENTIC_ASSURANCE.md"
+  },
+  "components": {
+    "api": {
+      "paths": [
+        "src/api/**"
+      ],
+      "invariants": [
+        "INV-CORE-001"
+      ]
+    }
+  }
+}

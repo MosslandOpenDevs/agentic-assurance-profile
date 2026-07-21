@@ -1,0 +1,229 @@
+{
+  "document_kind": "phase0_fixture_manifest_scaffold",
+  "status": "PROPOSED_NOT_ACCEPTED",
+  "public_contract": false,
+  "coverage_complete": false,
+  "reference": {
+    "release": "v0.4.0",
+    "annotated_tag_object_sha1": "1373d963a098e13d2f44891e58ee8a47e285c5c3",
+    "peeled_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+    "validator_git_blob_sha1": "af5f7c39373f6dc6ced93d437cec4b972851e3a3",
+    "requirements_git_blob_sha1": "1fbebbbb08277b81307439866de067ebd224515b",
+    "network_during_execution": "forbidden"
+  },
+  "digest": {
+    "algorithm": "sha256-over-canonical-root-records-described-in-README",
+    "corpus_sha256": "cb9710c7b27350e11b69450d8d4cc6bb95f0d8adb3e37ae474d3512d64d6a293"
+  },
+  "root_records": [
+    {
+      "root_id": "case-archived-reviewed-pass",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/archived-reviewed-pass"
+      },
+      "file_count": 5,
+      "byte_count": 1823,
+      "tree_sha256": "a2042af1e40807ab6a784590226c6b5af8253bef8d926812e986bf708f9d0261"
+    },
+    {
+      "root_id": "case-core-lite-draft-pass",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/core-lite-draft-pass"
+      },
+      "file_count": 4,
+      "byte_count": 1783,
+      "tree_sha256": "32782dd3fd875619209393eaa9033d9c7b8f7fadf1ef502a880a549ad09bf9e8"
+    },
+    {
+      "root_id": "case-core-split-draft-pass",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/core-split-draft-pass"
+      },
+      "file_count": 6,
+      "byte_count": 1851,
+      "tree_sha256": "57b9b9da8d972c01dc6d11d23a50819116866860fdcba4809e7e4a67fcfc29ab"
+    },
+    {
+      "root_id": "case-drift-routing-strict-block",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/drift-routing-strict-block"
+      },
+      "file_count": 4,
+      "byte_count": 867,
+      "tree_sha256": "879b3496847443796cd81b0556c5047a5818c5011459283299b03ffabdc72d90"
+    },
+    {
+      "root_id": "case-transition-stage-downgrade-block",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/transition-stage-downgrade-block"
+      },
+      "file_count": 4,
+      "byte_count": 1658,
+      "tree_sha256": "b52c7db6d52d35df2c5715f663d89a02fe3b531a4ac87c585f7bb5508f72f602"
+    },
+    {
+      "root_id": "case-trust-path-traversal-block",
+      "source": {
+        "kind": "corpus_directory",
+        "path": "cases/trust-path-traversal-block"
+      },
+      "file_count": 6,
+      "byte_count": 1757,
+      "tree_sha256": "1810e659fc5c8634007bac93fb80802965c4c9f70b12b3cb50a15da1f98424d4"
+    },
+    {
+      "root_id": "reference-v0.4.0",
+      "source": {
+        "kind": "git_commit",
+        "commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "scope": ".",
+        "git_tree_sha1": "5506346817ecd36c6766c498c8afefa2bf945f47"
+      },
+      "file_count": 57,
+      "byte_count": 1464622,
+      "tree_sha256": "1015d22bf38a21c6b9f535ee7d079248350dd50107c2b8a051bc1287b57a38de"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "core-split-draft-pass",
+      "input_root_id": "case-core-split-draft-pass",
+      "characterization_source": "tests/test_validate.py::TestAdopterBaseline::test_minimal_valid_split_core_adoption_passes",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "adopter",
+        "--adoption",
+        "@corpus/cases/core-split-draft-pass/project/.agentic-assurance/adoption.yaml",
+        "--project-root",
+        "@corpus/cases/core-split-draft-pass/project",
+        "--schemas",
+        "@profile/schemas",
+        "--profile-checkout",
+        "@profile",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "core-lite-draft-pass",
+      "input_root_id": "case-core-lite-draft-pass",
+      "characterization_source": "tests/test_validate.py::TestLiteLayout::test_valid_lite_fixture_passes",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "adopter",
+        "--adoption",
+        "@corpus/cases/core-lite-draft-pass/project/.agentic-assurance/adoption.yaml",
+        "--project-root",
+        "@corpus/cases/core-lite-draft-pass/project",
+        "--schemas",
+        "@profile/schemas",
+        "--profile-checkout",
+        "@profile",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "archived-reviewed-pass",
+      "input_root_id": "case-archived-reviewed-pass",
+      "characterization_source": "composed seed anchored by tests/test_validate.py::TestAdopterBaseline::test_archived_only_adoption_exempt_from_invariants_and_residuals, TestLiteLayout::test_archived_profile_emits_section_6_6_warning, and TestArchivedAndOperationalStageHardening::test_archived_conformant_preserves_honest_historical_registers",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "adopter",
+        "--adoption",
+        "@corpus/cases/archived-reviewed-pass/project/.agentic-assurance/adoption.yaml",
+        "--project-root",
+        "@corpus/cases/archived-reviewed-pass/project",
+        "--schemas",
+        "@profile/schemas",
+        "--profile-checkout",
+        "@profile",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "transition-stage-downgrade-block",
+      "input_root_id": "case-transition-stage-downgrade-block",
+      "characterization_source": "tests/test_validate.py::TestDriftPolicyRegression::test_stage_downgrade_fails",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "drift",
+        "--adoption",
+        "@corpus/cases/transition-stage-downgrade-block/head-adoption.yaml",
+        "--changed-files",
+        "@corpus/cases/transition-stage-downgrade-block/changed-files.txt",
+        "--pr-body",
+        "@corpus/cases/transition-stage-downgrade-block/pr-body.md",
+        "--base-adoption",
+        "@corpus/cases/transition-stage-downgrade-block/base-adoption.yaml",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "trust-path-traversal-block",
+      "input_root_id": "case-trust-path-traversal-block",
+      "characterization_source": "tests/test_validate.py::TestAdopterTrustBoundaries::test_security_paths_reject_traversal_and_symlink_escape",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "adopter",
+        "--adoption",
+        "@corpus/cases/trust-path-traversal-block/project/.agentic-assurance/adoption.yaml",
+        "--project-root",
+        "@corpus/cases/trust-path-traversal-block/project",
+        "--schemas",
+        "@profile/schemas",
+        "--profile-checkout",
+        "@profile",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "drift-routing-strict-block",
+      "input_root_id": "case-drift-routing-strict-block",
+      "characterization_source": "tests/test_validate.py::TestDriftRouting::test_assurance_diff_without_reference_strict_fails",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "drift",
+        "--adoption",
+        "@corpus/cases/drift-routing-strict-block/adoption.yaml",
+        "--changed-files",
+        "@corpus/cases/drift-routing-strict-block/changed-files.txt",
+        "--pr-body",
+        "@corpus/cases/drift-routing-strict-block/pr-body.md",
+        "--assurance-diff",
+        "@corpus/cases/drift-routing-strict-block/assurance.diff",
+        "--strict",
+        "--json"
+      ]
+    },
+    {
+      "case_id": "central-self-check-pass",
+      "input_root_id": "reference-v0.4.0",
+      "characterization_source": "tests/test_validate.py::TestSelfCheck::test_self_check_passes_on_repository",
+      "invocation": [
+        "@python",
+        "-I",
+        "@profile/scripts/validate.py",
+        "self-check",
+        "--repo-root",
+        "@profile",
+        "--json"
+      ]
+    }
+  ]
+}

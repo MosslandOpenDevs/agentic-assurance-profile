@@ -1,0 +1,277 @@
+{
+  "document_kind": "phase0_expected_outcomes_scaffold",
+  "status": "PROPOSED_NOT_ACCEPTED",
+  "oracle": false,
+  "public_contract": false,
+  "coverage_complete": false,
+  "candidate_label": "v0.4.0-seven-seed-2026-07-21",
+  "acceptance_binding": null,
+  "acceptance_process_required": {
+    "decision_authority": "MosslandOpenDevs maintainers under GOVERNANCE.md sections 1 and 2",
+    "binding": "A separate decision must bind the exact repository commit plus raw manifest and ledger SHA-256 values.",
+    "review_class_recording": "Record the factual GOVERNANCE.md review classes; they are non-ordinal, and AUTOMATION_VERIFIED is orthogonal to human review."
+  },
+  "fixture_manifest_raw_sha256": "4cd135234698b47c9b4444ca0cb00121b1da872ff8abf4ac9ccf32015009387b",
+  "entries": [
+    {
+      "case_id": "core-split-draft-pass",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §6.1 Core",
+        "PROFILE.md §17 DRAFT"
+      ],
+      "actual_review_classes": null,
+      "rationale": "The default split layout mechanically represents the minimum core artifacts at DRAFT.",
+      "proposed_expectation": {
+        "process_exit": 0,
+        "must_include": [
+          {
+            "level": "ok",
+            "message_substring": "adoption file validates against adoption.schema.json"
+          }
+        ],
+        "must_not_include_level": "error"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 0,
+        "json_exit_code": 0,
+        "counts": {
+          "error": 0,
+          "warn": 0,
+          "ok": 12
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "core-lite-draft-pass",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §6 Required local artifacts",
+        "PROFILE.md §6.1 Core",
+        "PROFILE.md §17 DRAFT"
+      ],
+      "actual_review_classes": null,
+      "rationale": "The single-file lite layout is permitted for a sole core profile and carries its minimum DRAFT content.",
+      "proposed_expectation": {
+        "process_exit": 0,
+        "must_include": [
+          {
+            "level": "ok",
+            "message_substring": "layout 'lite' is declared with core-only profiles"
+          }
+        ],
+        "must_not_include_level": "error"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 0,
+        "json_exit_code": 0,
+        "counts": {
+          "error": 0,
+          "warn": 0,
+          "ok": 12
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "archived-reviewed-pass",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §6.6 Archived",
+        "PROFILE.md §17 HUMAN_REVIEWED",
+        "PROFILE.md §17 honest mechanical boundary"
+      ],
+      "actual_review_classes": null,
+      "rationale": "Archived is exclusive, uses a mapped system artifact instead of active registers, and still cannot mechanically prove the historical facts.",
+      "proposed_expectation": {
+        "process_exit": 0,
+        "must_include": [
+          {
+            "level": "ok",
+            "message_substring": "profile 'archived' is declared exclusively"
+          },
+          {
+            "level": "warn",
+            "message_substring": "section 6.6"
+          }
+        ],
+        "must_not_include_level": "error"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 0,
+        "json_exit_code": 0,
+        "counts": {
+          "error": 0,
+          "warn": 1,
+          "ok": 9
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "transition-stage-downgrade-block",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §17 stage ladder and human-owner advancement",
+        "docs/ADOPTION.md §3.7 policy regression",
+        "CHANGELOG.md v0.2.1 Changed — Stage self-downgrade protection"
+      ],
+      "actual_review_classes": null,
+      "rationale": "A pull request must not lower its own declared stage and silently erase the reviewed gate.",
+      "proposed_expectation": {
+        "process_exit": 1,
+        "must_include": [
+          {
+            "level": "error",
+            "message_substring": "assurance policy weakened"
+          },
+          {
+            "level": "error",
+            "message_substring": "adoption_stage downgraded from CONFORMANT to DRAFT"
+          }
+        ],
+        "must_not_include_text": "Traceback"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 1,
+        "json_exit_code": 1,
+        "counts": {
+          "error": 1,
+          "warn": 0,
+          "ok": 0
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "trust-path-traversal-block",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §6 common repository-relative and containment boundary"
+      ],
+      "actual_review_classes": null,
+      "rationale": "An adopter-owned policy path may not escape the adopting repository.",
+      "proposed_expectation": {
+        "process_exit": 1,
+        "must_include": [
+          {
+            "level": "error",
+            "message_substring": "security.policy"
+          },
+          {
+            "level": "error",
+            "message_substring": "repository-relative"
+          }
+        ],
+        "must_not_include_text": "Traceback"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 1,
+        "json_exit_code": 1,
+        "counts": {
+          "error": 2,
+          "warn": 0,
+          "ok": 11
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "drift-routing-strict-block",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "PROFILE.md §9 Material changes",
+        "docs/ADOPTION.md §3.7 strict component routing",
+        "CHANGELOG.md v0.2.1 Changed — Per-component drift satisfaction"
+      ],
+      "actual_review_classes": null,
+      "rationale": "Strict routing blocks a touched component when neither assurance evidence nor an explicit impact declaration addresses its invariant.",
+      "proposed_expectation": {
+        "process_exit": 1,
+        "must_include": [
+          {
+            "level": "error",
+            "message_substring": "without an assurance update"
+          }
+        ],
+        "must_not_include_text": "Traceback"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 1,
+        "json_exit_code": 1,
+        "counts": {
+          "error": 1,
+          "warn": 0,
+          "ok": 0
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    },
+    {
+      "case_id": "central-self-check-pass",
+      "proposed_disposition": "PRESERVE",
+      "authority": [
+        "GOVERNANCE.md §2 AUTOMATION_VERIFIED evidence definition",
+        ".github/workflows/self-check.yml profile self-check job"
+      ],
+      "actual_review_classes": null,
+      "rationale": "The exact tagged release tree must satisfy its own required mechanical release gate.",
+      "proposed_expectation": {
+        "process_exit": 0,
+        "must_include": [
+          {
+            "level": "ok",
+            "message_substring": "VERSION file is 'v0.4.0'"
+          }
+        ],
+        "must_not_include_level": "error"
+      },
+      "reference_observation": {
+        "evidence_only": true,
+        "release_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+        "run_date": "2026-07-21",
+        "runtime": "CPython 3.14.6",
+        "process_exit": 0,
+        "json_exit_code": 0,
+        "counts": {
+          "error": 0,
+          "warn": 0,
+          "ok": 25
+        },
+        "selected_predicates_observed": true,
+        "stderr_empty": true
+      }
+    }
+  ]
+}

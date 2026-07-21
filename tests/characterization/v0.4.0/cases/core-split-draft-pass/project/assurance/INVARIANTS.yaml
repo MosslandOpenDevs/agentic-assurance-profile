@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "invariants": [
+    {
+      "id": "INV-CORE-001",
+      "title": "Example invariant",
+      "statement": "The example property always holds",
+      "severity": "low",
+      "scope": "example scope",
+      "status": "UNKNOWN",
+      "disclosure": "PUBLIC",
+      "owner": "Example Owner"
+    }
+  ]
+}
