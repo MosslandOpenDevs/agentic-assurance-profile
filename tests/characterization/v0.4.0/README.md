@@ -8,9 +8,12 @@ their outcomes. It does not complete Phase 0 or issue #49, authorize a parity
 exception, define a public JSON contract, or establish stable finding/check
 identifiers.
 
-No validator, workflow, schema, template, CI job, or test assertion consumes
-these files. The v0.4.0 executable is comparison evidence, not the authority
-for the proposed expectations.
+No validator, workflow, schema, template, CI job, or parity test assertion
+consumes these files. The Slice 3 internal offline verifier may read their
+bound Git-object bytes only to check repository and hash bindings; it does not
+evaluate the expectations, grant acceptance, or authorize implementation
+parity. The v0.4.0 executable is comparison evidence, not the authority for the
+proposed expectations.
 
 ## The three separate artifacts
 
@@ -139,22 +142,61 @@ temporary paths and whole stdout hashes are intentionally not parity claims.
 
 ## Digest algorithm
 
-Each `root_record` in the manifest covers one input tree. For a working-tree
-root, recursively enumerate every regular file beneath the declared directory.
-For the Git reference root, enumerate every tracked blob in the exact commit.
-Reject symlinks, non-regular entries, absolute paths, `.`/`..` components,
-duplicate paths, and paths outside the declared root.
+Each `root_record` in the manifest covers one input tree. Digest format v1
+enumerates it exclusively from Git objects already present in the repository:
+a `corpus_directory` beneath its path in the bound candidate commit, or the
+exact commit and tree named by a `git_commit` source. It does not enumerate a
+worktree or index. Reject symlinks, covered file entries that are not blobs,
+absolute paths, `.`/`..` components, duplicate paths, and paths outside the
+declared root.
 
 For each tree, create records with `path` (POSIX relative path), byte `size`,
-and lowercase raw-byte `sha256`; sort by `path`. Serialize the array as UTF-8
-JSON with ASCII escaping, sorted object keys, and separators `,` and `:` with
-no trailing newline. The SHA-256 of those bytes is `tree_sha256`.
+and lowercase raw-byte `sha256`. Digest format v1 accepts ASCII `path` values
+only and sorts their encoded ASCII bytes lexicographically. It performs no
+locale collation, case folding, or Unicode normalization. Serialize the array
+as UTF-8 JSON with ASCII escaping, sorted object keys, and separators `,` and
+`:` with no trailing newline. The SHA-256 of those bytes is `tree_sha256`.
 
 For `corpus_sha256`, create records containing only `root_id` and the verified
-`tree_sha256`, sort by `root_id`, and serialize/hash with the same rules. The
-manifest, ledger, and this README are excluded, so the aggregate has no
-self-reference. Acceptance later binds the raw manifest and ledger hashes
-separately.
+`tree_sha256`. Digest format v1 likewise accepts ASCII `root_id` values only and
+sorts their encoded ASCII bytes lexicographically before serializing and
+hashing with the same rules. The manifest, ledger, and this README are excluded,
+so the aggregate has no self-reference. Acceptance later binds the raw manifest
+and ledger hashes separately.
+
+For the Slice 3 verifier, every covered file must be a Git blob with mode
+`100644`. Any executable, symlink, submodule, or other mode is unsupported and
+fails closed. A `corpus_directory` is enumerated beneath its path in the bound
+candidate commit; a `git_commit` root is enumerated from the exact commit and
+tree named by the manifest. All bytes come from objects already present in the
+repository's Git object database. The verifier performs no fetch or checkout
+and does not read the worktree, index, untracked files, or filesystem modes.
+It sanitizes inherited Git repository/object/configuration overrides and sets
+`GIT_NO_LAZY_FETCH=1`. Missing objects and tree/object identity mismatches are
+controlled failures. A decision path must have no earlier use on the
+acceptance base's first-parent history, so deletion and reintroduction cannot
+make an old record appear newly accepted. Historical reuse of the same stable
+decision ID under another path is also rejected. No first-parent commit after
+acceptance may touch the selected record, even if the consumer endpoint restores
+the original bytes or round-trips through another Git object type. Replacement
+refs and local grafts are ignored; shallow or non-append-only decision history
+fails closed.
+
+## Offline binding verification boundary
+
+The internal command and its exact exit semantics are documented in
+[the oracle-decision README](../../../docs/evidence/v0.5/oracle-decisions/README.md#slice-3-offline-binding-verifier).
+Its success state is only `offline_binding = VERIFIED`; effective acceptance
+remains `NOT_ESTABLISHED`. It supports semantic-only decisions with no
+successor and no parity projection, authenticates no external human or GitHub
+authority predicate, and is not a CI consumer. Self-reported `accepted: true`
+or `status: ACCEPTED` fields are invalid and cannot upgrade that result.
+
+The current internal implementation applies Git subprocess timeouts and checks
+tree counts and sizes after output is returned, but it has no streaming Git
+stdout byte cap. Adversarially huge object databases therefore remain
+unsupported; authoritative CI or public use requires a separately reviewed
+resource-bound hardening change first.
 
 ## Review checklist before any acceptance
 
@@ -181,9 +223,10 @@ separately.
 - before implementation parity, separately merge and accept the public mapping
   plus complete check/gate projection, then verify that both decisions and the
   exact bound bytes are already present on the implementation base;
-- define path and root-ID collation, file-mode normalization or digest
-  coverage, and supported-runtime replay requirements before any verifier
-  treats the data as an accepted parity oracle;
+- confirm v1 ASCII byte collation, `100644`-only Git-object coverage, and the
+  no-fetch/no-worktree boundary; separately define supported-runtime replay
+  requirements before any verifier treats the data as an accepted parity
+  oracle;
 - run central self-check, the full regression suite, Markdown-link checks, and
   `git diff --check`;
 - record the final head and actual governance review classes outside these files.
