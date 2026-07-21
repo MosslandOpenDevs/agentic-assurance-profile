@@ -57,7 +57,7 @@
   "parity_projection": null,
   "implementation_parity_authorized": false,
   "decision_record": {
-    "pr_url": "",
+    "pr_url": "https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/63",
     "governing_body": "MosslandOpenDevs maintainers",
     "decision_maker": "mikim",
     "human_review_class": "SOLE_OWNER_ATTESTED",
