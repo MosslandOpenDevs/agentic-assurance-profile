@@ -1,6 +1,6 @@
 # v0.5 Phase 0 evidence log
 
-> **SCAFFOLD — NOT ACCEPTED — NOT AN ORACLE — COVERAGE INCOMPLETE**
+> **SCAFFOLD — NOT ACCEPTED — NOT AN ORACLE — PHASE-0 MATRIX INCOMPLETE**
 
 This log records the bounded Phase 0 slices of issue #49. It does not mark Phase
 0 complete, supply a G1 decision, or count static engine fixtures as adoption
@@ -49,6 +49,8 @@ and `acceptance_binding: null` remain.
 | peeled release commit | `00e2fe46d4eb01a4147f149851a48a3017cbb796` |
 | validator Git blob | `af5f7c39373f6dc6ced93d437cec4b972851e3a3` |
 | requirements Git blob | `1fbebbbb08277b81307439866de067ebd224515b` |
+| release decision | PR #44 and successful workflow run `29720585318`; `SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED` |
+| proposed ledger revision | `v0.4.0-seven-seed-contract-r3-2026-07-21` |
 
 The executable was run from a clean detached worktree at the peeled commit.
 Current `main` was not substituted for the reference. The locked environment
@@ -63,7 +65,7 @@ Candidate identities at the observed head are:
 |---|---|
 | corpus aggregate | `cb9710c7b27350e11b69450d8d4cc6bb95f0d8adb3e37ae474d3512d64d6a293` |
 | raw `manifest.json` | `4cd135234698b47c9b4444ca0cb00121b1da872ff8abf4ac9ccf32015009387b` |
-| raw proposed `expected-outcomes.json` | `8161327deb5b605eede377414bc6b1646922ea454f5050f5d6d12c5d7858270c` |
+| raw proposed `expected-outcomes.json` | `20621149949f2473aed8081db0b45a7f036d0f93ee95c5a986a1c75bc5a3b076` |
 
 These are candidate byte identities, not an acceptance binding. The ledger
 contains the manifest hash, while neither candidate contains its own hash.
@@ -92,18 +94,31 @@ reference-observation projection serialization or digest is claimed. This
 comparison establishes reproducibility of those selected fields only; it does
 not make the v0.4.0 behavior correct.
 
-The proposed semantic contract binds `EvaluationKind`, overall outcome, and an
-exact unordered finding set with unique condition keys, without copying raw
-diagnostic cardinality. In particular, the trust-path case's two legacy errors
-map to one repository-containment condition. Internal `phase0.internal.*` keys
-are corpus identifiers, not public finding/check/reason codes.
+The proposed semantic contract binds `EvaluationKind`, a selected-case
+`SATISFIED|BLOCKED` result, and an exact unordered finding set with unique
+condition keys, without copying raw diagnostic cardinality. This bounded result
+is not the run-level `OverallOutcome`, because no complete gate plan or
+`GateCoverage` is bound. In particular, the trust-path case's two legacy errors
+map to one repository-containment condition. A top-level catalog fixes the
+bounded meaning and authority of every `phase0.internal.*` key; those keys remain
+corpus identifiers, not public finding/check/reason codes.
 
-The candidate does not close unlisted check state or bind public codes,
-evaluated severity, complete check state, `GateCoverage`, plan identity, or
-dependency edges. It is therefore a semantic seed, not an
-implementation-consumable parity projection. Those missing fields require
-separately merged candidate material and a separate acceptance decision before
-implementation work may consume them.
+Coverage is recorded on three independent axes: the Phase 0 matrix is
+incomplete, the semantic projection is complete for these seven selected cases,
+and the implementation projection for those cases is incomplete. The candidate
+does not close unlisted check state or bind public codes, evaluated severity,
+complete check state, `GateCoverage`, plan identity, or dependency edges. It is
+therefore a semantic seed, not an implementation-consumable parity projection.
+Those missing fields require separately merged candidate material and a
+separate acceptance decision before implementation work may consume them.
+
+The central self-check expectation is grounded in the annotated v0.4.0 release
+decision and release PR #44, which record the exact release commit, the passing
+self-check evidence, and `SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED`. The
+self-check workflow is supporting mechanism rather than authority for its own
+result. `RELEASING.md` §§2–3 and `GOVERNANCE.md` §2 provide the pinned release
+and review-class context; the pre-first-release checklist in `RELEASING.md` §5
+is not reused as v0.4.0 authority.
 
 ## Remaining evidence before #49 can close
 
@@ -115,9 +130,12 @@ no claim that v0.4.0 is easy or difficult to adopt.
 
 A later acceptance record must live outside the candidate files and bind the
 exact commit plus raw manifest and ledger SHA-256 values and the actual review
-classes. Semantic-ledger acceptance alone cannot authorize implementation
-parity. The public mapping and complete parity projection must first merge as
-non-executable candidate material, then a separate decision must bind both.
+classes. Its `ledger_revision` must exactly match the candidate's
+`proposed_ledger_revision`, and it must also bind the `GOVERNANCE.md` revision
+effective on the acceptance-only PR's final base. Semantic-ledger acceptance
+alone cannot authorize implementation parity. The public mapping and complete
+parity projection must first merge as non-executable candidate material, then a
+separate decision must bind both.
 The format and byte-selection rules are documented in
 [the oracle-decision README](oracle-decisions/README.md). Until that complete
 decision is already present on an implementation PR's base branch, the PR may

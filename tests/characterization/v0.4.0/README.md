@@ -1,6 +1,6 @@
 # v0.4.0 characterization seed
 
-> **SCAFFOLD — NOT ACCEPTED — NOT AN ORACLE — COVERAGE INCOMPLETE**
+> **SCAFFOLD — NOT ACCEPTED — NOT AN ORACLE — PHASE-0 MATRIX INCOMPLETE**
 
 This directory is the first bounded seed for v0.5 Phase 0. It records seven
 small, deterministic candidate input shapes and a *proposed* interpretation of
@@ -25,24 +25,28 @@ for the proposed expectations.
 A file cannot grant itself review authority. A later, separate owner decision
 must bind an exact repository commit, raw `manifest.json` SHA-256, raw
 `expected-outcomes.json` SHA-256, and actual governance review classes before
-the semantic ledger revision can be accepted. That decision alone does not
-authorize implementation parity: the public mapping and complete parity
-projection described below must also be proposed and accepted separately. A
-correction must create a successor; it must not silently rewrite accepted
-bytes. The candidate decision-record format and anti-self-approval sequence are
-defined in
+the semantic ledger revision can be accepted. Its `ledger_revision` must
+exactly equal the candidate's `proposed_ledger_revision`, and it must bind the
+`GOVERNANCE.md` revision effective on the acceptance-only PR's final base. That
+decision alone does not authorize implementation parity: the public mapping
+and complete parity projection described below must also be proposed and
+accepted separately. A correction must create a successor; it must not silently
+rewrite accepted bytes. The candidate decision-record format and
+anti-self-approval sequence are defined in
 [the oracle-decision README](../../../docs/evidence/v0.5/oracle-decisions/README.md).
 
 ## Candidate ledger boundary
 
-Each `semantic_expectation` records the proposed `EvaluationKind`,
-`OverallOutcome`, any required satisfied internal conditions, and an exact
-closed set of semantic findings. `closed: true` means an unordered comparison
-with unique `condition_key` values: every listed finding occurs exactly once
-and any unlisted or duplicate semantic finding rejects the comparison. It does
-not make the v0.4.0 diagnostic count or prose part of the contract. For
-example, the two legacy errors observed for the trust-path seed collapse to one
-proposed repository-containment condition.
+Each `semantic_expectation` records the proposed `EvaluationKind`, a bounded
+selected-case `SATISFIED|BLOCKED` result, any required satisfied internal
+conditions, and an exact closed set of semantic findings. The bounded result is
+not the run-level `OverallOutcome`: no complete gate plan, `GateCoverage`, or
+`GatePlanIdentity` is bound. `closed: true` means an unordered comparison with
+unique `condition_key` values: every listed finding occurs exactly once and any
+unlisted or duplicate semantic finding rejects the comparison. It does not make
+the v0.4.0 diagnostic count or prose part of the contract. For example, the two
+legacy errors observed for the trust-path seed collapse to one proposed
+repository-containment condition.
 
 Every listed satisfied-condition key must likewise occur exactly once. That
 positive list is not a closed check plan and cannot prove that an unlisted
@@ -57,13 +61,18 @@ numeric process exit, level, bounded message substring, and traceback checks
 describe how the pinned v0.4.0 executable was recognized. They cannot define
 the successor engine's finding set or renderer wording.
 
-Keys under `phase0.internal.*` are provisional corpus identifiers. They are not
-public `finding_code`, `check_id`, or `reason_code` values. A later public-code
-mapping and the missing check/gate projection are required before
-implementation parity. They must be merged as non-executable candidate
-material and accepted by a separate decision already present on an
-implementation change's base branch; an implementation PR cannot create its
-own mapping. They also must not silently rewrite an accepted ledger revision.
+Keys under `phase0.internal.*` are provisional corpus identifiers. The ledger's
+top-level `condition_catalog` fixes each key's bounded meaning, kind, and
+authority so a later mapping cannot redefine it. Its key set is exactly the
+union of every required-satisfied key and every finding key used by the entries;
+positive statements cover only selected requirements and cannot imply complete
+gate execution. The keys are not public
+`finding_code`, `check_id`, or `reason_code` values. A later public-code mapping
+and the missing check/gate projection are required before implementation
+parity. They must be merged as non-executable candidate material and accepted
+by a separate decision already present on an implementation change's base
+branch; an implementation PR cannot create its own mapping. They also must not
+silently rewrite an accepted ledger revision.
 
 Every `authority_ref` resolves through a named `authority_source` pinned to an
 exact commit. `NORMATIVE`, `ACCEPTED_COMPATIBILITY`, and
@@ -71,6 +80,20 @@ exact commit. `NORMATIVE`, `ACCEPTED_COMPATIBILITY`, and
 scope. `SUPPORTING_CONTEXT` explains mechanics but cannot authorize an
 expectation by itself. The authority commit is not an oracle acceptance
 binding; those are deliberately separate controls.
+
+The central self-check condition uses the annotated v0.4.0 release decision and
+release PR #44 as `ACCEPTED_OPERATIONAL` authority. They record the canonical
+release commit, a passing self-check, and the factual
+`SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED` classes. The workflow itself is
+`SUPPORTING_CONTEXT`: it is the mechanism and cannot authorize its own result.
+
+The ledger reports coverage on three independent axes. The Phase 0 fixture
+matrix is incomplete; the semantic projection is complete for the seven
+selected cases; and the implementation projection for those cases is
+incomplete. The manifest's older `coverage_complete: false` field denotes only
+the incomplete Phase 0 input matrix; it does not summarize the semantic or
+implementation-projection axes. None of those fields self-authorizes the
+candidate.
 
 ## Seed coverage
 
@@ -82,7 +105,7 @@ binding; those are deliberately separate controls.
 | `transition-stage-downgrade-block` | base/head declaration regression | full register-transition matrix |
 | `trust-path-traversal-block` | lexical repository-boundary failure | symlink/retarget and every trust root |
 | `drift-routing-strict-block` | component routing with strict escalation | workflow event applicability from #43 |
-| `central-self-check-pass` | exact v0.4.0 tagged repository tree | real dogfood adoption or adopter usability |
+| `central-self-check-pass` | release-decision-backed central self-check on the exact v0.4.0 tagged tree | real dogfood adoption or adopter usability |
 
 Still missing from #49 are, at minimum: the current/legacy matrix, specialized
 split profiles, full stage ladder, default/explicit mapping cross-product,
@@ -97,6 +120,8 @@ The reference is the peeled release commit
 `00e2fe46d4eb01a4147f149851a48a3017cbb796`, not the annotated tag object and
 not current `main`. Materialize that commit as a clean detached worktree and
 use its `scripts/validate.py`, `requirements-ci.txt`, schemas, and templates.
+This execution identity is separate from release authority provenance, which
+also binds the annotated tag object and release PR #44.
 Install only the hash-locked dependencies from that worktree. Run with an
 environment that removes `GITHUB_ACTIONS` and `GITHUB_STEP_SUMMARY` so GitHub
 annotations do not change the selected observation.
@@ -144,9 +169,15 @@ separately.
   from evidence-only legacy matchers and closes the semantic finding set
   with unique condition keys, without freezing complete v0.4.0 prose or raw
   diagnostic counts;
+- confirm the condition catalog exactly closes over every used key, gives each
+  key one bounded authority-backed meaning, and limits positive statements to
+  selected requirements;
+- review the three coverage axes independently and do not promote selected-case
+  semantic completeness to complete Phase 0 or implementation parity;
 - confirm every authority reference resolves at its pinned revision and review
   the separately versioned acceptance decision that binds the candidate commit
-  and raw manifest/ledger hashes;
+  and raw manifest/ledger hashes, matches `proposed_ledger_revision`, and binds
+  the governance revision effective on its final base;
 - before implementation parity, separately merge and accept the public mapping
   plus complete check/gate projection, then verify that both decisions and the
   exact bound bytes are already present on the implementation base;
