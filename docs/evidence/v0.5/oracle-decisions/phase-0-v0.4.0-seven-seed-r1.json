@@ -1,0 +1,69 @@
+{
+  "document_kind": "phase0_oracle_decision",
+  "format_version": 1,
+  "decision_id": "AAP-V05-P0-ORACLE-001",
+  "decision": "ACCEPT_SEMANTIC_LEDGER_REVISION",
+  "ledger_revision": "v0.4.0-seven-seed-contract-r3-2026-07-21",
+  "ledger_shape_revision": "phase0-candidate-3",
+  "scope": {
+    "coverage": {
+      "phase0_matrix_complete": false,
+      "semantic_projection_complete_for_selected_cases": true,
+      "implementation_projection_complete_for_selected_cases": false
+    },
+    "case_ids": [
+      "archived-reviewed-pass",
+      "central-self-check-pass",
+      "core-lite-draft-pass",
+      "core-split-draft-pass",
+      "drift-routing-strict-block",
+      "transition-stage-downgrade-block",
+      "trust-path-traversal-block"
+    ]
+  },
+  "candidate": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "repository_commit_sha1": "8973078f4b95815a86304dec088a64cdc1ff091f",
+    "manifest": {
+      "path": "tests/characterization/v0.4.0/manifest.json",
+      "raw_sha256": "4cd135234698b47c9b4444ca0cb00121b1da872ff8abf4ac9ccf32015009387b"
+    },
+    "ledger": {
+      "path": "tests/characterization/v0.4.0/expected-outcomes.json",
+      "raw_sha256": "20621149949f2473aed8081db0b45a7f036d0f93ee95c5a986a1c75bc5a3b076"
+    },
+    "corpus_sha256": "cb9710c7b27350e11b69450d8d4cc6bb95f0d8adb3e37ae474d3512d64d6a293"
+  },
+  "reference_release_decision": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "release": "v0.4.0",
+    "annotated_tag_object_sha1": "1373d963a098e13d2f44891e58ee8a47e285c5c3",
+    "commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+    "release_pr_url": "https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/44",
+    "release_pr_head_sha1": "6e9d7af921f1539dfbad6ad53812e313158c6289",
+    "pull_request_workflow_run_id": 29720585318,
+    "recorded_review_classes": {
+      "human": "SOLE_OWNER_ATTESTED",
+      "automation": "AUTOMATION_VERIFIED"
+    }
+  },
+  "decision_authority_revision": {
+    "repository": "MosslandOpenDevs/agentic-assurance-profile",
+    "commit_sha1": "909392ed3c77403803587c8776f5423ebad754fa",
+    "path": "GOVERNANCE.md",
+    "locator": "§§1–2",
+    "raw_sha256": "5bc92e111440f117d4b7c1a801688889d6767217fcafdd4bdf9d0e333d9798a6"
+  },
+  "parity_projection": null,
+  "implementation_parity_authorized": false,
+  "decision_record": {
+    "pr_url": "",
+    "governing_body": "MosslandOpenDevs maintainers",
+    "decision_maker": "mikim",
+    "human_review_class": "SOLE_OWNER_ATTESTED",
+    "automation_review_class": "AUTOMATION_VERIFIED"
+  },
+  "supersedes_decision_id": null,
+  "successor_change": null,
+  "compatibility_impact": "none"
+}
