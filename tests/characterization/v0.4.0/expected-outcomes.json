@@ -1,14 +1,64 @@
 {
   "document_kind": "phase0_expected_outcomes_scaffold",
+  "ledger_shape_revision": "phase0-candidate-2",
   "status": "PROPOSED_NOT_ACCEPTED",
   "oracle": false,
   "public_contract": false,
   "coverage_complete": false,
-  "candidate_label": "v0.4.0-seven-seed-2026-07-21",
+  "candidate_label": "v0.4.0-seven-seed-contract-r2-2026-07-21",
+  "supersedes_candidate_raw_sha256": "3c404a9bbc4583a046e789da24fff207994e7fda2e9ea9d01b91b71e71992e1c",
   "acceptance_binding": null,
+  "condition_key_policy": {
+    "namespace": "phase0.internal.",
+    "stability": "PROVISIONAL_INTERNAL_NOT_PUBLIC",
+    "not_public_identifiers": [
+      "finding_code",
+      "check_id",
+      "reason_code"
+    ],
+    "public_code_mapping_required_before_implementation_parity": true
+  },
+  "candidate_use": {
+    "semantic_baseline_complete_for_listed_cases": true,
+    "implementation_parity_projection_complete": false,
+    "implementation_consumable": false,
+    "missing_before_implementation_parity": [
+      "accepted public condition-to-finding-or-reason mapping",
+      "evaluated severity and owning public check identity",
+      "completion_required and the three check-state axes",
+      "reason_code, blocked_by, and public dependency edges",
+      "GateCoverage and GatePlanIdentity"
+    ]
+  },
+  "semantic_projection_policy": {
+    "overall_outcome_comparison": "EXACT",
+    "evaluation_kind_bound_per_entry": true,
+    "gate_coverage_bound": false,
+    "finding_set_comparison": "EXACT_UNORDERED_UNIQUE_CONDITION_KEYS",
+    "condition_key_occurrence_per_case": "EACH_KEY_ZERO_OR_ONE",
+    "required_satisfied_condition_comparison": "EVERY_LISTED_KEY_EXACTLY_ONCE",
+    "unlisted_check_state_closed": false,
+    "evaluated_severity_bound": false,
+    "public_check_state_bound": false
+  },
+  "authority_sources": {
+    "aap-v0.4.0-tree": {
+      "repository": "MosslandOpenDevs/agentic-assurance-profile",
+      "release": "v0.4.0",
+      "commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796"
+    },
+    "governance-slice-2-base": {
+      "repository": "MosslandOpenDevs/agentic-assurance-profile",
+      "commit_sha1": "e328535113f621e12351ee9d7eb97f629f5d007a"
+    }
+  },
   "acceptance_process_required": {
-    "decision_authority": "MosslandOpenDevs maintainers under GOVERNANCE.md sections 1 and 2",
-    "binding": "A separate decision must bind the exact repository commit plus raw manifest and ledger SHA-256 values.",
+    "decision_authority_ref": {
+      "source_id": "governance-slice-2-base",
+      "path": "GOVERNANCE.md",
+      "locator": "§§1–2"
+    },
+    "binding": "A separately reviewed decision must bind the canonical main commit containing these bytes plus the raw manifest and ledger SHA-256 values. Later parity or implementation work may consume only a binding already present on its base branch.",
     "review_class_recording": "Record the factual GOVERNANCE.md review classes; they are non-ordinal, and AUTOMATION_VERIFIED is orthogonal to human review."
   },
   "fixture_manifest_raw_sha256": "4cd135234698b47c9b4444ca0cb00121b1da872ff8abf4ac9ccf32015009387b",
@@ -16,13 +66,37 @@
     {
       "case_id": "core-split-draft-pass",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §6.1 Core",
-        "PROFILE.md §17 DRAFT"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§6 Required local artifacts; §6.1 Core"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§17 DRAFT"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "The default split layout mechanically represents the minimum core artifacts at DRAFT.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_SNAPSHOT"
+        },
+        "overall_outcome": "PASS",
+        "required_satisfied_condition_keys": [
+          "phase0.internal.adopter.split-core-draft-baseline-satisfied"
+        ],
+        "finding_set": {
+          "closed": true,
+          "exact": []
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 0,
         "must_include": [
           {
@@ -51,14 +125,37 @@
     {
       "case_id": "core-lite-draft-pass",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §6 Required local artifacts",
-        "PROFILE.md §6.1 Core",
-        "PROFILE.md §17 DRAFT"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§6 Required local artifacts; §6.1 Core"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§17 DRAFT"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "The single-file lite layout is permitted for a sole core profile and carries its minimum DRAFT content.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_SNAPSHOT"
+        },
+        "overall_outcome": "PASS",
+        "required_satisfied_condition_keys": [
+          "phase0.internal.adopter.lite-core-draft-baseline-satisfied"
+        ],
+        "finding_set": {
+          "closed": true,
+          "exact": []
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 0,
         "must_include": [
           {
@@ -87,14 +184,42 @@
     {
       "case_id": "archived-reviewed-pass",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §6.6 Archived",
-        "PROFILE.md §17 HUMAN_REVIEWED",
-        "PROFILE.md §17 honest mechanical boundary"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§6.6 Archived"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§17 HUMAN_REVIEWED; honest mechanical boundary"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "Archived is exclusive, uses a mapped system artifact instead of active registers, and still cannot mechanically prove the historical facts.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_SNAPSHOT"
+        },
+        "overall_outcome": "PASS",
+        "required_satisfied_condition_keys": [
+          "phase0.internal.adopter.archived-exclusive-satisfied"
+        ],
+        "finding_set": {
+          "closed": true,
+          "exact": [
+            {
+              "condition_key": "phase0.internal.archived.historical-facts-mechanical-verification-limited",
+              "gate_effect": "WARN"
+            }
+          ]
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 0,
         "must_include": [
           {
@@ -127,14 +252,46 @@
     {
       "case_id": "transition-stage-downgrade-block",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §17 stage ladder and human-owner advancement",
-        "docs/ADOPTION.md §3.7 policy regression",
-        "CHANGELOG.md v0.2.1 Changed — Stage self-downgrade protection"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§17 stage ladder and human-owner advancement"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "SUPPORTING_CONTEXT",
+          "path": "docs/ADOPTION.md",
+          "locator": "§3.7 Policy regression check"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "ACCEPTED_COMPATIBILITY",
+          "path": "CHANGELOG.md",
+          "locator": "v0.2.1 Changed — Stage self-downgrade protection"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "A pull request must not lower its own declared stage and silently erase the reviewed gate.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_TRANSITION"
+        },
+        "overall_outcome": "FAIL",
+        "required_satisfied_condition_keys": [],
+        "finding_set": {
+          "closed": true,
+          "exact": [
+            {
+              "condition_key": "phase0.internal.transition.adoption-stage-downgrade",
+              "gate_effect": "BLOCK"
+            }
+          ]
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 1,
         "must_include": [
           {
@@ -167,12 +324,34 @@
     {
       "case_id": "trust-path-traversal-block",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §6 common repository-relative and containment boundary"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§6 common repository-relative and containment boundary"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "An adopter-owned policy path may not escape the adopting repository.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_SNAPSHOT"
+        },
+        "overall_outcome": "FAIL",
+        "required_satisfied_condition_keys": [],
+        "finding_set": {
+          "closed": true,
+          "exact": [
+            {
+              "condition_key": "phase0.internal.trust.security-policy-path-not-contained",
+              "gate_effect": "BLOCK"
+            }
+          ]
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 1,
         "must_include": [
           {
@@ -205,14 +384,46 @@
     {
       "case_id": "drift-routing-strict-block",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "PROFILE.md §9 Material changes",
-        "docs/ADOPTION.md §3.7 strict component routing",
-        "CHANGELOG.md v0.2.1 Changed — Per-component drift satisfaction"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "NORMATIVE",
+          "path": "PROFILE.md",
+          "locator": "§9 Material changes"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "SUPPORTING_CONTEXT",
+          "path": "docs/ADOPTION.md",
+          "locator": "§3.7 Impact routing; strict drift"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "ACCEPTED_COMPATIBILITY",
+          "path": "CHANGELOG.md",
+          "locator": "v0.2.1 Changed — Per-component drift satisfaction"
+        }
       ],
       "actual_review_classes": null,
       "rationale": "Strict routing blocks a touched component when neither assurance evidence nor an explicit impact declaration addresses its invariant.",
-      "proposed_expectation": {
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "ADOPTER_TRANSITION"
+        },
+        "overall_outcome": "FAIL",
+        "required_satisfied_condition_keys": [],
+        "finding_set": {
+          "closed": true,
+          "exact": [
+            {
+              "condition_key": "phase0.internal.drift.strict-component-routing-unsatisfied",
+              "gate_effect": "BLOCK"
+            }
+          ]
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 1,
         "must_include": [
           {
@@ -241,13 +452,43 @@
     {
       "case_id": "central-self-check-pass",
       "proposed_disposition": "PRESERVE",
-      "authority": [
-        "GOVERNANCE.md §2 AUTOMATION_VERIFIED evidence definition",
-        ".github/workflows/self-check.yml profile self-check job"
+      "authority_refs": [
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "ACCEPTED_OPERATIONAL",
+          "path": ".github/workflows/self-check.yml",
+          "locator": "push and pull_request triggers; profile self-check job"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "SUPPORTING_CONTEXT",
+          "path": "PROFILE.md",
+          "locator": "§16 Versioning and pinning"
+        },
+        {
+          "source_id": "aap-v0.4.0-tree",
+          "role": "SUPPORTING_CONTEXT",
+          "path": "GOVERNANCE.md",
+          "locator": "§2 AUTOMATION_VERIFIED evidence definition"
+        }
       ],
       "actual_review_classes": null,
-      "rationale": "The exact tagged release tree must satisfy its own required mechanical release gate.",
-      "proposed_expectation": {
+      "rationale": "The pinned v0.4.0 tree is the release fixture for the repository's accepted continuously executed self-check workflow.",
+      "semantic_expectation": {
+        "evaluation_context": {
+          "evaluation_kind": "CENTRAL_SELF_CHECK"
+        },
+        "overall_outcome": "PASS",
+        "required_satisfied_condition_keys": [
+          "phase0.internal.self-check.pinned-tree-self-check-satisfied"
+        ],
+        "finding_set": {
+          "closed": true,
+          "exact": []
+        }
+      },
+      "legacy_reference_matcher": {
+        "evidence_only": true,
         "process_exit": 0,
         "must_include": [
           {

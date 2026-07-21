@@ -2,11 +2,13 @@
 
 > **SCAFFOLD — NOT ACCEPTED — NOT AN ORACLE — COVERAGE INCOMPLETE**
 
-This log accompanies the first bounded slice of issue #49. It does not mark
-Phase 0 complete, supply a G1 decision, or count static engine fixtures as
-adoption trials.
+This log records the bounded Phase 0 slices of issue #49. It does not mark Phase
+0 complete, supply a G1 decision, or count static engine fixtures as adoption
+trials.
 
-## Slice decision
+## Slice decisions
+
+### Slice 1 — deterministic seed
 
 The owner recorded the `START` decision in
 [#49's bounded-slice kickoff](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/49#issuecomment-5028818203):
@@ -18,8 +20,26 @@ The owner recorded the `START` decision in
   new normative source/public contract, or the slice cannot fit the cap;
 - output: a Draft PR, with any expansion requiring a new reviewed decision.
 
-No stop condition has authorized a scope expansion. This slice changes only
-documentation and test data.
+No stop condition authorized a scope expansion. Slice 1 changed only
+documentation and inert characterization data and merged in PR #60.
+
+### Slice 2 — oracle contract hardening
+
+After PR #60, the owner recorded a second `START` decision in
+[#49's contract-hardening kickoff](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/49#issuecomment-5030095573):
+
+- working base: `main@e328535113f621e12351ee9d7eb97f629f5d007a`;
+- effort cap: four elapsed working hours, not increasable while active;
+- scope: semantic/legacy separation, closed semantic finding sets, pinned
+  authority references, and the external acceptance-record boundary;
+- non-scope: actual oracle acceptance, executable or CI changes, public codes,
+  new fixtures, trials, runtime replay, and #43; and
+- output: a Draft PR, with each later expansion requiring a new reviewed
+  decision.
+
+Slice 2 changes the proposed interpretation contract, not the frozen inputs or
+the v0.4.0 observations. `oracle: false`, `implementation_consumable: false`,
+and `acceptance_binding: null` remain.
 
 ## Reference identity
 
@@ -43,7 +63,7 @@ Candidate identities at the observed head are:
 |---|---|
 | corpus aggregate | `cb9710c7b27350e11b69450d8d4cc6bb95f0d8adb3e37ae474d3512d64d6a293` |
 | raw `manifest.json` | `4cd135234698b47c9b4444ca0cb00121b1da872ff8abf4ac9ccf32015009387b` |
-| raw proposed `expected-outcomes.json` | `3c404a9bbc4583a046e789da24fff207994e7fda2e9ea9d01b91b71e71992e1c` |
+| raw proposed `expected-outcomes.json` | `8161327deb5b605eede377414bc6b1646922ea454f5050f5d6d12c5d7858270c` |
 
 These are candidate byte identities, not an acceptance binding. The ledger
 contains the manifest hash, while neither candidate contains its own hash.
@@ -51,8 +71,9 @@ contains the manifest hash, while neither candidate contains its own hash.
 ## Seed observations
 
 Reference execution recorded only observed exit status, level counts, empty
-stderr, and selected bounded predicates. Those observations remain separate
-from the authority-backed proposals in `expected-outcomes.json`.
+stderr, and selected bounded predicates. They now live in evidence-only legacy
+matcher and observation fields, separate from the authority-backed semantic
+proposals in `expected-outcomes.json`.
 
 | Case | Reference observation | Interpretation status |
 |---|---|---|
@@ -66,10 +87,23 @@ from the authority-backed proposals in `expected-outcomes.json`.
 
 The seven invocations were repeated from two independently copied fresh corpus
 roots. Exit status, level counts, stderr-empty state, and the selected bounded
-predicates described above were identical in both runs. No separate projection
-serialization or projection digest is claimed. This comparison establishes
-reproducibility of those selected fields only; it does not make the v0.4.0
-behavior correct.
+predicates described above were identical in both runs. No separate
+reference-observation projection serialization or digest is claimed. This
+comparison establishes reproducibility of those selected fields only; it does
+not make the v0.4.0 behavior correct.
+
+The proposed semantic contract binds `EvaluationKind`, overall outcome, and an
+exact unordered finding set with unique condition keys, without copying raw
+diagnostic cardinality. In particular, the trust-path case's two legacy errors
+map to one repository-containment condition. Internal `phase0.internal.*` keys
+are corpus identifiers, not public finding/check/reason codes.
+
+The candidate does not close unlisted check state or bind public codes,
+evaluated severity, complete check state, `GateCoverage`, plan identity, or
+dependency edges. It is therefore a semantic seed, not an
+implementation-consumable parity projection. Those missing fields require
+separately merged candidate material and a separate acceptance decision before
+implementation work may consume them.
 
 ## Remaining evidence before #49 can close
 
@@ -81,5 +115,11 @@ no claim that v0.4.0 is easy or difficult to adopt.
 
 A later acceptance record must live outside the candidate files and bind the
 exact commit plus raw manifest and ledger SHA-256 values and the actual review
-classes. Until then, no implementation PR may use this seed as an oracle or
-rewrite it to approve its own difference.
+classes. Semantic-ledger acceptance alone cannot authorize implementation
+parity. The public mapping and complete parity projection must first merge as
+non-executable candidate material, then a separate decision must bind both.
+The format and byte-selection rules are documented in
+[the oracle-decision README](oracle-decisions/README.md). Until that complete
+decision is already present on an implementation PR's base branch, the PR may
+not use this seed as an oracle or rewrite its mapping or expectations to approve
+its own difference.

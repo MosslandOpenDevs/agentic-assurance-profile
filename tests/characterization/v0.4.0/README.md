@@ -18,14 +18,59 @@ for the proposed expectations.
    exact v0.4.0 Git tree used by central self-check.
 2. `manifest.json` describes how to hash and invoke those candidates. Its
    pre-acceptance shape is internal scaffolding and may change before acceptance.
-3. `expected-outcomes.json` keeps proposed expectations, normative or accepted
-   compatibility authority, and observed v0.4.0 results in separate fields.
+3. `expected-outcomes.json` keeps proposed semantic expectations, pinned
+   authority, evidence-only legacy matchers, and observed v0.4.0 results in
+   separate fields.
 
 A file cannot grant itself review authority. A later, separate owner decision
 must bind an exact repository commit, raw `manifest.json` SHA-256, raw
 `expected-outcomes.json` SHA-256, and actual governance review classes before
-either document becomes an accepted parity oracle. A correction must create a
-successor; it must not silently rewrite accepted bytes.
+the semantic ledger revision can be accepted. That decision alone does not
+authorize implementation parity: the public mapping and complete parity
+projection described below must also be proposed and accepted separately. A
+correction must create a successor; it must not silently rewrite accepted
+bytes. The candidate decision-record format and anti-self-approval sequence are
+defined in
+[the oracle-decision README](../../../docs/evidence/v0.5/oracle-decisions/README.md).
+
+## Candidate ledger boundary
+
+Each `semantic_expectation` records the proposed `EvaluationKind`,
+`OverallOutcome`, any required satisfied internal conditions, and an exact
+closed set of semantic findings. `closed: true` means an unordered comparison
+with unique `condition_key` values: every listed finding occurs exactly once
+and any unlisted or duplicate semantic finding rejects the comparison. It does
+not make the v0.4.0 diagnostic count or prose part of the contract. For
+example, the two legacy errors observed for the trust-path seed collapse to one
+proposed repository-containment condition.
+
+Every listed satisfied-condition key must likewise occur exactly once. That
+positive list is not a closed check plan and cannot prove that an unlisted
+check completed. This candidate deliberately does not yet bind evaluated
+severity, public `check_id`, `completion_required`, the three check-state axes,
+`reason_code`, `blocked_by`, `GateCoverage`, public dependency edges, or
+`GatePlanIdentity`. Consequently it is a semantic seed, not an
+implementation-consumable parity projection.
+
+The neighboring `legacy_reference_matcher` is explicitly `evidence_only`. Its
+numeric process exit, level, bounded message substring, and traceback checks
+describe how the pinned v0.4.0 executable was recognized. They cannot define
+the successor engine's finding set or renderer wording.
+
+Keys under `phase0.internal.*` are provisional corpus identifiers. They are not
+public `finding_code`, `check_id`, or `reason_code` values. A later public-code
+mapping and the missing check/gate projection are required before
+implementation parity. They must be merged as non-executable candidate
+material and accepted by a separate decision already present on an
+implementation change's base branch; an implementation PR cannot create its
+own mapping. They also must not silently rewrite an accepted ledger revision.
+
+Every `authority_ref` resolves through a named `authority_source` pinned to an
+exact commit. `NORMATIVE`, `ACCEPTED_COMPATIBILITY`, and
+`ACCEPTED_OPERATIONAL` references can ground an expectation in their declared
+scope. `SUPPORTING_CONTEXT` explains mechanics but cannot authorize an
+expectation by itself. The authority commit is not an oracle acceptance
+binding; those are deliberately separate controls.
 
 ## Seed coverage
 
@@ -95,14 +140,16 @@ separately.
 - reproduce observations with the pinned executable in two fresh temp roots;
 - verify each proposed expectation cites PROFILE or an already accepted
   compatibility/release decision rather than the executable's current output;
-- separate authority-backed semantic expectations from evidence-only legacy
-  text matchers, and close the allowed semantic finding/check set without
-  freezing complete v0.4.0 prose or raw diagnostic counts;
-- pin authority references to an exact accepted revision and define a
-  separately reviewed, versioned acceptance decision artifact that binds the
-  candidate commit and raw manifest/ledger hashes; later parity and
-  implementation changes may consume it only when it is already present on
-  their base branch;
+- confirm every entry keeps authority-backed semantic expectations separate
+  from evidence-only legacy matchers and closes the semantic finding set
+  with unique condition keys, without freezing complete v0.4.0 prose or raw
+  diagnostic counts;
+- confirm every authority reference resolves at its pinned revision and review
+  the separately versioned acceptance decision that binds the candidate commit
+  and raw manifest/ledger hashes;
+- before implementation parity, separately merge and accept the public mapping
+  plus complete check/gate projection, then verify that both decisions and the
+  exact bound bytes are already present on the implementation base;
 - define path and root-ID collation, file-mode normalization or digest
   coverage, and supported-runtime replay requirements before any verifier
   treats the data as an accepted parity oracle;
