@@ -34,6 +34,8 @@ The executable was run from a clean detached worktree at the peeled commit.
 Current `main` was not substituted for the reference. The locked environment
 used CPython 3.14.6, PyYAML 6.0.3, and jsonschema 4.26.0 installed with
 `pip --require-hashes` from the release's `requirements-ci.txt`.
+This is one reference observation environment, not evidence of parity across
+the repository's Python CI matrix, operating systems, or architectures.
 
 Candidate identities at the observed head are:
 
@@ -63,11 +65,11 @@ from the authority-backed proposals in `expected-outcomes.json`.
 | `central-self-check-pass` | exit 0; 25 ok, 0 warn, 0 error | proposed, not accepted |
 
 The seven invocations were repeated from two independently copied fresh corpus
-roots. The selected projection was identical in both runs, with non-normative
-projection SHA-256
-`9793a59d5ebd86a0e80e9bca2d890121f3168216e402f83c8a58905eab60ebd6`.
-This comparison establishes reproducibility of the selected observation only;
-it does not make the v0.4.0 behavior correct.
+roots. Exit status, level counts, stderr-empty state, and the selected bounded
+predicates described above were identical in both runs. No separate projection
+serialization or projection digest is claimed. This comparison establishes
+reproducibility of those selected fields only; it does not make the v0.4.0
+behavior correct.
 
 ## Remaining evidence before #49 can close
 

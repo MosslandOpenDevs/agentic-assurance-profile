@@ -95,6 +95,17 @@ separately.
 - reproduce observations with the pinned executable in two fresh temp roots;
 - verify each proposed expectation cites PROFILE or an already accepted
   compatibility/release decision rather than the executable's current output;
+- separate authority-backed semantic expectations from evidence-only legacy
+  text matchers, and close the allowed semantic finding/check set without
+  freezing complete v0.4.0 prose or raw diagnostic counts;
+- pin authority references to an exact accepted revision and define a
+  separately reviewed, versioned acceptance decision artifact that binds the
+  candidate commit and raw manifest/ledger hashes; later parity and
+  implementation changes may consume it only when it is already present on
+  their base branch;
+- define path and root-ID collation, file-mode normalization or digest
+  coverage, and supported-runtime replay requirements before any verifier
+  treats the data as an accepted parity oracle;
 - run central self-check, the full regression suite, Markdown-link checks, and
   `git diff --check`;
 - record the final head and actual governance review classes outside these files.
