@@ -1,0 +1,6 @@
+diff --git a/assurance/INVARIANTS.yaml b/assurance/INVARIANTS.yaml
+--- a/assurance/INVARIANTS.yaml
++++ b/assurance/INVARIANTS.yaml
+@@ -1 +1 @@
+-  old text
++  unrelated edit

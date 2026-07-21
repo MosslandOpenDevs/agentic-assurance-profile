@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "purpose": "Demonstrate the lite layout",
+  "non_goals": [
+    "No production guarantees"
+  ],
+  "system": "A single-service example system with no external trust boundary",
+  "invariants": [
+    {
+      "id": "INV-CORE-001",
+      "title": "Example invariant",
+      "statement": "The example property always holds",
+      "severity": "low",
+      "scope": "example scope",
+      "status": "UNKNOWN",
+      "disclosure": "PUBLIC",
+      "owner": "Example Owner"
+    }
+  ],
+  "residuals": [
+    {
+      "id": "RES-CORE-001",
+      "summary": "Example residual",
+      "impact": "low",
+      "uncertainty": "low",
+      "status": "OPEN",
+      "disclosure": "PUBLIC",
+      "owner": "Example Owner"
+    }
+  ]
+}
