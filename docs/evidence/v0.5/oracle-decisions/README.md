@@ -4,8 +4,9 @@
 
 This directory is the reserved location for separately reviewed Phase 0 oracle
 decision records. This README defines an internal decision-record shape and
-sequence; it is not a public JSON contract, a verifier, or an acceptance of the
-current characterization seed.
+sequence; it is not a public JSON contract or an acceptance of the current
+characterization seed. The bounded offline verifier described below checks only
+repository-object and byte-binding predicates; it cannot grant acceptance.
 
 ## Required separation sequence
 
@@ -20,6 +21,13 @@ current characterization seed.
    material, a parity implementation, or an allowlist.
 4. A later **implementation PR** may consume only material whose byte-identical
    decision record is already present on its base branch.
+
+For this internal format, each candidate and acceptance PR must land as an
+ordinary Git merge commit with exactly two parents: the final canonical-main
+base first and the reviewed PR head second. Squash and rebase merges are
+unsupported because they erase that boundary. Repository settings that still
+permit those strategies are an external process risk, not a condition this
+offline verifier can repair.
 
 A narrower decision may accept the semantic ledger revision after step 1 while
 recording `implementation_parity_authorized: false`. That decision preserves a
@@ -62,7 +70,9 @@ A decision record has effect only when all of the following are true:
 - a decision that authorizes implementation parity binds a separately merged
   complete parity projection; semantic-ledger acceptance alone is insufficient;
 - the consuming implementation base already contains this exact record; and
-- no accepted record has been edited in place.
+- no accepted record has been edited in place, deleted, or made to look new by
+  reintroducing its path after deletion. The selected path must have no earlier
+  use on the acceptance base's first-parent history.
 
 For a current parity claim, the named record must be terminal for every
 selected case: no accepted record already on the base branch may supersede it
@@ -70,8 +80,107 @@ for that case. A superseded record may be selected only for explicitly labeled
 historical reproduction and cannot satisfy the current required CI gate. There
 is no implicit `latest` lookup.
 
-These checks are a review contract until a separately authorized verifier is
-implemented. This bounded slice adds no CI consumer.
+The repository's internal offline verifier mechanizes only the bounded subset
+described below. The external authority predicates remain a review contract,
+and no operational acceptance or parity CI consumer is added. Regression CI
+does check that the committed candidate artifacts remain component-compatible
+with the internal verifier; that check grants no authority.
+
+## Slice 3 offline binding verifier
+
+Slice 3 adds a Python-standard-library-only internal verifier for one explicitly
+named semantic decision. A representative invocation is:
+
+```bash
+python -I scripts/verify_phase0_acceptance.py \
+  --repo-root /path/to/repository \
+  --expected-repository MosslandOpenDevs/agentic-assurance-profile \
+  --consumer-base <40-lowercase-sha> \
+  --decision-commit <40-lowercase-sha> \
+  --decision-id AAP-V05-P0-ORACLE-001 \
+  --decision-path docs/evidence/v0.5/oracle-decisions/<record>.json \
+  --format json
+```
+
+The verifier uses the local Git object database only. Its Git subprocesses run
+with a sanitized repository environment and `GIT_NO_LAZY_FETCH=1`; inherited
+Git-directory, worktree, object-directory, alternate-object, and configuration
+overrides cannot redirect the inspection. It does not fetch, read candidate or
+decision bytes from the worktree or index, or select an implicit latest
+decision. Missing objects, shallow history, unsafe or ambiguous paths, parse
+failures, and binding mismatches are controlled failures rather than permission
+to fall back to current files.
+
+The `local_observations` fields `verifier_executable_path`,
+`git_executable_path`, `git_version`, and `repository_root` are diagnostics,
+not provenance. The
+verifier and Git executable provenance, local repository origin, and authority
+of the caller's expected-repository argument remain unverified preconditions. A
+successful run must not promote those observations into a trust claim. JSON
+names them under `unverified_preconditions` as
+`verifier-executable-provenance`, `git-executable-provenance`,
+`local-repository-origin`, and `expected-repository-argument-authority`.
+
+The selected decision path must be introduced for the first time by the named
+acceptance merge. A path that appeared earlier on the acceptance base's
+first-parent history remains used even if an intervening commit deleted it;
+deletion and reintroduction cannot reset record identity. The stable
+`decision_id` likewise must not occur in any earlier decision-directory tree,
+even under another path. After acceptance, no first-parent commit through the
+consumer base may touch the selected path; restoring the same endpoint bytes
+does not erase an intermediate edit or deletion.
+
+The canonical decision-record set is append-only: any first-parent modification,
+deletion, rename, or Git object-type change of a direct decision-directory JSON
+record fails closed.
+That invariant plus the current-tree duplicate-ID check prevents historical ID
+reuse without selecting an implicit latest record. History walks ignore both
+replacement refs and repository-local grafts and reject shallow repositories.
+
+Git subprocesses have a timeout and parsed object/tree results receive
+post-output count and size checks. Slice 3 does not yet implement a streaming
+byte cap on Git stdout, however. A repository with an adversarially huge object
+database is outside this internal slice's supported boundary: the verifier MUST
+NOT be used as an authoritative CI gate or public verifier until a separately
+reviewed hardening change adds that bound.
+
+Exit status `0` means only that the implemented offline object and binding
+predicates were verified. JSON success therefore reports
+`"offline_binding":"VERIFIED"` together with
+`"effective_acceptance":"NOT_ESTABLISHED"` and
+`"implementation_parity_authorized":false`. Text success begins with
+`OFFLINE BINDING VERIFIED; EFFECTIVE ACCEPTANCE NOT ESTABLISHED`. Exit `1`
+means a controlled missing, mismatch, or unsupported condition; command-line
+usage errors retain `argparse` exit `2`.
+
+In particular, the verifier does not establish that the decision arrived on
+protected canonical `main`, that the named GitHub pull request was the actual
+acceptance-only change, that the recorded decision maker is a human, or that
+the factual review classes are authentic. JSON lists these as
+`unverified_external_predicates`, using the stable internal names
+`protected-canonical-main`, `github-acceptance-pr-state`,
+`factual-human-decision-maker`, and `factual-review-classes`. Green automation
+or exit `0` cannot upgrade any of them.
+
+It also does not establish the semantic validity of the ledger's authority
+references or the factual published-release, GitHub release-PR, and release
+workflow state they describe. JSON records these under
+`unverified_authority_predicates` as
+`semantic-authority-reference-validity`, `published-release-tag-state`,
+`github-release-pr-state`, and `github-release-workflow-run-state`. Completing
+the authority graph, adding an
+aggregate resource budget, and separating binding failure from verifier
+indeterminacy in a stable exit taxonomy are deferred requirements before any
+authoritative consumer or CI gate.
+
+The Slice 3 implementation accepts only the semantic-only, non-successor shape:
+`decision = ACCEPT_SEMANTIC_LEDGER_REVISION`,
+`supersedes_decision_id = null`, `successor_change = null`,
+`parity_projection = null`, and `implementation_parity_authorized = false`.
+An `accepted: true` field or self-reported `status: ACCEPTED` switch is invalid
+and cannot affect the result.
+Successor selection, public mapping, implementation parity, effective authority
+verification, and CI-gate consumption remain outside this slice.
 
 ## Candidate JSON shape
 

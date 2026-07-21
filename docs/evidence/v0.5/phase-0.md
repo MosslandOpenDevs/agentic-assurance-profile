@@ -41,6 +41,52 @@ Slice 2 changes the proposed interpretation contract, not the frozen inputs or
 the v0.4.0 observations. `oracle: false`, `implementation_consumable: false`,
 and `acceptance_binding: null` remain.
 
+### Slice 3 — offline binding verifier
+
+After PR #61, the next bounded slice starts with:
+
+- working base: `main@8973078f4b95815a86304dec088a64cdc1ff091f`;
+- effort cap: four elapsed working hours, not increasable while active;
+- checkpoint: at two elapsed working hours, record `CONTINUE` only if the
+  bounded offline predicates and negative test matrix still fit the remaining
+  cap; otherwise stop and rescope through a new reviewed decision;
+- scope: a Python-standard-library-only, read-only verifier for exact semantic
+  decision IDs, consumer-base presence, local Git-object history, raw
+  manifest/ledger/governance bindings, corpus digest reproduction, and the
+  semantic-only non-successor shape;
+- non-scope: an acceptance decision, external human or GitHub authority
+  verification, successors, public mapping or codes, implementation parity,
+  runtime replay, new fixtures or trials, candidate-byte changes, network
+  fetches, worktree/index consumption, workflow or CI-gate integration, G1,
+  #43, and closing #49; and
+- output: a separately reviewed Draft PR; any expansion requires another
+  reviewed decision.
+
+The slice must stop rather than expand if offline verification requires a
+network trust adapter, a candidate-byte rewrite, successor-graph semantics,
+parity material, or work that cannot fit the cap. Exit `0` from the internal
+tool means `offline_binding = VERIFIED`, not effective acceptance. Protected
+canonical-main state, GitHub acceptance-PR state, the factual human decision
+maker, and factual review classes remain explicitly unverified external
+predicates. Candidate and acceptance PR boundaries are supported only when each
+lands as an ordinary exactly-two-parent merge commit; squash and rebase merges
+are unsupported, and repository settings that permit them remain an external
+process risk. This slice adds no operational acceptance or parity CI consumer;
+regression CI checks only component compatibility of the committed candidate
+artifacts and grants no authority.
+
+Selected Git executable/version and repository-root identities are diagnostic
+observations. Verifier and Git provenance, repository origin, and the authority
+of the expected-repository argument are not established. The semantic validity
+of authority references and the factual published-release, GitHub release-PR,
+and release workflow state also remain unverified. Full authority-graph
+verification, an aggregate resource budget, and a stable
+failure-versus-indeterminate exit taxonomy are deferred before any authoritative
+consumer.
+
+The candidate manifest, ledger, corpus, and all identities below remain
+byte-for-byte unchanged by Slice 3.
+
 ## Reference identity
 
 | Item | Identity |
@@ -69,6 +115,29 @@ Candidate identities at the observed head are:
 
 These are candidate byte identities, not an acceptance binding. The ledger
 contains the manifest hash, while neither candidate contains its own hash.
+
+The Slice 3 verifier reads those candidate bytes only from the bound Git commit
+objects. A sanitized Git environment plus `GIT_NO_LAZY_FETCH=1` prevents
+inherited repository/object overrides and lazy object retrieval; it reads
+neither the worktree nor the index. Its v1 digest projection accepts only
+`100644` blobs and orders ASCII `path` and `root_id` bytes lexicographically,
+without locale collation, case folding, or Unicode normalization. An unavailable
+object, another file mode, or a non-ASCII/ambiguous identifier is unsupported
+and fails closed. A decision's `accepted: true` or self-reported
+`status: ACCEPTED` is likewise invalid and grants nothing.
+The selected decision path must also be new across the acceptance base's whole
+first-parent history; deleting and later reintroducing a record cannot reset
+its identity. A stable decision ID cannot be reused at another historical path,
+and any intermediate post-acceptance edit or deletion fails even when the
+consumer endpoint restores the original bytes. Replacement refs and local Git
+grafts are ignored, while shallow history fails closed. Direct decision JSON
+records therefore form an append-only first-parent set: modification, deletion,
+rename, or Git object-type change is unsupported.
+
+The internal subprocess boundary has timeouts and post-output count/size checks,
+but no streaming byte cap for Git stdout. Until a separately reviewed hardening
+slice adds that cap, adversarially huge object databases are unsupported and
+this verifier cannot serve as an authoritative CI gate or public verifier.
 
 ## Seed observations
 
