@@ -4,6 +4,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added [ADR 0009](docs/adr/v0.5/0009-event-matrix.md), which separates
+  caller-event applicability, completion, and outcome for the transition-drift
+  capability. It defines snapshot-only events, fail-closed handling of
+  `pull_request_target` and unknown events, reusable-caller inheritance, and
+  the no-untrusted-code privilege boundary. Documentation only: the v0.4.x
+  workflow still skips drift outside `pull_request`, and issue
+  [#43](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/43)
+  remains open until a separately reviewed runtime change ships.
+
 - Documented the v0.4.x reusable-workflow event limitation: drift evaluation
   runs only for `pull_request`, so a green push or other non-pull-request run
   is not a drift verdict. Push remains outside the documented drift scope;
