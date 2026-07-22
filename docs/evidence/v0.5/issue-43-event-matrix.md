@@ -43,7 +43,7 @@ verdict.
 ## GitHub provider facts
 
 The following were verified against GitHub's official documentation on
-2026-07-21:
+2026-07-22:
 
 - [`pull_request`](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
   uses a synthetic merge ref/SHA by default; the explicit head revision is
@@ -69,6 +69,17 @@ The following were verified against GitHub's official documentation on
 - In a [reusable workflow](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#github-context),
   the `github` context remains associated with the caller workflow; token
   permissions can be maintained or reduced, not elevated through nesting.
+- GitHub's [job-condition documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions)
+  states that a skipped job reports success and does not prevent merging even
+  when it is a required check. Its
+  [workflow-syntax documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds)
+  adds that a failed or skipped dependency can skip a downstream job unless
+  its condition handles that state explicitly.
+- GitHub's [ruleset-workflow documentation](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-workflows-to-pass-before-merging)
+  states that supported-event filters, including `types`, are ignored and that
+  `pull_request` ruleset workflows run only for the default `opened`,
+  `synchronize`, and `reopened` activities. Such a workflow does not observe a
+  PR-body-only `edited` event merely because its YAML requests that type.
 - GitHub's [secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use#mitigating-the-risks-of-untrusted-code-checkout)
   says privileged triggers must not explicitly check out untrusted PR code.
 
@@ -102,6 +113,25 @@ proves that separate, non-substitutable status identities and caller
 provenance can be introduced compatibly. Running drift on a new event remains
 out of scope.
 
+### Caller reachability and freshness
+
+Event subscription is necessary but not sufficient. A caller can list all
+required PR activities while placing the reusable-workflow call job behind a
+false job condition or a dependency that fails or is skipped. GitHub can then
+report the skipped required job as successful without invoking the trusted
+producer. Accepted caller provenance must therefore cover the call job's
+reachability for every required activity and prevent a same-named partial or
+alternate producer from satisfying the complete-transition status.
+
+GitHub ruleset required workflows remove some caller mutability, but their
+provider semantics create a separate freshness limit: event filters are
+ignored and `pull_request` runs only on the default activity set, which omits
+`edited`. Because the current drift contract reads PR prose, a ruleset workflow
+alone cannot establish complete transition coverage after a body-only edit.
+The Foundation producer/caller-trust decision must define a separately tested
+rerun or invalidation mechanism; until then the status remains advisory rather
+than complete-gate evidence.
+
 Before shipping, local table tests and a GitHub pilot must verify event rows,
 evaluator failure and cancellation, reusable outputs, caller-trigger
 provenance, status identity, and same-repository, fork, Dependabot,
@@ -115,6 +145,8 @@ boundary exists.
 - wider public reason/check catalog metadata and JSON spelling (the exact
   semantic event-reason identifiers in ADR 0009 are reserved);
 - separate required-status identities for snapshot and transition gates;
+- caller reachability and PR-prose freshness enforcement, including the
+  provider limitation of ruleset workflows;
 - a safe bounded-data design, if any, for `pull_request_target`;
 - aggregate multi-PR drift semantics for a merge group;
 - whether push `before`/`after` should ever define a separately named

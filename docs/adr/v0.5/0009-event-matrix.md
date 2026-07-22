@@ -7,8 +7,9 @@
 - **Acceptance:** maintainer review and merge of the exact review-candidate
   head in the linked pull request
 - **Acceptance record:** [Draft PR #64](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/64)
-- **Acceptance review class:** pending; record the factual class from
-  [`GOVERNANCE.md`](../../../GOVERNANCE.md) before merge
+- **Acceptance review class:** derived from the durable PR #64 acceptance
+  record under [`GOVERNANCE.md`](../../../GOVERNANCE.md); the immutable
+  candidate does not predeclare its eventual class
 - **Recorded:** 2026-07-21
 - **Working base:** `main@a300bd1806804e6b660423a905d6a353131c5642`
 - **Runtime effect:** none; this ADR does not change the v0.4.x workflow
@@ -52,9 +53,18 @@ JSON field spelling, or CI status names.
    called workflow classifies the caller-associated `github` context and does
    not accept caller inputs that override event, base, or head identity.
 6. A transition status is authoritative only inside an accepted caller trust
-   boundary that proves the required event subscriptions and producer pin. A
-   called workflow cannot infer the caller YAML's full trigger set from one
-   runtime payload.
+   boundary that proves the required event subscriptions, invocation
+   reachability, producer pin, and non-substitutable status identity. For every
+   required activity, the reusable-workflow call job must not disappear behind
+   a job-level condition or a skipped or failed dependency: GitHub reports a
+   skipped job as successful even when it is a required check. A called
+   workflow cannot infer the caller YAML's full trigger set or job graph from
+   one runtime payload.
+7. A provider-required workflow that ignores event filters cannot by itself
+   prove PR-prose freshness. In particular, GitHub ruleset workflows run
+   `pull_request` only for the provider's default activity types and ignore a
+   caller's `types` filter, so they do not observe `edited` solely because the
+   YAML lists it.
 
 ### Event matrix
 
@@ -109,9 +119,18 @@ Because the PR body carries the assurance-impact and policy-change
 declarations, callers that claim transition coverage must trigger at least
 `opened`, `synchronize`, `reopened`, and `edited`. `ready_for_review` is
 required only if a later trusted plan makes draft state an evaluation input.
-The current called workflow cannot verify this static caller configuration;
+They must also make the reusable-workflow call reachable on every required
+activity despite job conditions and dependency outcomes, and prevent another
+producer from satisfying the same complete-transition identity. The current
+called workflow cannot verify this static caller configuration or job graph;
 until an accepted producer/caller provenance mechanism does so, its status is
 not eligible as proof of complete transition coverage.
+
+GitHub ruleset workflows are not sufficient proof of that coverage when PR
+prose is an input: GitHub ignores event filters for these workflows and runs
+`pull_request` only for `opened`, `synchronize`, and `reopened`. A separately
+accepted mechanism must run or invalidate the transition result on `edited`;
+otherwise complete transition coverage remains unproved.
 
 GitHub's event documentation says that a `pull_request` payload may be empty
 for a fork-origin PR. The same-repository, fork, and Dependabot cases therefore
