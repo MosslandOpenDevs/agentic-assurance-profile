@@ -4,6 +4,18 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added [ADR 0005](docs/adr/v0.5/0005-human-review-authority.md), which keeps
+  `REVIEW_RECORDED` limited to mechanically established structural review
+  provenance, defines the exact revision/scope/governance bindings required
+  for durable repository decisions, and separates factual human-review classes
+  from automation, signatures, OIDC, and provider-account events. External
+  human identity, presence, intent, and credential-custody verification remain
+  explicitly unsupported in v0.5 Foundation unless a later accepted,
+  versioned capability names and verifies its trust anchors. Documentation
+  only: this change accepts no diagnostic catalog or mapping, authorizes no
+  parity or runtime use, creates no public state, and changes no validator,
+  workflow, schema, template, profile obligation, or repository setting.
+
 - Added the review-only, non-runtime [first v0.5 diagnostic catalog and exact
   v0.4.0 mapping candidate](docs/evidence/v0.5/diagnostic-catalog/README.md): 36 proposed
   public checks, 113 proposed finding-code allocations governed by the stable
