@@ -4,13 +4,29 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added the review-only, non-runtime [first v0.5 diagnostic catalog and exact
+  v0.4.0 mapping candidate](docs/evidence/v0.5/diagnostic-catalog/README.md): 36 proposed
+  public checks, 113 proposed finding-code allocations governed by the stable
+  identity policy, 41 non-completion reasons, 309 closed validator semantic
+  groups, 41 terminal families, and all five jobs / 36 steps in the two runtime
+  workflows. It records one prospective allocation with no v0.4 producer,
+  separates GitHub step outcome from conclusion, and preserves the seven Phase
+  0 selected conditions without claiming a complete public gate plan. A
+  review-only verifier and compatibility-change manifest make the candidate's
+  evidence reproducible. The candidate cannot accept itself: runtime readiness
+  and implementation parity remain false. It changes no adopter-facing
+  validator behavior, adopter workflow, schema, template, profile, public
+  report format, or CI status identity. Its 23 verifier tests do expand the
+  repository `self-check` pass predicate through the existing test-discovery
+  command; the only workflow-file change makes that job fetch complete Git
+  history so the review-only verifier can read the exact bound objects.
+
 - Added [ADR 0002](docs/adr/v0.5/0002-diagnostic-identities.md), which defines
   brand-independent stable finding codes, semantic public check IDs, and
   non-completion reason codes. It fixes their finding-versus-reason boundary,
   closed fact-schema and tombstone rules, and the requirement that a complete
-  legacy mapping be accepted separately before implementation. Documentation
-  only: no catalog values, output schema, or runtime behavior ship in this
-  change.
+  legacy mapping be accepted separately before implementation. That earlier
+  ADR-only slice shipped no catalog values, output schema, or runtime behavior.
 
 - Added [ADR 0009](docs/adr/v0.5/0009-event-matrix.md), which separates
   caller-event applicability, completion, and outcome for the transition-drift

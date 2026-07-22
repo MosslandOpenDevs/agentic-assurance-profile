@@ -1,0 +1,3072 @@
+{
+  "candidate_lifecycle": {
+    "acceptance_binding": null,
+    "implementation_consumption_allowed": false,
+    "implementation_parity_authorized": false,
+    "runtime_ready": false
+  },
+  "catalog_identity": {
+    "catalog_id": "urn:uuid:6d6187ea-521e-4f3e-98d9-cb716877a84b",
+    "catalog_revision": 1,
+    "decision_id": "AAP-V05-DIAGNOSTICS-001",
+    "mapping_revision": 1
+  },
+  "derivation_contract": {
+    "dependencies": "PYTHON_STANDARD_LIBRARY_ONLY",
+    "direct_emitter_selector": "CALL_RECEIVER_NAME_REPORT_ATTRIBUTE_ERROR_WARN_OK",
+    "file_spelling": "UTF8_SORTED_KEYS_INDENT_2_ONE_FINAL_LF",
+    "implementation": "scripts/verify_diagnostic_catalog_candidate.py",
+    "payload_hash_spelling": "RFC8259_ASCII_SORTED_KEYS_NO_WHITESPACE",
+    "preliminary_upstream_selector": {
+      "append_functions": [
+        "adoption_policy_regressions",
+        "policy_path_target_regressions",
+        "register_policy_regressions",
+        "schema_errors"
+      ],
+      "return_functions": [
+        "load_json",
+        "load_yaml_with_loader",
+        "policy_path_mapping_contract_error",
+        "read_changed_files"
+      ]
+    },
+    "source_selection": "EXACT_LOCAL_GIT_OBJECTS_ONLY_NO_FETCH_NO_CHECKOUT",
+    "supplemental_upstream_selector": [
+      "schema_errors list-comprehension item",
+      "read_version_file error returns",
+      "leading_pr_directives invalid/ambiguous assignments"
+    ],
+    "unknown_or_unsupported_source_shape": "REJECT",
+    "validator_parser": "PYTHON_AST",
+    "version": 1,
+    "workflow_block_scalars": [
+      "|",
+      "|-",
+      "|+"
+    ],
+    "workflow_parser": "BOUNDED_GITHUB_ACTIONS_INDENTATION_SUBSET"
+  },
+  "document_kind": "diagnostic_candidate_normalized_inventory",
+  "exact_source": {
+    "annotated_tag_object_sha1": "1373d963a098e13d2f44891e58ee8a47e285c5c3",
+    "commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+    "current_draft_inventory_state": "CATALOG_ALLOCATED_TERMINAL_FAMILY_INVENTORY_CLOSED_RUNTIME_PROJECTION_NOT_READY",
+    "current_runtime_projection_ready": false,
+    "exact_runtime_sources": [
+      {
+        "path": "scripts/validate.py",
+        "raw_sha256": "c603735db7218c9d4a7da7cafb31501294b1e00ac84290ae4d5256feb27f6298"
+      },
+      {
+        "path": ".github/workflows/adopter-validate.yml",
+        "raw_sha256": "d6c183e676cf72d9332fec2f417faff110a8d97e452bcb1697117221c1c25ea8"
+      },
+      {
+        "path": ".github/workflows/self-check.yml",
+        "raw_sha256": "6f279cd99dac64e03aa7db01db36c5e328d7b34e1eb6be79ecdc10dbbf8f5497"
+      }
+    ],
+    "release": "v0.4.0",
+    "semantic_inventory_expected": "CLOSED_BEFORE_ACCEPTANCE",
+    "slice_working_base_commit_sha1": "a34f074ab57214d5fe924ba90c00df313cc2acb6",
+    "terminal_family_inventory_closed": true,
+    "terminal_inventory_expected": "CLOSED_BEFORE_ACCEPTANCE"
+  },
+  "ordinary_review_evidence_only": true,
+  "payload_sha256": "884d1fff8282f13e3dd0ddf3d27273b22388c750f7bc13e076f9b7b68f97d961",
+  "review_data_format": 1,
+  "runtime_contract": false,
+  "scope": "REVIEW_ONLY_NOT_RUNTIME_OR_ACCEPTANCE",
+  "validator_inventory": {
+    "direct_emitter_function_count": 41,
+    "direct_emitter_levels": {
+      "error": 195,
+      "ok": 32,
+      "warn": 16
+    },
+    "direct_emitters": [
+      {
+        "end_line": 1573,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1570
+      },
+      {
+        "end_line": 1579,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1579
+      },
+      {
+        "end_line": 1582,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1582
+      },
+      {
+        "end_line": 1589,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1586
+      },
+      {
+        "end_line": 1599,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1594
+      },
+      {
+        "end_line": 1605,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "error",
+        "line": 1605
+      },
+      {
+        "end_line": 1631,
+        "function": "checked_project_path",
+        "function_end_line": 1632,
+        "function_line": 1547,
+        "kind": "warn",
+        "line": 1626
+      },
+      {
+        "end_line": 1660,
+        "function": "check_declared_paths",
+        "function_end_line": 1679,
+        "function_line": 1635,
+        "kind": "error",
+        "line": 1656
+      },
+      {
+        "end_line": 1668,
+        "function": "check_declared_paths",
+        "function_end_line": 1679,
+        "function_line": 1635,
+        "kind": "error",
+        "line": 1665
+      },
+      {
+        "end_line": 1702,
+        "function": "check_declared_security_paths",
+        "function_end_line": 1710,
+        "function_line": 1682,
+        "kind": "error",
+        "line": 1699
+      },
+      {
+        "end_line": 1733,
+        "function": "check_declared_review_record",
+        "function_end_line": 1741,
+        "function_line": 1713,
+        "kind": "error",
+        "line": 1730
+      },
+      {
+        "end_line": 1808,
+        "function": "read_project_text_file",
+        "function_end_line": 1830,
+        "function_line": 1789,
+        "kind": "error",
+        "line": 1808
+      },
+      {
+        "end_line": 1810,
+        "function": "read_project_text_file",
+        "function_end_line": 1830,
+        "function_line": 1789,
+        "kind": "error",
+        "line": 1810
+      },
+      {
+        "end_line": 1818,
+        "function": "read_project_text_file",
+        "function_end_line": 1830,
+        "function_line": 1789,
+        "kind": "error",
+        "line": 1815
+      },
+      {
+        "end_line": 1822,
+        "function": "read_project_text_file",
+        "function_end_line": 1830,
+        "function_line": 1789,
+        "kind": "error",
+        "line": 1822
+      },
+      {
+        "end_line": 1828,
+        "function": "read_project_text_file",
+        "function_end_line": 1830,
+        "function_line": 1789,
+        "kind": "error",
+        "line": 1825
+      },
+      {
+        "end_line": 1970,
+        "function": "check_root_reading_order",
+        "function_end_line": 1972,
+        "function_line": 1947,
+        "kind": "error",
+        "line": 1966
+      },
+      {
+        "end_line": 1972,
+        "function": "check_root_reading_order",
+        "function_end_line": 1972,
+        "function_line": 1947,
+        "kind": "ok",
+        "line": 1972
+      },
+      {
+        "end_line": 1993,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 1993
+      },
+      {
+        "end_line": 1996,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 1996
+      },
+      {
+        "end_line": 1999,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 1999
+      },
+      {
+        "end_line": 2006,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2002
+      },
+      {
+        "end_line": 2022,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2020
+      },
+      {
+        "end_line": 2026,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2024
+      },
+      {
+        "end_line": 2035,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2031
+      },
+      {
+        "end_line": 2042,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2039
+      },
+      {
+        "end_line": 2048,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2045
+      },
+      {
+        "end_line": 2073,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2068
+      },
+      {
+        "end_line": 2091,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2088
+      },
+      {
+        "end_line": 2110,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2105
+      },
+      {
+        "end_line": 2124,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2120
+      },
+      {
+        "end_line": 2130,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "error",
+        "line": 2127
+      },
+      {
+        "end_line": 2134,
+        "function": "check_active_specification_workflow",
+        "function_end_line": 2134,
+        "function_line": 1975,
+        "kind": "ok",
+        "line": 2132
+      },
+      {
+        "end_line": 2281,
+        "function": "check_human_review_temporal_semantics",
+        "function_end_line": 2301,
+        "function_line": 2265,
+        "kind": "error",
+        "line": 2278
+      },
+      {
+        "end_line": 2291,
+        "function": "check_human_review_temporal_semantics",
+        "function_end_line": 2301,
+        "function_line": 2265,
+        "kind": "error",
+        "line": 2287
+      },
+      {
+        "end_line": 2296,
+        "function": "check_human_review_temporal_semantics",
+        "function_end_line": 2301,
+        "function_line": 2265,
+        "kind": "error",
+        "line": 2293
+      },
+      {
+        "end_line": 2301,
+        "function": "check_human_review_temporal_semantics",
+        "function_end_line": 2301,
+        "function_line": 2265,
+        "kind": "error",
+        "line": 2298
+      },
+      {
+        "end_line": 2313,
+        "function": "check_issue_integration_semantics",
+        "function_end_line": 2319,
+        "function_line": 2304,
+        "kind": "error",
+        "line": 2310
+      },
+      {
+        "end_line": 2319,
+        "function": "check_issue_integration_semantics",
+        "function_end_line": 2319,
+        "function_line": 2304,
+        "kind": "error",
+        "line": 2315
+      },
+      {
+        "end_line": 2461,
+        "function": "check_completed_register_human_acts",
+        "function_end_line": 2461,
+        "function_line": 2438,
+        "kind": "error",
+        "line": 2458
+      },
+      {
+        "end_line": 2488,
+        "function": "check_register_disposition_grounds",
+        "function_end_line": 2509,
+        "function_line": 2464,
+        "kind": "error",
+        "line": 2485
+      },
+      {
+        "end_line": 2495,
+        "function": "check_register_disposition_grounds",
+        "function_end_line": 2509,
+        "function_line": 2464,
+        "kind": "error",
+        "line": 2492
+      },
+      {
+        "end_line": 2509,
+        "function": "check_register_disposition_grounds",
+        "function_end_line": 2509,
+        "function_line": 2464,
+        "kind": "error",
+        "line": 2506
+      },
+      {
+        "end_line": 2601,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2601
+      },
+      {
+        "end_line": 2628,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "warn",
+        "line": 2625
+      },
+      {
+        "end_line": 2636,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2632
+      },
+      {
+        "end_line": 2663,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2660
+      },
+      {
+        "end_line": 2668,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2665
+      },
+      {
+        "end_line": 2684,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2680
+      },
+      {
+        "end_line": 2696,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "error",
+        "line": 2696
+      },
+      {
+        "end_line": 2698,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "warn",
+        "line": 2698
+      },
+      {
+        "end_line": 2704,
+        "function": "check_semantics",
+        "function_end_line": 2704,
+        "function_line": 2517,
+        "kind": "ok",
+        "line": 2704
+      },
+      {
+        "end_line": 2749,
+        "function": "check_lite_sections",
+        "function_end_line": 2764,
+        "function_line": 2707,
+        "kind": "error",
+        "line": 2746
+      },
+      {
+        "end_line": 2757,
+        "function": "check_lite_sections",
+        "function_end_line": 2764,
+        "function_line": 2707,
+        "kind": "error",
+        "line": 2757
+      },
+      {
+        "end_line": 2763,
+        "function": "check_lite_sections",
+        "function_end_line": 2764,
+        "function_line": 2707,
+        "kind": "ok",
+        "line": 2760
+      },
+      {
+        "end_line": 2776,
+        "function": "check_version_file",
+        "function_end_line": 2784,
+        "function_line": 2772,
+        "kind": "error",
+        "line": 2776
+      },
+      {
+        "end_line": 2779,
+        "function": "check_version_file",
+        "function_end_line": 2784,
+        "function_line": 2772,
+        "kind": "ok",
+        "line": 2779
+      },
+      {
+        "end_line": 2784,
+        "function": "check_version_file",
+        "function_end_line": 2784,
+        "function_line": 2772,
+        "kind": "error",
+        "line": 2781
+      },
+      {
+        "end_line": 2793,
+        "function": "check_schemas_parse",
+        "function_end_line": 2815,
+        "function_line": 2787,
+        "kind": "error",
+        "line": 2793
+      },
+      {
+        "end_line": 2796,
+        "function": "check_schemas_parse",
+        "function_end_line": 2815,
+        "function_line": 2787,
+        "kind": "error",
+        "line": 2796
+      },
+      {
+        "end_line": 2802,
+        "function": "check_schemas_parse",
+        "function_end_line": 2815,
+        "function_line": 2787,
+        "kind": "error",
+        "line": 2799
+      },
+      {
+        "end_line": 2809,
+        "function": "check_schemas_parse",
+        "function_end_line": 2815,
+        "function_line": 2787,
+        "kind": "error",
+        "line": 2807
+      },
+      {
+        "end_line": 2813,
+        "function": "check_schemas_parse",
+        "function_end_line": 2815,
+        "function_line": 2787,
+        "kind": "ok",
+        "line": 2811
+      },
+      {
+        "end_line": 2831,
+        "function": "check_template",
+        "function_end_line": 2853,
+        "function_line": 2818,
+        "kind": "error",
+        "line": 2831
+      },
+      {
+        "end_line": 2835,
+        "function": "check_template",
+        "function_end_line": 2853,
+        "function_line": 2818,
+        "kind": "error",
+        "line": 2835
+      },
+      {
+        "end_line": 2846,
+        "function": "check_template",
+        "function_end_line": 2853,
+        "function_line": 2818,
+        "kind": "error",
+        "line": 2846
+      },
+      {
+        "end_line": 2852,
+        "function": "check_template",
+        "function_end_line": 2853,
+        "function_line": 2818,
+        "kind": "ok",
+        "line": 2849
+      },
+      {
+        "end_line": 2872,
+        "function": "check_lite_template",
+        "function_end_line": 2921,
+        "function_line": 2856,
+        "kind": "error",
+        "line": 2872
+      },
+      {
+        "end_line": 2876,
+        "function": "check_lite_template",
+        "function_end_line": 2921,
+        "function_line": 2856,
+        "kind": "error",
+        "line": 2876
+      },
+      {
+        "end_line": 2882,
+        "function": "check_lite_template",
+        "function_end_line": 2921,
+        "function_line": 2856,
+        "kind": "error",
+        "line": 2882
+      },
+      {
+        "end_line": 2887,
+        "function": "check_lite_template",
+        "function_end_line": 2921,
+        "function_line": 2856,
+        "kind": "ok",
+        "line": 2884
+      },
+      {
+        "end_line": 2896,
+        "function": "check_lite_template",
+        "function_end_line": 2921,
+        "function_line": 2856,
+        "kind": "error",
+        "line": 2892
+      },
+      {
+        "end_line": 2962,
+        "function": "check_forbidden_string",
+        "function_end_line": 2974,
+        "function_line": 2924,
+        "kind": "error",
+        "line": 2959
+      },
+      {
+        "end_line": 2969,
+        "function": "check_forbidden_string",
+        "function_end_line": 2974,
+        "function_line": 2924,
+        "kind": "error",
+        "line": 2966
+      },
+      {
+        "end_line": 2974,
+        "function": "check_forbidden_string",
+        "function_end_line": 2974,
+        "function_line": 2924,
+        "kind": "ok",
+        "line": 2971
+      },
+      {
+        "end_line": 2991,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 2991
+      },
+      {
+        "end_line": 2997,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 2994
+      },
+      {
+        "end_line": 3010,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3007
+      },
+      {
+        "end_line": 3017,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3014
+      },
+      {
+        "end_line": 3024,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3021
+      },
+      {
+        "end_line": 3032,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3029
+      },
+      {
+        "end_line": 3039,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3036
+      },
+      {
+        "end_line": 3050,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3046
+      },
+      {
+        "end_line": 3057,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "error",
+        "line": 3054
+      },
+      {
+        "end_line": 3062,
+        "function": "check_agent_instruction_template_sync",
+        "function_end_line": 3062,
+        "function_line": 2977,
+        "kind": "ok",
+        "line": 3059
+      },
+      {
+        "end_line": 3073,
+        "function": "check_archived_system_template_markers",
+        "function_end_line": 3085,
+        "function_line": 3065,
+        "kind": "error",
+        "line": 3073
+      },
+      {
+        "end_line": 3081,
+        "function": "check_archived_system_template_markers",
+        "function_end_line": 3085,
+        "function_line": 3065,
+        "kind": "error",
+        "line": 3078
+      },
+      {
+        "end_line": 3085,
+        "function": "check_archived_system_template_markers",
+        "function_end_line": 3085,
+        "function_line": 3065,
+        "kind": "ok",
+        "line": 3083
+      },
+      {
+        "end_line": 3097,
+        "function": "check_codeowners_template",
+        "function_end_line": 3200,
+        "function_line": 3088,
+        "kind": "error",
+        "line": 3097
+      },
+      {
+        "end_line": 3198,
+        "function": "check_codeowners_template",
+        "function_end_line": 3200,
+        "function_line": 3088,
+        "kind": "error",
+        "line": 3195
+      },
+      {
+        "end_line": 3200,
+        "function": "check_codeowners_template",
+        "function_end_line": 3200,
+        "function_line": 3088,
+        "kind": "ok",
+        "line": 3200
+      },
+      {
+        "end_line": 3251,
+        "function": "load_adopter_schemas",
+        "function_end_line": 3269,
+        "function_line": 3246,
+        "kind": "error",
+        "line": 3251
+      },
+      {
+        "end_line": 3253,
+        "function": "load_adopter_schemas",
+        "function_end_line": 3269,
+        "function_line": 3246,
+        "kind": "error",
+        "line": 3253
+      },
+      {
+        "end_line": 3258,
+        "function": "load_adopter_schemas",
+        "function_end_line": 3269,
+        "function_line": 3246,
+        "kind": "error",
+        "line": 3255
+      },
+      {
+        "end_line": 3266,
+        "function": "load_adopter_schemas",
+        "function_end_line": 3269,
+        "function_line": 3246,
+        "kind": "error",
+        "line": 3263
+      },
+      {
+        "end_line": 3277,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "error",
+        "line": 3277
+      },
+      {
+        "end_line": 3280,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "error",
+        "line": 3280
+      },
+      {
+        "end_line": 3286,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "error",
+        "line": 3286
+      },
+      {
+        "end_line": 3290,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "error",
+        "line": 3290
+      },
+      {
+        "end_line": 3295,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "error",
+        "line": 3295
+      },
+      {
+        "end_line": 3297,
+        "function": "check_adoption_document",
+        "function_end_line": 3298,
+        "function_line": 3272,
+        "kind": "ok",
+        "line": 3297
+      },
+      {
+        "end_line": 3308,
+        "function": "check_pinned_version",
+        "function_end_line": 3320,
+        "function_line": 3301,
+        "kind": "error",
+        "line": 3305
+      },
+      {
+        "end_line": 3312,
+        "function": "check_pinned_version",
+        "function_end_line": 3320,
+        "function_line": 3301,
+        "kind": "error",
+        "line": 3312
+      },
+      {
+        "end_line": 3315,
+        "function": "check_pinned_version",
+        "function_end_line": 3320,
+        "function_line": 3301,
+        "kind": "ok",
+        "line": 3315
+      },
+      {
+        "end_line": 3320,
+        "function": "check_pinned_version",
+        "function_end_line": 3320,
+        "function_line": 3301,
+        "kind": "error",
+        "line": 3317
+      },
+      {
+        "end_line": 3340,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3337
+      },
+      {
+        "end_line": 3349,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "warn",
+        "line": 3345
+      },
+      {
+        "end_line": 3367,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3367
+      },
+      {
+        "end_line": 3375,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3372
+      },
+      {
+        "end_line": 3380,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3377
+      },
+      {
+        "end_line": 3405,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3402
+      },
+      {
+        "end_line": 3411,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3408
+      },
+      {
+        "end_line": 3421,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3418
+      },
+      {
+        "end_line": 3427,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3424
+      },
+      {
+        "end_line": 3437,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3434
+      },
+      {
+        "end_line": 3443,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3440
+      },
+      {
+        "end_line": 3484,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3481
+      },
+      {
+        "end_line": 3493,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3490
+      },
+      {
+        "end_line": 3515,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3511
+      },
+      {
+        "end_line": 3524,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3521
+      },
+      {
+        "end_line": 3537,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "error",
+        "line": 3534
+      },
+      {
+        "end_line": 3542,
+        "function": "check_pinned_checkout_commit",
+        "function_end_line": 3542,
+        "function_line": 3323,
+        "kind": "ok",
+        "line": 3539
+      },
+      {
+        "end_line": 3561,
+        "function": "resolve_profile_checkout",
+        "function_end_line": 3594,
+        "function_line": 3545,
+        "kind": "error",
+        "line": 3561
+      },
+      {
+        "end_line": 3571,
+        "function": "resolve_profile_checkout",
+        "function_end_line": 3594,
+        "function_line": 3545,
+        "kind": "error",
+        "line": 3567
+      },
+      {
+        "end_line": 3578,
+        "function": "resolve_profile_checkout",
+        "function_end_line": 3594,
+        "function_line": 3545,
+        "kind": "error",
+        "line": 3578
+      },
+      {
+        "end_line": 3585,
+        "function": "resolve_profile_checkout",
+        "function_end_line": 3594,
+        "function_line": 3545,
+        "kind": "error",
+        "line": 3585
+      },
+      {
+        "end_line": 3592,
+        "function": "resolve_profile_checkout",
+        "function_end_line": 3594,
+        "function_line": 3545,
+        "kind": "error",
+        "line": 3588
+      },
+      {
+        "end_line": 3622,
+        "function": "check_artifacts",
+        "function_end_line": 3648,
+        "function_line": 3597,
+        "kind": "error",
+        "line": 3622
+      },
+      {
+        "end_line": 3632,
+        "function": "check_artifacts",
+        "function_end_line": 3648,
+        "function_line": 3597,
+        "kind": "error",
+        "line": 3632
+      },
+      {
+        "end_line": 3638,
+        "function": "check_artifacts",
+        "function_end_line": 3648,
+        "function_line": 3597,
+        "kind": "error",
+        "line": 3638
+      },
+      {
+        "end_line": 3641,
+        "function": "check_artifacts",
+        "function_end_line": 3648,
+        "function_line": 3597,
+        "kind": "ok",
+        "line": 3641
+      },
+      {
+        "end_line": 3647,
+        "function": "check_artifacts",
+        "function_end_line": 3648,
+        "function_line": 3597,
+        "kind": "warn",
+        "line": 3643
+      },
+      {
+        "end_line": 3678,
+        "function": "require",
+        "function_end_line": 3682,
+        "function_line": 3663,
+        "kind": "ok",
+        "line": 3678
+      },
+      {
+        "end_line": 3680,
+        "function": "require",
+        "function_end_line": 3682,
+        "function_line": 3663,
+        "kind": "ok",
+        "line": 3680
+      },
+      {
+        "end_line": 3682,
+        "function": "require",
+        "function_end_line": 3682,
+        "function_line": 3663,
+        "kind": "error",
+        "line": 3682
+      },
+      {
+        "end_line": 3700,
+        "function": "check_required_files",
+        "function_end_line": 3700,
+        "function_line": 3651,
+        "kind": "warn",
+        "line": 3697
+      },
+      {
+        "end_line": 3735,
+        "function": "check_register_obligations",
+        "function_end_line": 3735,
+        "function_line": 3703,
+        "kind": "error",
+        "line": 3731
+      },
+      {
+        "end_line": 3744,
+        "function": "check_adopter_warnings",
+        "function_end_line": 3763,
+        "function_line": 3738,
+        "kind": "warn",
+        "line": 3741
+      },
+      {
+        "end_line": 3751,
+        "function": "check_adopter_warnings",
+        "function_end_line": 3763,
+        "function_line": 3738,
+        "kind": "warn",
+        "line": 3747
+      },
+      {
+        "end_line": 3763,
+        "function": "check_adopter_warnings",
+        "function_end_line": 3763,
+        "function_line": 3738,
+        "kind": "warn",
+        "line": 3753
+      },
+      {
+        "end_line": 3845,
+        "function": "check_profile_exclusivity",
+        "function_end_line": 3847,
+        "function_line": 3824,
+        "kind": "error",
+        "line": 3838
+      },
+      {
+        "end_line": 3847,
+        "function": "check_profile_exclusivity",
+        "function_end_line": 3847,
+        "function_line": 3824,
+        "kind": "ok",
+        "line": 3847
+      },
+      {
+        "end_line": 3879,
+        "function": "check_lite_profiles",
+        "function_end_line": 3881,
+        "function_line": 3850,
+        "kind": "error",
+        "line": 3876
+      },
+      {
+        "end_line": 3881,
+        "function": "check_lite_profiles",
+        "function_end_line": 3881,
+        "function_line": 3850,
+        "kind": "ok",
+        "line": 3881
+      },
+      {
+        "end_line": 3912,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "error",
+        "line": 3912
+      },
+      {
+        "end_line": 3914,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "error",
+        "line": 3914
+      },
+      {
+        "end_line": 3918,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "error",
+        "line": 3918
+      },
+      {
+        "end_line": 3926,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "error",
+        "line": 3926
+      },
+      {
+        "end_line": 3931,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "error",
+        "line": 3931
+      },
+      {
+        "end_line": 3933,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "ok",
+        "line": 3933
+      },
+      {
+        "end_line": 3946,
+        "function": "check_lite_file",
+        "function_end_line": 3949,
+        "function_line": 3884,
+        "kind": "warn",
+        "line": 3942
+      },
+      {
+        "end_line": 3989,
+        "function": "check_lite_required_files",
+        "function_end_line": 3999,
+        "function_line": 3952,
+        "kind": "ok",
+        "line": 3987
+      },
+      {
+        "end_line": 3994,
+        "function": "check_lite_required_files",
+        "function_end_line": 3999,
+        "function_line": 3952,
+        "kind": "ok",
+        "line": 3991
+      },
+      {
+        "end_line": 3999,
+        "function": "check_lite_required_files",
+        "function_end_line": 3999,
+        "function_line": 3952,
+        "kind": "error",
+        "line": 3996
+      },
+      {
+        "end_line": 4046,
+        "function": "check_component_map",
+        "function_end_line": 4060,
+        "function_line": 4002,
+        "kind": "error",
+        "line": 4043
+      },
+      {
+        "end_line": 4053,
+        "function": "check_component_map",
+        "function_end_line": 4060,
+        "function_line": 4002,
+        "kind": "error",
+        "line": 4050
+      },
+      {
+        "end_line": 4060,
+        "function": "check_component_map",
+        "function_end_line": 4060,
+        "function_line": 4002,
+        "kind": "ok",
+        "line": 4058
+      },
+      {
+        "end_line": 4146,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4143
+      },
+      {
+        "end_line": 4160,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4157
+      },
+      {
+        "end_line": 4181,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4178
+      },
+      {
+        "end_line": 4200,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4196
+      },
+      {
+        "end_line": 4216,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4214
+      },
+      {
+        "end_line": 4227,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4224
+      },
+      {
+        "end_line": 4260,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4257
+      },
+      {
+        "end_line": 4267,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4264
+      },
+      {
+        "end_line": 4296,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4293
+      },
+      {
+        "end_line": 4322,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4319
+      },
+      {
+        "end_line": 4331,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4328
+      },
+      {
+        "end_line": 4337,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4335
+      },
+      {
+        "end_line": 4342,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4340
+      },
+      {
+        "end_line": 4381,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4377
+      },
+      {
+        "end_line": 4401,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4396
+      },
+      {
+        "end_line": 4407,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4403
+      },
+      {
+        "end_line": 4423,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4418
+      },
+      {
+        "end_line": 4430,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4426
+      },
+      {
+        "end_line": 4441,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4436
+      },
+      {
+        "end_line": 4447,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "warn",
+        "line": 4443
+      },
+      {
+        "end_line": 4459,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4454
+      },
+      {
+        "end_line": 4479,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4473
+      },
+      {
+        "end_line": 4519,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "error",
+        "line": 4512
+      },
+      {
+        "end_line": 4522,
+        "function": "check_adoption_stage",
+        "function_end_line": 4522,
+        "function_line": 4063,
+        "kind": "ok",
+        "line": 4522
+      },
+      {
+        "end_line": 4608,
+        "function": "run_adopter",
+        "function_end_line": 4712,
+        "function_line": 4525,
+        "kind": "warn",
+        "line": 4604
+      },
+      {
+        "end_line": 6348,
+        "function": "load_register_document",
+        "function_end_line": 6350,
+        "function_line": 6335,
+        "kind": "warn",
+        "line": 6344
+      },
+      {
+        "end_line": 6373,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6370
+      },
+      {
+        "end_line": 6378,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6378
+      },
+      {
+        "end_line": 6383,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6381
+      },
+      {
+        "end_line": 6392,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6389
+      },
+      {
+        "end_line": 6410,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6408
+      },
+      {
+        "end_line": 6415,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6415
+      },
+      {
+        "end_line": 6423,
+        "function": "load_registers_from_root",
+        "function_end_line": 6425,
+        "function_line": 6309,
+        "kind": "error",
+        "line": 6420
+      },
+      {
+        "end_line": 6487,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6484
+      },
+      {
+        "end_line": 6492,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6490
+      },
+      {
+        "end_line": 6506,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6506
+      },
+      {
+        "end_line": 6511,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6509
+      },
+      {
+        "end_line": 6524,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6521
+      },
+      {
+        "end_line": 6541,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6541
+      },
+      {
+        "end_line": 6544,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6544
+      },
+      {
+        "end_line": 6549,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6549
+      },
+      {
+        "end_line": 6555,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6552
+      },
+      {
+        "end_line": 6563,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6559
+      },
+      {
+        "end_line": 6569,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6566
+      },
+      {
+        "end_line": 6580,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6577
+      },
+      {
+        "end_line": 6596,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6596
+      },
+      {
+        "end_line": 6609,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6605
+      },
+      {
+        "end_line": 6635,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6632
+      },
+      {
+        "end_line": 6652,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6649
+      },
+      {
+        "end_line": 6677,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "warn",
+        "line": 6673
+      },
+      {
+        "end_line": 6679,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6679
+      },
+      {
+        "end_line": 6682,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6682
+      },
+      {
+        "end_line": 6686,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6686
+      },
+      {
+        "end_line": 6694,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6690
+      },
+      {
+        "end_line": 6706,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6702
+      },
+      {
+        "end_line": 6812,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6809
+      },
+      {
+        "end_line": 6830,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "warn",
+        "line": 6827
+      },
+      {
+        "end_line": 6838,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6832
+      },
+      {
+        "end_line": 6851,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6846
+      },
+      {
+        "end_line": 6855,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 6855
+      },
+      {
+        "end_line": 6860,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 6860
+      },
+      {
+        "end_line": 6866,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6863
+      },
+      {
+        "end_line": 6871,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6869
+      },
+      {
+        "end_line": 6876,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6876
+      },
+      {
+        "end_line": 6888,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6885
+      },
+      {
+        "end_line": 6896,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6894
+      },
+      {
+        "end_line": 6905,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6905
+      },
+      {
+        "end_line": 6910,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6908
+      },
+      {
+        "end_line": 6915,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6913
+      },
+      {
+        "end_line": 6926,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6924
+      },
+      {
+        "end_line": 6932,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6929
+      },
+      {
+        "end_line": 6938,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6935
+      },
+      {
+        "end_line": 6945,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6941
+      },
+      {
+        "end_line": 6954,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6952
+      },
+      {
+        "end_line": 6960,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6957
+      },
+      {
+        "end_line": 6966,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6963
+      },
+      {
+        "end_line": 6974,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6971
+      },
+      {
+        "end_line": 6994,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 6990
+      },
+      {
+        "end_line": 7014,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 7009
+      },
+      {
+        "end_line": 7050,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 7050
+      },
+      {
+        "end_line": 7053,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 7053
+      },
+      {
+        "end_line": 7061,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 7061
+      },
+      {
+        "end_line": 7064,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 7064
+      },
+      {
+        "end_line": 7093,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "error",
+        "line": 7093
+      },
+      {
+        "end_line": 7095,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "warn",
+        "line": 7095
+      },
+      {
+        "end_line": 7103,
+        "function": "run_drift",
+        "function_end_line": 7106,
+        "function_line": 6450,
+        "kind": "ok",
+        "line": 7100
+      }
+    ],
+    "preliminary_upstream_producers": [
+      {
+        "end_line": 1245,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1242
+      },
+      {
+        "end_line": 1249,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1249
+      },
+      {
+        "end_line": 1251,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1251
+      },
+      {
+        "end_line": 1253,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1253
+      },
+      {
+        "end_line": 1255,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1255
+      },
+      {
+        "end_line": 1257,
+        "function": "load_yaml_with_loader",
+        "kind": "return",
+        "line": 1257
+      },
+      {
+        "end_line": 1278,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1275
+      },
+      {
+        "end_line": 1308,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1308
+      },
+      {
+        "end_line": 1310,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1310
+      },
+      {
+        "end_line": 1312,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1312
+      },
+      {
+        "end_line": 1314,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1314
+      },
+      {
+        "end_line": 1316,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1316
+      },
+      {
+        "end_line": 1318,
+        "function": "load_json",
+        "kind": "return",
+        "line": 1318
+      },
+      {
+        "end_line": 1338,
+        "function": "schema_errors",
+        "kind": "schema_message",
+        "line": 1336
+      },
+      {
+        "end_line": 1341,
+        "function": "schema_errors",
+        "kind": "schema_message",
+        "line": 1341
+      },
+      {
+        "end_line": 4738,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4735
+      },
+      {
+        "end_line": 4741,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4741
+      },
+      {
+        "end_line": 4745,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4745
+      },
+      {
+        "end_line": 4766,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4763
+      },
+      {
+        "end_line": 4780,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4778
+      },
+      {
+        "end_line": 4786,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4783
+      },
+      {
+        "end_line": 4787,
+        "function": "read_changed_files",
+        "kind": "return",
+        "line": 4787
+      },
+      {
+        "end_line": 5067,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5060
+      },
+      {
+        "end_line": 5076,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5069
+      },
+      {
+        "end_line": 5090,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5085
+      },
+      {
+        "end_line": 5119,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5114
+      },
+      {
+        "end_line": 5138,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5131
+      },
+      {
+        "end_line": 5147,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5145
+      },
+      {
+        "end_line": 5188,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5181
+      },
+      {
+        "end_line": 5200,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5195
+      },
+      {
+        "end_line": 5212,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5207
+      },
+      {
+        "end_line": 5229,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5221
+      },
+      {
+        "end_line": 5248,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5243
+      },
+      {
+        "end_line": 5301,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5294
+      },
+      {
+        "end_line": 5340,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5335
+      },
+      {
+        "end_line": 5361,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5356
+      },
+      {
+        "end_line": 5384,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5378
+      },
+      {
+        "end_line": 5411,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5405
+      },
+      {
+        "end_line": 5437,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5431
+      },
+      {
+        "end_line": 5449,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5449
+      },
+      {
+        "end_line": 5458,
+        "function": "adoption_policy_regressions",
+        "kind": "regression_append",
+        "line": 5456
+      },
+      {
+        "end_line": 5486,
+        "function": "policy_path_mapping_contract_error",
+        "kind": "return",
+        "line": 5486
+      },
+      {
+        "end_line": 5488,
+        "function": "policy_path_mapping_contract_error",
+        "kind": "return",
+        "line": 5488
+      },
+      {
+        "end_line": 5492,
+        "function": "policy_path_mapping_contract_error",
+        "kind": "return",
+        "line": 5490
+      },
+      {
+        "end_line": 5498,
+        "function": "policy_path_mapping_contract_error",
+        "kind": "return",
+        "line": 5495
+      },
+      {
+        "end_line": 5499,
+        "function": "policy_path_mapping_contract_error",
+        "kind": "return",
+        "line": 5499
+      },
+      {
+        "end_line": 5652,
+        "function": "policy_path_target_regressions",
+        "kind": "regression_append",
+        "line": 5646
+      },
+      {
+        "end_line": 5662,
+        "function": "policy_path_target_regressions",
+        "kind": "regression_append",
+        "line": 5656
+      },
+      {
+        "end_line": 5671,
+        "function": "policy_path_target_regressions",
+        "kind": "regression_append",
+        "line": 5665
+      },
+      {
+        "end_line": 5680,
+        "function": "policy_path_target_regressions",
+        "kind": "regression_append",
+        "line": 5674
+      },
+      {
+        "end_line": 5848,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5842
+      },
+      {
+        "end_line": 5862,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5855
+      },
+      {
+        "end_line": 5881,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5873
+      },
+      {
+        "end_line": 5887,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5887
+      },
+      {
+        "end_line": 5907,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5901
+      },
+      {
+        "end_line": 5924,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5918
+      },
+      {
+        "end_line": 5953,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5946
+      },
+      {
+        "end_line": 5966,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5960
+      },
+      {
+        "end_line": 5978,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5972
+      },
+      {
+        "end_line": 5998,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 5992
+      },
+      {
+        "end_line": 6018,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6010
+      },
+      {
+        "end_line": 6042,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6035
+      },
+      {
+        "end_line": 6055,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6049
+      },
+      {
+        "end_line": 6065,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6060
+      },
+      {
+        "end_line": 6084,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6077
+      },
+      {
+        "end_line": 6098,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6092
+      },
+      {
+        "end_line": 6114,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6108
+      },
+      {
+        "end_line": 6134,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6128
+      },
+      {
+        "end_line": 6149,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6142
+      },
+      {
+        "end_line": 6160,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6153
+      },
+      {
+        "end_line": 6179,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6172
+      },
+      {
+        "end_line": 6197,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6191
+      },
+      {
+        "end_line": 6214,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6207
+      },
+      {
+        "end_line": 6234,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6227
+      },
+      {
+        "end_line": 6270,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6263
+      },
+      {
+        "end_line": 6290,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6283
+      },
+      {
+        "end_line": 6305,
+        "function": "register_policy_regressions",
+        "kind": "regression_append",
+        "line": 6296
+      }
+    ],
+    "report_emit_return_lines": [
+      3238,
+      4534,
+      4546,
+      4564,
+      4712,
+      6488,
+      6493,
+      6515,
+      6525,
+      6542,
+      6545,
+      6550,
+      6581,
+      6597,
+      6610,
+      6636,
+      6653,
+      6680,
+      6683,
+      6687,
+      6861,
+      6867,
+      6872,
+      6877,
+      6889,
+      6897,
+      6981,
+      6995,
+      7015,
+      7106
+    ],
+    "report_results_read_lines": [
+      2557,
+      2701,
+      2898,
+      2909,
+      4025,
+      4054,
+      6657,
+      6853
+    ],
+    "supplemental_upstream_producers": [
+      {
+        "end_line": 1330,
+        "function": "schema_errors",
+        "kind": "schema_comprehension_item",
+        "line": 1329
+      },
+      {
+        "end_line": 1754,
+        "function": "read_version_file",
+        "kind": "version_error_return",
+        "line": 1754
+      },
+      {
+        "end_line": 1756,
+        "function": "read_version_file",
+        "kind": "version_error_return",
+        "line": 1756
+      },
+      {
+        "end_line": 1765,
+        "function": "read_version_file",
+        "kind": "version_error_return",
+        "line": 1765
+      },
+      {
+        "end_line": 4904,
+        "function": "leading_pr_directives",
+        "kind": "directive_invalid_assignment",
+        "line": 4904
+      },
+      {
+        "end_line": 4923,
+        "function": "leading_pr_directives",
+        "kind": "directive_invalid_assignment",
+        "line": 4923
+      },
+      {
+        "end_line": 4926,
+        "function": "leading_pr_directives",
+        "kind": "directive_ambiguity_assignment",
+        "line": 4926
+      }
+    ]
+  },
+  "workflow_inventory": [
+    {
+      "job_count": 3,
+      "jobs": [
+        {
+          "continue_on_error": false,
+          "if": null,
+          "job_id": "structure",
+          "needs": null,
+          "outputs": [
+            {
+              "expression": "${{ steps.pin.outputs.adoption_stage }}",
+              "name": "adoption_stage"
+            }
+          ],
+          "steps": [
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out adopting repository",
+              "ordinal": 1
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "a5e23736bedeb4100533fb66cc92eea0d22dd19c7aa91f012f01d99a2f39f65a",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Verify workflow identity",
+              "ordinal": 2
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "a291a61b2831e42e9af4a01c5a5c64cfc455589b449585f2956cd7b9e482629d",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Reserve trusted profile checkout destination",
+              "ordinal": 3
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out this workflow's profile source (trusted)",
+              "ordinal": 4
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+              },
+              "id": null,
+              "if": null,
+              "name": "Set up Python",
+              "ordinal": 5
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "0a5a575127835fa0abf21e32d8133dab4c098a743c268b86ae600c92c23debf1",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Install hash-locked validator dependencies",
+              "ordinal": 6
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "0588c945ea059e0b92493b02d41a210fa6013c7c4a849f7325816e65b6e142b6",
+                "shell": "python -I {0}"
+              },
+              "id": "pin",
+              "if": null,
+              "name": "Read and verify upstream pin",
+              "ordinal": 7
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "c226bb11e0191c61f0031784e062fb650432e44ba766cadea6f0d1bce862081d",
+                "shell": null
+              },
+              "id": null,
+              "if": "${{ steps.pin.outputs.version != 'unreleased' }}",
+              "name": "Verify release pin matches its tag",
+              "ordinal": 8
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "9aa8c5ff613c8ba214930532c4d50d05ae7db37d509627159b0a64ff199c75cd",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Validate against the pinned profile",
+              "ordinal": 9
+            },
+            {
+              "continue_on_error": true,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "f0ac93f19ffa2b226b3659d71dabac378921bc11de9a8ad73dffaa6c0e94ddac",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check pin staleness (non-blocking)",
+              "ordinal": 10
+            }
+          ]
+        },
+        {
+          "continue_on_error": false,
+          "if": "needs.structure.outputs.adoption_stage != 'DRAFT'",
+          "job_id": "declared-stage",
+          "needs": "structure",
+          "outputs": [],
+          "steps": [
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out adopting repository",
+              "ordinal": 1
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "5f985cf6fa391215b85c1c84959ef0aafa35d3624fad663906a7289e8d7c4b16",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Verify workflow identity",
+              "ordinal": 2
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "a291a61b2831e42e9af4a01c5a5c64cfc455589b449585f2956cd7b9e482629d",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Reserve trusted profile checkout destination",
+              "ordinal": 3
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out this workflow's profile source (trusted)",
+              "ordinal": 4
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+              },
+              "id": null,
+              "if": null,
+              "name": "Set up Python",
+              "ordinal": 5
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "0a5a575127835fa0abf21e32d8133dab4c098a743c268b86ae600c92c23debf1",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Install hash-locked validator dependencies",
+              "ordinal": 6
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "1474773e874e40ecf6d8c76998b3f402f543e159099dc70857e261d29fb6a630",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Verify upstream pin matches this workflow",
+              "ordinal": 7
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "3b39107ed41dda76a6fa9990e69504bc9ece0965b44562a17b5d507819868d03",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Enforce the declared adoption stage",
+              "ordinal": 8
+            }
+          ]
+        },
+        {
+          "continue_on_error": false,
+          "if": "github.event_name == 'pull_request'",
+          "job_id": "drift",
+          "needs": null,
+          "outputs": [],
+          "steps": [
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out adopting repository",
+              "ordinal": 1
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "5f985cf6fa391215b85c1c84959ef0aafa35d3624fad663906a7289e8d7c4b16",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Verify workflow identity",
+              "ordinal": 2
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "a291a61b2831e42e9af4a01c5a5c64cfc455589b449585f2956cd7b9e482629d",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Reserve trusted profile checkout destination",
+              "ordinal": 3
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out this workflow's profile source (trusted)",
+              "ordinal": 4
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+              },
+              "id": null,
+              "if": null,
+              "name": "Set up Python",
+              "ordinal": 5
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "0a5a575127835fa0abf21e32d8133dab4c098a743c268b86ae600c92c23debf1",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Install hash-locked validator dependencies",
+              "ordinal": 6
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "2959249b2b2e29892d7bc26525c6c7d2ed850f248bdffacb39157342611e78fe",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Compute changed files (rename-safe)",
+              "ordinal": 7
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "927f40bb8ccef699c09d9013e0b5ac85f39081261f9ffa1a2beab9e82c418346",
+                "shell": "python -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Normalize changed files",
+              "ordinal": 8
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "1be1d6b39444c84dcd4a3cf87d8422c39c9037e2b8f108e34b0dbe2306978383",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Write PR description to a file",
+              "ordinal": 9
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "6492283986561ae311ab8c1c211d24dbea372c0914800c06d9b57571c2efd6fb",
+                "shell": "python3 -I {0}"
+              },
+              "id": null,
+              "if": null,
+              "name": "Materialize the base tree and compute the assurance diff",
+              "ordinal": 10
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "7c2c02d93855f5a5a9dfae93147a020ac8e349023020b4872d5bf1d68a5c0775",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Route impact and screen policy against the component map",
+              "ordinal": 11
+            }
+          ]
+        }
+      ],
+      "path": ".github/workflows/adopter-validate.yml",
+      "raw_sha256": "d6c183e676cf72d9332fec2f417faff110a8d97e452bcb1697117221c1c25ea8",
+      "step_count": 29
+    },
+    {
+      "job_count": 2,
+      "jobs": [
+        {
+          "continue_on_error": false,
+          "if": null,
+          "job_id": "self-check",
+          "needs": null,
+          "outputs": [],
+          "steps": [
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out repository",
+              "ordinal": 1
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+              },
+              "id": null,
+              "if": null,
+              "name": "Set up Python",
+              "ordinal": 2
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "6142c23c756966e0044cc11be5f466a65f1e34553d8b17c4d8417e893a965cd9",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Install hash-locked validator dependencies",
+              "ordinal": 3
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "3c76725ef8b1630b28465da260fc85af1f86b40120b825b4aa4faad2aed9fa18",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Run profile self-check",
+              "ordinal": 4
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "RUN",
+                "run_sha256": "ff9589960e74f51a5cc9c4734f3d88062b11f378e66f0311d66ca513f800d2c3",
+                "shell": null
+              },
+              "id": null,
+              "if": null,
+              "name": "Run validator regression tests",
+              "ordinal": 5
+            }
+          ]
+        },
+        {
+          "continue_on_error": false,
+          "if": null,
+          "job_id": "actionlint",
+          "needs": null,
+          "outputs": [],
+          "steps": [
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+              },
+              "id": null,
+              "if": null,
+              "name": "Check out repository",
+              "ordinal": 1
+            },
+            {
+              "continue_on_error": false,
+              "execution": {
+                "kind": "USES",
+                "reference": "docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
+              },
+              "id": null,
+              "if": null,
+              "name": "Lint workflow files",
+              "ordinal": 2
+            }
+          ]
+        }
+      ],
+      "path": ".github/workflows/self-check.yml",
+      "raw_sha256": "6f279cd99dac64e03aa7db01db36c5e328d7b34e1eb6be79ecdc10dbbf8f5497",
+      "step_count": 7
+    }
+  ]
+}
