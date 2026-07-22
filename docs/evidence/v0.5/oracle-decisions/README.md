@@ -13,9 +13,10 @@ repository-object and byte-binding predicates; it cannot grant acceptance.
 1. A **semantic-candidate PR** establishes the corpus, manifest, and proposed
    ledger bytes, then merges them to canonical `main`.
 2. Before implementation parity, a later **parity-projection candidate PR**
-   maps every internal condition to public finding or reason identity and adds
-   the complete check/gate comparison projection. It contains no executable or
-   allowlist change and merges before the decision that accepts it.
+   maps every internal condition to a public finding, reason, or completed
+   check identity and adds the complete check/gate comparison projection. It
+   contains no executable or allowlist change and merges before the decision
+   that accepts it.
 3. A later **acceptance-only PR** adds one decision record that binds the
    earlier candidate commits and exact raw hashes. It does not modify candidate
    material, a parity implementation, or an allowlist.
@@ -285,7 +286,8 @@ A later `AUTHORIZE_IMPLEMENTATION_PARITY` decision must replace
 raw SHA-256, and mapping revision. The separately reviewed projection must
 cover every selected case and bind:
 
-- each internal condition to a stable finding code or check reason code;
+- each internal condition to a stable finding code, check reason code, or
+  completed public check identity;
 - owning public `check_id`, `completion_required`, evaluated severity, gate
   effect, and relevant source;
 - applicability, completion, outcome, `reason_code`, and `blocked_by`;

@@ -4,13 +4,23 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added the docs-only [first v0.5 diagnostic catalog and exact v0.4.0 mapping
+  candidate](docs/evidence/v0.5/diagnostic-catalog/README.md): 36 proposed
+  public checks, 113 stable finding identities, 41 non-completion reasons, 309
+  closed validator semantic groups, 41 terminal families, and all five jobs / 36
+  steps in the two runtime workflows. It records one prospective identity as
+  having no v0.4 producer, separates GitHub step outcome from conclusion,
+  and projects the seven Phase 0 cases without changing their ledger. The
+  candidate cannot accept itself: runtime readiness and implementation parity
+  remain false, and no validator, workflow, schema, template, profile, or
+  public report format changes.
+
 - Added [ADR 0002](docs/adr/v0.5/0002-diagnostic-identities.md), which defines
   brand-independent stable finding codes, semantic public check IDs, and
   non-completion reason codes. It fixes their finding-versus-reason boundary,
   closed fact-schema and tombstone rules, and the requirement that a complete
-  legacy mapping be accepted separately before implementation. Documentation
-  only: no catalog values, output schema, or runtime behavior ship in this
-  change.
+  legacy mapping be accepted separately before implementation. That earlier
+  ADR-only slice shipped no catalog values, output schema, or runtime behavior.
 
 - Added [ADR 0009](docs/adr/v0.5/0009-event-matrix.md), which separates
   caller-event applicability, completion, and outcome for the transition-drift
