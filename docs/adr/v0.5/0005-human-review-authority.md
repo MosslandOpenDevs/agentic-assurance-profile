@@ -6,8 +6,7 @@
 - **Tracking issue:** [#50](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/50)
 - **Acceptance:** maintainer review and merge of the exact review-candidate
   head in the linked pull request
-- **Acceptance record:** the linked Draft PR for this candidate; its URL and
-  exact review-candidate head are recorded before candidate freeze
+- **Acceptance record:** [Draft PR #67](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/67)
 - **Acceptance review class:** derived from the durable linked-PR acceptance
   record under [`GOVERNANCE.md`](../../../GOVERNANCE.md); the immutable
   candidate does not predeclare its eventual class
