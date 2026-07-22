@@ -4,6 +4,14 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added [ADR 0002](docs/adr/v0.5/0002-diagnostic-identities.md), which defines
+  brand-independent stable finding codes, semantic public check IDs, and
+  non-completion reason codes. It fixes their finding-versus-reason boundary,
+  closed fact-schema and tombstone rules, and the requirement that a complete
+  legacy mapping be accepted separately before implementation. Documentation
+  only: no catalog values, output schema, or runtime behavior ship in this
+  change.
+
 - Added [ADR 0009](docs/adr/v0.5/0009-event-matrix.md), which separates
   caller-event applicability, completion, and outcome for the transition-drift
   capability. It defines snapshot-only events, fail-closed handling of

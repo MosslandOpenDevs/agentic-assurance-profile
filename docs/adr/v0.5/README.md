@@ -10,4 +10,5 @@ copy a mutable lifecycle value into immutable candidate bytes.
 
 | ADR | Decision | Status | Tracking issue |
 |---|---|---|---|
+| [0002](0002-diagnostic-identities.md) | Diagnostic identity and allocation policy | Merge-derived; see ADR lifecycle | [#50](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/50) |
 | [0009](0009-event-matrix.md) | Caller-event applicability and non-PR drift completion | Merge-derived; see ADR lifecycle | [#43](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/43) |
