@@ -1,0 +1,919 @@
+{
+  "document_kind": "diagnostic_catalog_compatibility_change_candidate",
+  "review_data_format": 1,
+  "runtime_contract": false,
+  "decision_id": "AAP-V05-DIAGNOSTICS-001",
+  "catalog_ref": {
+    "catalog_id": "urn:uuid:6d6187ea-521e-4f3e-98d9-cb716877a84b",
+    "catalog_revision": 1
+  },
+  "mapping_ref": {
+    "mapping_revision": 1,
+    "legacy_release": "v0.4.0",
+    "legacy_commit_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796"
+  },
+  "candidate_lifecycle": {
+    "status": "PROPOSED_REVIEW_DATA",
+    "acceptance_binding": null,
+    "accepted": false,
+    "effective_only_after_external_exact_byte_acceptance": true,
+    "later_acceptance_required": true,
+    "implementation_consumption_allowed": false,
+    "implementation_parity_authorized": false,
+    "runtime_ready": false,
+    "migration_notes_are_current_runtime_instructions": false
+  },
+  "authority_locator_contract": {
+    "registry_artifact": "catalog-r1.json",
+    "registry_field": "authority_sources",
+    "candidate_locators_are_review_evidence_not_accepted_authority": true,
+    "diagnostics_r1_self_becomes_authoritative_only_after_later_exact_byte_acceptance": true,
+    "legacy_runtime_locator_revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+    "legacy_runtime_locator_path": "scripts/validate.py",
+    "legacy_runtime_raw_sha256": "c603735db7218c9d4a7da7cafb31501294b1e00ac84290ae4d5256feb27f6298"
+  },
+  "closed_change_set": {
+    "closed": true,
+    "selection_predicate": "catalog-r1 finding compatibility_disposition equals INTENDED_CHANGE_PENDING",
+    "count": 33,
+    "exact_codes": [
+      "F0005",
+      "F0007",
+      "F0008",
+      "F0011",
+      "F0012",
+      "F0013",
+      "F0015",
+      "F0018",
+      "F0023",
+      "F0024",
+      "F0025",
+      "F0032",
+      "F0034",
+      "F0036",
+      "F0047",
+      "F0050",
+      "F0052",
+      "F0063",
+      "F0072",
+      "F0073",
+      "F0095",
+      "F0096",
+      "F0097",
+      "F0098",
+      "F0099",
+      "F0100",
+      "F0101",
+      "F0102",
+      "F0103",
+      "F0105",
+      "F0106",
+      "F0108",
+      "F0113"
+    ],
+    "on_missing_code": "REJECT",
+    "on_extra_code": "REJECT",
+    "on_duplicate_code": "REJECT"
+  },
+  "changes": [
+    {
+      "code": "F0005",
+      "legacy_state_or_collapse": "The shared YAML loader reports syntax, constructor ValueError, constructor OverflowError, data-model, and resource-limit failures through prose-oriented exception families reused at adoption-document and register callsites.",
+      "proposed_v0_5_distinction": "F0005 identifies only YAML grammar or constructor syntax/value failures for an adoption-policy or register document; invalid UTF-8, invalid data model, and bounded-resource exhaustion remain distinct identities.",
+      "rationale": "A grammar failure is a completed bounded-parse result and must not acquire the identity of a schema violation or a resource-limit failure merely because v0.4 rendered them through the same loader path.",
+      "compatibility_impact": "A legacy generic YAML-invalid result can no longer be mapped by message text alone; the producer must expose its exception variant and callsite before emitting F0005.",
+      "migration_note": "At load_yaml callsites 3275 and 3620, map YAML_SYNTAX_OR_CONSTRUCTOR_INVALID, YAML_CONSTRUCTOR_VALUE_INVALID, and YAML_CONSTRUCTOR_OVERFLOW_INVALID to F0005; route UTF-8, data-model, and limit variants to their own codes.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0005]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-1255 and U-1257 at load_yaml@3275 and load_yaml@3620"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 6 and 7.2 bounded parser boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0007",
+      "legacy_state_or_collapse": "YamlDataModelError is caught inside the same v0.4 loader branch that also catches constructor values, complexity failures, recursion, and overflow, so its stable semantic identity is absent from the rendered result.",
+      "proposed_v0_5_distinction": "F0007 identifies a successfully parsed YAML value that falls outside the permitted JSON-compatible policy data model, at either the adoption-document or register-document callsite.",
+      "rationale": "An invalid value model is neither malformed YAML nor exhaustion of a bounded parser budget and therefore needs an independent remediation and identity.",
+      "compatibility_impact": "Consumers that grouped every v0.4 loader ValueError together must recognize F0007 separately from F0005 and F0008.",
+      "migration_note": "Emit F0007 only for the YAML_DATA_MODEL_INVALID producer variant at load_yaml@3275 or load_yaml@3620; do not infer it from rendered exception prose.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0007]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group U-1257 variant YAML_DATA_MODEL_INVALID at load_yaml@3275 and load_yaml@3620"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 6 and 7.2 bounded parser boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0008",
+      "legacy_state_or_collapse": "v0.4 exposes byte size, numeric-token length, alias expansion, expanded node count, and recursion exhaustion through several loader branches without one stable resource-limit identity or a reliable limit-kind fact.",
+      "proposed_v0_5_distinction": "F0008 represents bounded YAML resource exhaustion and carries a closed limit_kind fact for BYTE_SIZE, NUMERIC_VALUE, NESTING, ALIAS_EXPANSION, or NODE_COUNT.",
+      "rationale": "Resource exhaustion has operational and security consequences distinct from invalid syntax, and the exceeded budget must be machine-visible without parsing the error string.",
+      "compatibility_impact": "Several v0.4 messages collapse into one code plus a required fact; adapters that cannot produce a valid limit_kind must fail closed instead of guessing.",
+      "migration_note": "Map U-1242 to BYTE_SIZE, the U-1255 numeric-token variant to NUMERIC_VALUE, and the U-1257 alias, node, and recursion variants to the corresponding F0008 limit_kind at adoption and register callsites.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0008]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-1242, U-1255, and U-1257 at load_yaml@3275 and load_yaml@3620"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 6 and 7.2 bounded parser boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0011",
+      "legacy_state_or_collapse": "The U-1316 strict-JSON ValueError family covers duplicate keys, non-finite values, numeric limits, nesting limits, and node-count limits before v0.4 renders a generic loader failure.",
+      "proposed_v0_5_distinction": "F0011 identifies only strict JSON data-model failures such as duplicate keys and non-finite values; bounded numeric, nesting, node-count, and byte limits belong to F0012.",
+      "rationale": "Invalid JSON data semantics and resource-budget exhaustion require different stable conditions even when the Python exception class is the same.",
+      "compatibility_impact": "A single legacy ValueError family becomes a typed branch between F0011 and F0012, so message-based compatibility adapters are insufficient.",
+      "migration_note": "At load_json@3249, map only JSON_DATA_MODEL_INVALID to F0011 and route every registered budget variant to F0012 with its required limit_kind.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0011]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group U-1316 variant JSON_DATA_MODEL_INVALID at load_json@3249"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 6 and 7.2 bounded parser boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0012",
+      "legacy_state_or_collapse": "JSON byte size, numeric value, nesting, and expanded node-count limits originate in U-1275, U-1316, and U-1318, while v0.4 preserves no single typed budget condition across those branches.",
+      "proposed_v0_5_distinction": "F0012 is the bounded JSON resource finding with a closed limit_kind of BYTE_SIZE, NUMERIC_VALUE, NESTING, or NODE_COUNT.",
+      "rationale": "A common resource-budget identity makes bounded parsing observable while retaining the exact exhausted dimension as structured evidence.",
+      "compatibility_impact": "Multiple legacy result strings consolidate into F0012 and now require a non-null, in-domain limit_kind fact.",
+      "migration_note": "Map U-1275 to BYTE_SIZE, U-1318 to NESTING, and the registered U-1316 budget variants to NUMERIC_VALUE, NESTING, or NODE_COUNT at load_json@3249.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0012]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-1275, U-1316, and U-1318 at load_json@3249"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 6 and 7.2 bounded parser boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0013",
+      "legacy_state_or_collapse": "Generic schema-error producers U-SCHEMA-NONMEANINGFUL-1329 and AUX-SCHEMA-1341 are reused across documents and paths, while direct adoption-shape checks D-1656, D-3280, and D-4340 emit separate prose.",
+      "proposed_v0_5_distinction": "F0013 owns adoption-schema violations outside the profiles subtree; violations whose instance pointer is profiles or a descendant are separated as F0015.",
+      "rationale": "The general adoption schema and the declared profile-set contract have different owners and remedies even when they come from the same schema evaluator.",
+      "compatibility_impact": "Schema failures must be dispatched by callsite and instance pointer instead of treating all schema prose as one identity.",
+      "migration_note": "Map adoption schema errors outside profiles, plus D-1656, D-3280, and D-4340, to F0013; send profiles-subtree errors to F0015.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0013]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups AUX-SCHEMA-1341 and U-SCHEMA-NONMEANINGFUL-1329 variant OTHER_ADOPTION_SCHEMA_VIOLATION, plus D-1656, D-3280, and D-4340"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 6 required local artifacts and adoption shape"
+        }
+      ]
+    },
+    {
+      "code": "F0015",
+      "legacy_state_or_collapse": "v0.4's generic schema failure does not provide a stable profile-declaration identity for malformed, empty, duplicated, or unknown profile selections.",
+      "proposed_v0_5_distinction": "F0015 is selected when the schema violation's instance pointer is profiles or one of its descendants, isolating the declared profile-set contract from other adoption schema failures.",
+      "rationale": "Profile classification controls downstream obligations and deserves a precise diagnostic rather than a generic adoption-schema result.",
+      "compatibility_impact": "A subset of legacy adoption schema failures moves from the general F0013 family to the newly distinct F0015 code.",
+      "migration_note": "Preserve the schema instance pointer as a typed discriminant; route profiles and descendant pointers to F0015 and every other adoption pointer to F0013.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0015]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups AUX-SCHEMA-1341 and U-SCHEMA-NONMEANINGFUL-1329 variant PROFILE_DECLARATION_SCHEMA_VIOLATION"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "sections 5, 6, and 6.6 profile selection"
+        }
+      ]
+    },
+    {
+      "code": "F0018",
+      "legacy_state_or_collapse": "Shared YAML parsing and schema producers, together with D-4604, yield different prose for lite-envelope, embedded-register, and loader failures and are also reused by full templates and standalone registers.",
+      "proposed_v0_5_distinction": "F0018 gives the adopter's lite assurance envelope and its register sections one layout-owned invalid-bundle identity, distinguished by callsite from shipped-template F0103 and standalone-register F0036.",
+      "rationale": "For the lite layout, the enforceable unit is the bundle envelope; callsite ownership is more stable than the generic parser or schema message that surfaced the defect.",
+      "compatibility_impact": "Several legacy parse, schema, and layout strings consolidate into F0018, while equivalent loader branches at other callsites produce different codes.",
+      "migration_note": "Attach the check_lite_file callsite before projection and map its registered loader, schema, and D-4604 envelope branches to F0018; do not reuse F0018 for shipped templates or standalone register files.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0018]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping callsites load_yaml@3916 and schema_errors@3928, plus group D-4604"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 6.1 permitted lite layout"
+        }
+      ]
+    },
+    {
+      "code": "F0023",
+      "legacy_state_or_collapse": "D-3408 and D-3424 are classified as non-completion reasons for a non-real trusted directory or resource, while D-3534 is a finding for resources that differ from the pinned checkout's HEAD.",
+      "proposed_v0_5_distinction": "F0023 treats all safely inspected absence, type, and content mismatches in the trusted pinned resource set as one completed upstream-commit-pin finding.",
+      "rationale": "These states establish a repository trust-boundary violation rather than merely making an otherwise applicable check unknowable.",
+      "compatibility_impact": "The D-3408 and D-3424 paths change from reason semantics to a blocking finding and collapse with the existing HEAD-difference condition.",
+      "migration_note": "Map D-3408, D-3424, and D-3534 to F0023; callers must no longer interpret the first two as an uncompleted check once the new decision is accepted.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0023]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-3408, D-3424, and D-3534"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 16 immutable upstream pin"
+        }
+      ]
+    },
+    {
+      "code": "F0024",
+      "legacy_state_or_collapse": "The direct D-3511 Report.error for assume-unchanged or skip-worktree flags was preliminarily classified as display-only, leaving its semantic status ambiguous despite blocking behavior.",
+      "proposed_v0_5_distinction": "F0024 is a dedicated finding for Git index flags that can hide modifications to trusted validation resources from ordinary worktree comparison.",
+      "rationale": "A concealment mechanism at the trust boundary is not display decoration and must have its own stable, blocking identity.",
+      "compatibility_impact": "This corrects the preliminary classification and introduces a distinct code rather than folding the condition into generic trusted-resource mismatch prose.",
+      "migration_note": "Replace any display-only treatment of the D-3511 branch with F0024; preserve the direct producer identity and do not derive it from the rendered message.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0024]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group D-3511 and its classification_correction"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 16 immutable upstream pin"
+        }
+      ]
+    },
+    {
+      "code": "F0025",
+      "legacy_state_or_collapse": "D-3440 treats an executing validator outside the pinned checkout as a reason, while D-3588 emits a finding when schemas and the pinned checkout resolve to different trusted trees.",
+      "proposed_v0_5_distinction": "F0025 unifies both cases as a completed profile-checkout-boundary mismatch.",
+      "rationale": "The validator, schemas, and checkout must share one trust root; a safely established mismatch is a policy violation rather than missing evaluation context.",
+      "compatibility_impact": "D-3440 changes from reason to blocking finding and joins D-3588 under one stable code.",
+      "migration_note": "Project both exact source groups D-3440 and D-3588 to F0025 after acceptance; do not preserve the former non-completion classification.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0025]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-3440 and D-3588"
+        },
+        {
+          "source_id": "adoption-guide-v0.4.0",
+          "artifact": "docs/ADOPTION.md",
+          "locator": "pinned checkout trust boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0032",
+      "legacy_state_or_collapse": "The shared project-text helper emits identical cannot-read-as-UTF-8 prose for OSError and UnicodeDecodeError at multiple callsites; not-regular, oversized, and lite-file branches are separate legacy findings.",
+      "proposed_v0_5_distinction": "At a required-artifact callsite, inaccessible project state becomes PROJECT_TREE_UNAVAILABLE, while invalid UTF-8 or a safely established unusable required artifact becomes F0032.",
+      "rationale": "An inaccessible project tree prevents completion, whereas invalid content or file type is a completed artifact-conformance failure.",
+      "compatibility_impact": "The same legacy English text can now yield either a non-completion reason or a blocking finding, and several usable-file defects consolidate into F0032.",
+      "migration_note": "Dispatch D-1822 by exception type and required-artifact callsite: OSError to PROJECT_TREE_UNAVAILABLE, UnicodeDecodeError to F0032; also map D-1808, D-1815, and D-3912 artifact-usability branches to F0032.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0032]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-1808, D-1815, D-1822 at read_project_text_file@3669, and D-3912"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "sections 6, 6.1, and 6.6 required artifacts"
+        }
+      ]
+    },
+    {
+      "code": "F0034",
+      "legacy_state_or_collapse": "For the lite system description, v0.4 emits separate missing, non-regular, oversized, empty, UTF-8, and final inline-or-file obligation prose, while the shared read helper conflates OSError with UnicodeDecodeError.",
+      "proposed_v0_5_distinction": "F0034 represents the safely established failure of the lite inline-or-file system-description obligation; an inaccessible project tree remains a non-completion reason.",
+      "rationale": "The public obligation is satisfied by either inline content or a usable file, so its stable identity should express that compound requirement while retaining the acquisition boundary.",
+      "compatibility_impact": "Several legacy file-state messages consolidate into F0034, but an OSError on the same helper path now produces PROJECT_TREE_UNAVAILABLE instead of a finding.",
+      "migration_note": "At read_project_text_file@3978, route OSError to PROJECT_TREE_UNAVAILABLE and UnicodeDecodeError plus D-1808, D-1810, D-1815, D-1825, and D-3996 to F0034 when the inline alternative is not usable.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0034]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-1808, D-1810, D-1815, D-1822, D-1825 at read_project_text_file@3978, and D-3996"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "sections 6, 6.1, and 6.6 lite system description"
+        }
+      ]
+    },
+    {
+      "code": "F0036",
+      "legacy_state_or_collapse": "v0.4's register path surfaces bounded YAML loading and schema evaluation through neighboring generic messages, so parse, UTF-8, resource, and actual schema states are not represented by stable typed identities.",
+      "proposed_v0_5_distinction": "F0036 is limited to safely loaded register values that fail their selected register schema; register YAML grammar, UTF-8, data-model, and resource-budget failures are owned by adoption.document-parse and project to F0005, F0006, F0007, or F0008.",
+      "rationale": "A schema check can complete only after bounded acquisition and parsing succeeds; keeping that boundary prevents malformed input from masquerading as schema nonconformance.",
+      "compatibility_impact": "Legacy register failures that appeared in one validation stream split into document-parse findings and the narrower F0036 schema finding, while remaining blocking when evaluation completes.",
+      "migration_note": "Emit F0036 only for AUX-SCHEMA-1341 or U-SCHEMA-NONMEANINGFUL-1329 at register schema callsites; route every load_yaml@3620 variant through F0005-F0008 and never recover the split from English text.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0036] and public_checks[check_id=adoption.register-conformance]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups AUX-SCHEMA-1341 and U-SCHEMA-NONMEANINGFUL-1329 at schema_errors@2752 and schema_errors@3635"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "sections 6 and 7-12 register contracts"
+        }
+      ]
+    },
+    {
+      "code": "F0047",
+      "legacy_state_or_collapse": "Material-change workflow-root checks emit distinct path-state prose, while D-2039 uses one cannot-read-as-UTF-8 branch for both OSError and UnicodeDecodeError.",
+      "proposed_v0_5_distinction": "F0047 identifies a safely inspected workflow root that is malformed, outside the repository, absent, non-regular, or invalid UTF-8; inaccessible project state remains PROJECT_TREE_UNAVAILABLE.",
+      "rationale": "A declared root that violates the repository boundary is a completed specification-workflow finding, but a tree that cannot be inspected prevents completion.",
+      "compatibility_impact": "The D-2039 legacy text gains a typed reason-versus-finding split and the other root-validation messages consolidate under F0047.",
+      "migration_note": "At the D-2039 producer, send OSError to PROJECT_TREE_UNAVAILABLE and UnicodeDecodeError to F0047; also project D-2002, D-2020, D-2024, and D-2127 to F0047.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0047]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-2002, D-2020, D-2024, D-2039, and D-2127"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 material-change workflow"
+        }
+      ]
+    },
+    {
+      "code": "F0050",
+      "legacy_state_or_collapse": "Missing, non-regular, oversized, empty, and out-of-order root-guide states have separate v0.4 prose, while the shared D-1822 read branch collapses OSError and invalid UTF-8.",
+      "proposed_v0_5_distinction": "F0050 represents a safely inspected required root instruction that cannot provide the canonical visible assurance reading-order block; inaccessible project state remains a reason.",
+      "rationale": "The semantic obligation is the usable canonical reading-order block, not the particular helper message that caused the obligation to fail.",
+      "compatibility_impact": "Legacy guide-state messages consolidate into F0050, and identical D-1822 prose splits into PROJECT_TREE_UNAVAILABLE or F0050 by producer exception type.",
+      "migration_note": "Route OSError at read_project_text_file@1955 to PROJECT_TREE_UNAVAILABLE, UnicodeDecodeError to F0050, and map D-1808, D-1810, D-1815, D-1825, and D-1966 root-guide branches to F0050.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0050]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-1808, D-1810, D-1815, D-1822, D-1825 at read_project_text_file@1955, and D-1966"
+        },
+        {
+          "source_id": "adoption-guide-v0.4.0",
+          "artifact": "docs/ADOPTION.md",
+          "locator": "root assurance reading-order requirement"
+        }
+      ]
+    },
+    {
+      "code": "F0052",
+      "legacy_state_or_collapse": "D-4143 reports an illegal adoption stage as a reason because legacy stage requirements cannot be enforced, even though the invalid declared value was safely loaded and evaluated.",
+      "proposed_v0_5_distinction": "F0052 is a completed adoption.stage-conformance finding for any stage outside DRAFT, HUMAN_REVIEWED, or CONFORMANT.",
+      "rationale": "A safely observed invalid enum value is a policy failure, not unavailable input or an uncompleted evaluation.",
+      "compatibility_impact": "The D-4143 path changes from a non-completion reason to a blocking finding.",
+      "migration_note": "Replace the legacy requirements-cannot-be-enforced classification for D-4143 with F0052 after acceptance; retain non-completion only when the stage input itself cannot be acquired.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0052]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group D-4143"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 17 adoption stages"
+        }
+      ]
+    },
+    {
+      "code": "F0063",
+      "legacy_state_or_collapse": "v0.4 has separate missing and empty review-record messages, while the shared project-text read branch uses the same prose for OSError and UnicodeDecodeError.",
+      "proposed_v0_5_distinction": "F0063 identifies a required review record that is safely established as missing, empty, or invalid UTF-8; an inaccessible project tree remains PROJECT_TREE_UNAVAILABLE.",
+      "rationale": "The declared adoption stage creates a concrete record obligation, but the check must retain the distinction between a violated obligation and unavailable evaluation input.",
+      "compatibility_impact": "Review-record defects consolidate into F0063, while one legacy read-error message now has distinct reason and finding outcomes.",
+      "migration_note": "At read_project_text_file@4346, map OSError to PROJECT_TREE_UNAVAILABLE and UnicodeDecodeError to F0063; map D-4328 and D-4335, plus applicable missing or empty helper states, to F0063.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0063]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-1808, D-1810, D-1815, D-1822, D-1825 at read_project_text_file@4346, plus D-4328 and D-4335"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 17 HUMAN_REVIEWED record"
+        }
+      ]
+    },
+    {
+      "code": "F0072",
+      "legacy_state_or_collapse": "The exact v0.4.0 inventory is closed with no producer for a durable human review of profile classification; declared profile syntax and stage do not establish that provenance.",
+      "proposed_v0_5_distinction": "F0072 is a prospective non-blocking finding when a safely loaded classification remains UNCONFIRMED; an unevaluable classification-review capability is instead non-complete and emits no F0072.",
+      "rationale": "Passing declared-profile gates does not prove that the project was classified correctly, and tooling must not fabricate human authority.",
+      "compatibility_impact": "This is a genuinely new WARN identity with a closed negative legacy inventory; future clients must tolerate it and surface human escalation without treating it as v0.4 parity.",
+      "migration_note": "Do not synthesize F0072 from any v0.4 message. Emit it only after the new profile-classification-review check completes as UNCONFIRMED; use a reason when the review state is UNDETERMINED.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0072] and its closed negative v0.4 inventory"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "profile-classification-review states and UNCONFIRMED finding, lines 741-780"
+        }
+      ]
+    },
+    {
+      "code": "F0073",
+      "legacy_state_or_collapse": "Base and head adoption, register, YAML, JSON, and path-transition failures are spread across many prose results; some loader failures are swallowed into false or compatibility fallback, and D-6605 and D-6632 are reason-classified.",
+      "proposed_v0_5_distinction": "F0073 is one transition.input-parse finding for safely acquired base or head policy input that is malformed, structurally invalid, or otherwise not comparable; inaccessible input remains a typed reason.",
+      "rationale": "Transition logic must fail closed instead of guessing absence or silently falling back when the inputs needed for comparison are invalid.",
+      "compatibility_impact": "A broad set of legacy strings and hidden fallback states consolidates into F0073, including selected reason-to-finding promotions, while true acquisition failure remains non-completion.",
+      "migration_note": "Preserve callsite and parser variant before mapping registered run_drift and load_register_document failures to F0073; suppress only the documented internal fallback duplicate and route inaccessible input to its reason code.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0073]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping producer set referenced by F0073, including load_yaml@5522, @6336, @6539, @6659 and load_json@6594"
+        },
+        {
+          "source_id": "v0.5-design-base",
+          "artifact": "docs/V0.5-DESIGN.md",
+          "locator": "sections 7 and 7.1 transition input boundary"
+        }
+      ]
+    },
+    {
+      "code": "F0095",
+      "legacy_state_or_collapse": "U-4745 invalid UTF-8 and U-4778 non-canonical changed paths are upstream reason states whose rendered consumers do not expose a stable malformed changed-file-set identity.",
+      "proposed_v0_5_distinction": "F0095 is a completed finding for a safely acquired changed-file set that is malformed, ambiguous, invalid UTF-8, or contains a non-canonical repository-relative path.",
+      "rationale": "Once the input bytes are available, their invalid framing or path semantics are an evaluated transition-input violation rather than missing context.",
+      "compatibility_impact": "The two v0.4 reason states become a blocking finding with one stable identity.",
+      "migration_note": "Map U-4745 and U-4778 to F0095; reserve input-unavailable reasons for failures to acquire the changed-file input itself.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0095]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-4745 and U-4778"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 component and change routing"
+        }
+      ]
+    },
+    {
+      "code": "F0096",
+      "legacy_state_or_collapse": "U-4735, U-4763, and U-4783 expose changed-file input bytes, path length, and file-count limits as separate reason states without one typed budget result.",
+      "proposed_v0_5_distinction": "F0096 is the completed changed-file-set resource finding with required limit_kind INPUT_BYTES, PATH_CODE_POINTS, or CHANGED_FILE_COUNT.",
+      "rationale": "Bounded evaluation limits are enforceable input constraints and should expose both a stable identity and the exhausted dimension.",
+      "compatibility_impact": "Three non-completion reasons become a blocking finding and require an exact limit_kind fact.",
+      "migration_note": "Map U-4735 to INPUT_BYTES, U-4763 to PATH_CODE_POINTS, and U-4783 to CHANGED_FILE_COUNT; reject missing or unknown limit_kind values.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0096]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-4735, U-4763, and U-4783"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 component and change routing"
+        }
+      ]
+    },
+    {
+      "code": "F0097",
+      "legacy_state_or_collapse": "leading_pr_directives returns impact_ambiguous or order_invalid internal state from lines 4904, 4923, and 4926, which v0.4 folds into downstream routing prose rather than an independently stable finding.",
+      "proposed_v0_5_distinction": "F0097 promotes a malformed or contract-violating pull-request directive block to its own transition.pr-directive-routing finding.",
+      "rationale": "The parser already establishes a specific invalid directive state, and downstream message wording should not determine whether that state has public identity.",
+      "compatibility_impact": "A previously internal or indirectly visible state becomes an independent blocking diagnostic.",
+      "migration_note": "Have the directive parser emit a typed invalid-state discriminant and map impact_ambiguous or order_invalid to F0097 before downstream routing prose is rendered.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0097]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group U-PR-DIRECTIVE-INVALID-STATES, producer lines 4904, 4923, and 4926"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 material-change declaration"
+        }
+      ]
+    },
+    {
+      "code": "F0098",
+      "legacy_state_or_collapse": "D-6577 classifies an oversized pull-request body as a reason, and v0.4 has no stable directive-input resource code or structured limit kind.",
+      "proposed_v0_5_distinction": "F0098 is a completed pull-request-directive resource finding; the mapped v0.4 producer binds limit_kind PR_BODY_BYTES, while the catalog reserves other closed directive limits.",
+      "rationale": "A safely measured routing input that exceeds its accepted bound is an evaluated policy failure rather than unavailable input.",
+      "compatibility_impact": "D-6577 changes from reason to blocking finding and gains a required structured limit_kind.",
+      "migration_note": "Map D-6577 to F0098 with limit_kind PR_BODY_BYTES; never infer a different reserved limit kind without a separately registered producer.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0098]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping group D-6577"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 material-change declaration"
+        }
+      ]
+    },
+    {
+      "code": "F0099",
+      "legacy_state_or_collapse": "Component-map shape, names, globs, and invariant-ID errors are separate v0.4 findings, while D-6894's cannot-read-as-UTF-8 text conflates OSError with UnicodeDecodeError.",
+      "proposed_v0_5_distinction": "F0099 consolidates safely established component-routing declaration defects; an unavailable assurance diff produces ASSURANCE_DIFF_UNAVAILABLE, while invalid UTF-8 remains a contract finding.",
+      "rationale": "Structural inconsistency is a completed routing-contract failure, but inability to acquire the assurance diff prevents the check from completing.",
+      "compatibility_impact": "Many structural messages consolidate into F0099, and the same D-6894 prose now splits between a reason and a blocking finding.",
+      "migration_note": "Dispatch D-6894 by exception type to ASSURANCE_DIFF_UNAVAILABLE or F0099, and map D-6863, D-6905, D-6913, D-6924, D-6941, D-6952, and D-6971 to F0099.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0099]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping producer set referenced by F0099, including source-predicate group D-6894"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 component routing"
+        }
+      ]
+    },
+    {
+      "code": "F0100",
+      "legacy_state_or_collapse": "Component count, name length, glob count, path length, invariant count, ID length, glob work, and mention-scan work are separate findings, while D-6885's assurance-diff byte cap is classified as a reason.",
+      "proposed_v0_5_distinction": "F0100 unifies all bounded component-routing exhaustion under one finding with a required limit_kind covering the nine registered work and size dimensions.",
+      "rationale": "These states share the semantic condition that bounded routing evaluation exceeded an accepted budget, while the structured fact preserves the precise budget.",
+      "compatibility_impact": "Eight legacy finding messages and one reason consolidate into F0100; D-6885 is promoted to a blocking finding and every instance requires limit_kind.",
+      "migration_note": "Map D-6869, D-6885, D-6908, D-6929, D-6935, D-6957, D-6963, D-6990, and D-7009 to their exact catalog-bound F0100 limit_kind; reject any unregistered budget dimension.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0100]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups D-6869, D-6885, D-6908, D-6929, D-6935, D-6957, D-6963, D-6990, and D-7009"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 9 component routing"
+        }
+      ]
+    },
+    {
+      "code": "F0101",
+      "legacy_state_or_collapse": "The shared read_version_file producers U-VERSION-1756 and U-VERSION-1765 expose invalid UTF-8 and non-canonical line framing at both release-tree and pinned-checkout callsites, while D-2781 separately reports a release version mismatch.",
+      "proposed_v0_5_distinction": "F0101 owns invalid or inconsistent VERSION state in the profile release tree; the same parser failures at the adopter's pinned checkout are distinguished as F0113.",
+      "rationale": "The release artifact and an adopter's pinned upstream copy have different check owners and remediation even when the low-level parser branch is shared.",
+      "compatibility_impact": "One legacy parser family splits by callsite between F0101 and F0113, and the release mismatch message consolidates into F0101.",
+      "migration_note": "At read_version_file@2774 map U-VERSION-1756, U-VERSION-1765, and D-2781 to F0101; reserve F0113 for read_version_file@3310.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0101]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-VERSION-1756 and U-VERSION-1765 at read_version_file@2774, plus D-2781"
+        },
+        {
+          "source_id": "releasing-v0.4.0",
+          "artifact": "RELEASING.md",
+          "locator": "release version contract"
+        }
+      ]
+    },
+    {
+      "code": "F0102",
+      "legacy_state_or_collapse": "Distributed schema JSON syntax, UTF-8, data-model, size, nesting, node, top-level shape, $schema, and Draft 2020-12 failures are spread across shared loader and direct self-check messages also reused by adopter inputs.",
+      "proposed_v0_5_distinction": "F0102 consolidates invalid or contract-inconsistent schema resources shipped by the profile release, selected by the profile-schema callsite rather than generic loader prose.",
+      "rationale": "The public condition is that the distributed schema set is unusable or inconsistent; parser implementation details remain evidence, not separate profile-release identities.",
+      "compatibility_impact": "Many legacy schema-release messages collapse into F0102, while identical JSON loader branches at adopter or transition callsites map to other findings.",
+      "migration_note": "Use the check_schemas_parse and profile schema self-check callsites to map registered U-1275, U-1312, U-1314, U-1316, U-1318, D-2796, D-2799, D-2807, D-3253, D-3255, and D-3263 branches to F0102.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0102]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping producer set referenced by F0102 at load_json@2791 and schema self-check emitters"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "bundled schema contract"
+        }
+      ]
+    },
+    {
+      "code": "F0103",
+      "legacy_state_or_collapse": "Full and lite shipped templates reuse YAML loader and schema producers that also serve adopter documents, lite bundles, and registers, producing many parser- and schema-specific legacy strings.",
+      "proposed_v0_5_distinction": "F0103 consolidates parse, data-model, bounded-resource, and schema failures at shipped-template callsites into one profile.template-conformance identity.",
+      "rationale": "The release-level condition is an invalid distributed template; exact callsite ownership prevents adopter or register failures from acquiring the same identity.",
+      "compatibility_impact": "Multiple legacy template messages collapse into F0103, and the shared loaders require stable callsite and variant discriminants.",
+      "migration_note": "At load_yaml@2833, load_yaml@2874, and their schema_errors callsites, map registered parser and schema branches to F0103; keep adopter lite bundle and register callsites on F0018 and F0036 or the document-parse findings.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0103]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping template callsites for groups U-1242, U-1253, U-1255, U-1257, AUX-SCHEMA-1341, and U-SCHEMA-NONMEANINGFUL-1329"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "profile template and minimum adoption contract"
+        }
+      ]
+    },
+    {
+      "code": "F0105",
+      "legacy_state_or_collapse": "D-2991 uses one display-oriented cannot-read-templates message for OSError and UnicodeDecodeError, while D-2994 through D-3054 separately report framing, block-count, fence, synchronization, and canonical-content defects.",
+      "proposed_v0_5_distinction": "F0105 consolidates invalid UTF-8 and safely established agent-instruction synchronization defects; an OSError acquiring the release input remains INPUT_FILE_UNAVAILABLE.",
+      "rationale": "Content mismatch is a completed release-tree finding, but inability to acquire the template is a non-completion reason.",
+      "compatibility_impact": "One legacy display message splits into reason or blocking finding, and the remaining synchronization messages collapse into F0105.",
+      "migration_note": "Dispatch D-2991 by exception type to INPUT_FILE_UNAVAILABLE or F0105, and map D-2994, D-3007, D-3014, D-3021, D-3029, D-3036, D-3046, and D-3054 to F0105.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0105]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping source-predicate group D-2991 and direct groups D-2994 through D-3054"
+        },
+        {
+          "source_id": "agent-template-v0.4.0",
+          "artifact": "templates/AGENTIC_ASSURANCE.md",
+          "locator": "section 11 agent integration block"
+        }
+      ]
+    },
+    {
+      "code": "F0106",
+      "legacy_state_or_collapse": "D-3097 uses one display-oriented CODEOWNERS read failure for OSError and UnicodeDecodeError, while D-3195 separately reports missing coverage for default adopted policy locations.",
+      "proposed_v0_5_distinction": "F0106 identifies invalid UTF-8 or safely established missing CODEOWNERS coverage; an OSError acquiring the template remains INPUT_FILE_UNAVAILABLE.",
+      "rationale": "An unreadable input and a readable but invalid or insufficient ownership policy are different completion states.",
+      "compatibility_impact": "The D-3097 prose splits into reason or blocking finding, and the coverage failure joins the latter under F0106.",
+      "migration_note": "Route D-3097 OSError to INPUT_FILE_UNAVAILABLE and UnicodeDecodeError to F0106; map D-3195 to F0106 without parsing its joined missing-path text.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0106]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping source-predicate group D-3097 and direct group D-3195"
+        },
+        {
+          "source_id": "codeowners-template-v0.4.0",
+          "artifact": "templates/github/CODEOWNERS",
+          "locator": "default adopted policy locations"
+        }
+      ]
+    },
+    {
+      "code": "F0108",
+      "legacy_state_or_collapse": "D-3073 uses one display-oriented archived-marker inspection message for OSError and UnicodeDecodeError, while D-3078 separately reports an exact marker-contract mismatch.",
+      "proposed_v0_5_distinction": "F0108 identifies invalid UTF-8 or a safely established archived-marker mismatch; failure to acquire the release input remains INPUT_FILE_UNAVAILABLE.",
+      "rationale": "A malformed or mismatched release artifact is a completed repository-hygiene finding, unlike an unavailable input.",
+      "compatibility_impact": "The D-3073 legacy display result splits into reason or blocking finding, and the mismatch message consolidates into F0108.",
+      "migration_note": "Dispatch D-3073 OSError to INPUT_FILE_UNAVAILABLE and UnicodeDecodeError to F0108; map D-3078 directly to F0108.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0108]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping source-predicate group D-3073 and direct group D-3078"
+        },
+        {
+          "source_id": "changelog-v0.4.0",
+          "artifact": "CHANGELOG.md",
+          "locator": "archived marker invariant"
+        }
+      ]
+    },
+    {
+      "code": "F0113",
+      "legacy_state_or_collapse": "U-VERSION-1756 and U-VERSION-1765 are shared by the profile release self-check and the adopter's pinned profile checkout, so low-level UTF-8 and line-framing messages do not identify which trust boundary failed.",
+      "proposed_v0_5_distinction": "F0113 owns invalid UTF-8, a second line, or a bare carriage return in the pinned profile checkout's VERSION resource; the release-tree callsite remains F0101.",
+      "rationale": "Pinned-upstream conformance and release-tree conformance are separate checks with different source references and remediation.",
+      "compatibility_impact": "The shared version parser family splits by callsite between F0113 and F0101.",
+      "migration_note": "At read_version_file@3310 in check_pinned_version, map U-VERSION-1756 and U-VERSION-1765 to F0113; at read_version_file@2774 map them to F0101.",
+      "authority_locators": [
+        {
+          "source_id": "diagnostics-r1-self",
+          "artifact": "catalog-r1.json",
+          "locator": "findings.allocated_entries[code=F0113]"
+        },
+        {
+          "source_id": "v0.4.0-runtime-surface",
+          "artifact": "legacy-v0.4.0-mapping-r1.json",
+          "locator": "semantic_mapping groups U-VERSION-1756 and U-VERSION-1765 at read_version_file@3310"
+        },
+        {
+          "source_id": "validator-v0.4.0",
+          "artifact": "scripts/validate.py",
+          "locator": "read_version_file lines 1749-1766"
+        },
+        {
+          "source_id": "profile-v0.4.0",
+          "artifact": "PROFILE.md",
+          "locator": "section 16 profile release pin"
+        }
+      ]
+    }
+  ],
+  "validation_contract": {
+    "change_entries_match_closed_change_set_exactly": true,
+    "each_code_is_unique": true,
+    "each_code_resolves_to_catalog_disposition_intended_change_pending": true,
+    "each_entry_has_nonempty_legacy_state_or_collapse": true,
+    "each_entry_has_nonempty_proposed_v0_5_distinction": true,
+    "each_entry_has_nonempty_rationale": true,
+    "each_entry_has_nonempty_compatibility_impact": true,
+    "each_entry_has_nonempty_migration_note": true,
+    "each_entry_has_at_least_one_authority_locator": true,
+    "unknown_authority_source_id": "REJECT",
+    "acceptance_binding_must_remain_null_in_this_candidate": true,
+    "runtime_or_implementation_consumption": "REJECT_UNTIL_LATER_EXACT_BYTE_ACCEPTANCE"
+  }
+}

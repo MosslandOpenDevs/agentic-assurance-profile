@@ -261,7 +261,6 @@ projection:
 
 - a normal report whose explicit planned-check states, `OverallOutcome`, and
   exit `0`, `1`, or `3` agree;
-- a pre-plan informational success, which is outside `CheckPlan` and exit `0`;
 - a pre-plan invocation error, which is outside `CheckPlan` and exit `2`;
 - conventional signal termination; or
 - a bootstrap, process, or provider non-completion projection with a stable
@@ -329,7 +328,7 @@ This decision does not define:
 - human-review authority verification (ADR 0005);
 - product, package, executable, or plugin names (ADR 0001);
 - the complete public check catalog, v0.4 semantic-input projection, or legacy
-  mapping (the separate #50 catalog/mapping decision candidate);
+  mapping (the next #50 decision);
 - package layout, CLI behavior, or implementation types; or
 - a new normative profile obligation, Snapshot, rule, or #43 runtime fix.
 
@@ -357,5 +356,3 @@ does not acquire that label as a prefix.
 Repository counts, current output behavior, Phase 0 constraints, mapping risks,
 and excluded decisions are recorded in
 [`issue-50-identity-survey.md`](../../evidence/v0.5/issue-50-identity-survey.md).
-The separately reviewable catalog and exact v0.4 mapping candidate are in
-[`diagnostic-catalog/`](../../evidence/v0.5/diagnostic-catalog/README.md).

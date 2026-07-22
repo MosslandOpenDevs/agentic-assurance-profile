@@ -10,7 +10,9 @@
     "implementation_consumption_allowed": false,
     "implementation_parity_authorized": false,
     "review_class_derived_externally": true,
-    "runtime_ready": false
+    "runtime_ready": false,
+    "review_only_verifier_required_before_acceptance": true,
+    "review_only_verifier_path": "scripts/verify_diagnostic_catalog_candidate.py"
   },
   "catalog": {
     "catalog_id": "urn:uuid:6d6187ea-521e-4f3e-98d9-cb716877a84b",
@@ -71,15 +73,16 @@
   "public_checks": [
     {
       "check_id": "adoption.document-parse",
-      "capability": "Boundedly acquire and parse requested adoption-policy documents without deriving identity from parser prose.",
+      "capability": "Boundedly acquire and parse requested adoption-policy and register documents without deriving identity from parser prose.",
       "allowed_evaluation_kinds": [
         "ADOPTER_SNAPSHOT",
         "ADOPTER_TRANSITION"
       ],
       "semantic_input_roles": [
+        "BASE_ADOPTION_DOCUMENT",
         "CURRENT_ADOPTION_DOCUMENT",
-        "HEAD_ADOPTION_DOCUMENT",
-        "BASE_ADOPTION_DOCUMENT"
+        "CURRENT_REGISTER_SET",
+        "HEAD_ADOPTION_DOCUMENT"
       ],
       "proposed_dependency_check_ids": [],
       "possible_gate_effects": [
@@ -87,8 +90,8 @@
       ],
       "authority_refs": [
         {
-          "source": "V0.5-DESIGN.md",
-          "locator": "sections 6 and 7.2 bounded parser boundary"
+          "locator": "sections 6 and 7.2 bounded parser boundary",
+          "source_id": "v0.5-design-base"
         }
       ]
     },
@@ -110,8 +113,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 6 required local artifacts"
+          "locator": "section 6 required local artifacts",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -133,8 +136,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 5, 6, and 6.6"
+          "locator": "sections 5, 6, and 6.6",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -156,8 +159,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 6.1 and permitted lite layout"
+          "locator": "section 6.1 and permitted lite layout",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -180,8 +183,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 16 profile release pin"
+          "locator": "section 16 profile release pin",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -205,8 +208,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 16 immutable upstream pin"
+          "locator": "section 16 immutable upstream pin",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -226,8 +229,8 @@
       ],
       "authority_refs": [
         {
-          "source": "docs/ADOPTION.md@v0.4.0",
-          "locator": "pinned checkout trust boundary"
+          "locator": "pinned checkout trust boundary",
+          "source_id": "adoption-guide-v0.4.0"
         }
       ]
     },
@@ -250,8 +253,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 6 repository-relative containment boundary"
+          "locator": "section 6 repository-relative containment boundary",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -275,8 +278,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 6, 6.1, and 6.6"
+          "locator": "sections 6, 6.1, and 6.6",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -291,6 +294,7 @@
         "ADOPTER_SCHEMA_SET"
       ],
       "proposed_dependency_check_ids": [
+        "adoption.document-parse",
         "adoption.required-artifacts"
       ],
       "possible_gate_effects": [
@@ -299,8 +303,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 6 and 7-12 register contracts"
+          "locator": "sections 6 and 7-12 register contracts",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -322,8 +326,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 7-14 register semantics"
+          "locator": "sections 7-14 register semantics",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -346,8 +350,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 9 material-change workflow"
+          "locator": "section 9 material-change workflow",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -368,8 +372,8 @@
       ],
       "authority_refs": [
         {
-          "source": "docs/ADOPTION.md@v0.4.0",
-          "locator": "root reading-order contract"
+          "locator": "root reading-order contract",
+          "source_id": "adoption-guide-v0.4.0"
         }
       ]
     },
@@ -392,8 +396,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 9 component routing"
+          "locator": "section 9 component routing",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -423,8 +427,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 17 stage ladder"
+          "locator": "section 17 stage ladder",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -450,8 +454,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 17 HUMAN_REVIEWED record"
+          "locator": "section 17 HUMAN_REVIEWED record",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -472,8 +476,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 17 completed human-act timing"
+          "locator": "section 17 completed human-act timing",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -495,8 +499,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "issue integration and disclosure obligations"
+          "locator": "issue integration and disclosure obligations",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -520,8 +524,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 6.6 archived"
+          "locator": "section 6.6 archived",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -546,8 +550,8 @@
       ],
       "authority_refs": [
         {
-          "source": "V0.5-DESIGN.md",
-          "locator": "section 7 classification-review provenance"
+          "locator": "section 7 classification-review provenance",
+          "source_id": "v0.5-design-base"
         }
       ]
     },
@@ -571,8 +575,8 @@
       ],
       "authority_refs": [
         {
-          "source": "V0.5-DESIGN.md",
-          "locator": "sections 7 and 7.1 InputReport boundary"
+          "locator": "sections 7 and 7.1 InputReport boundary",
+          "source_id": "v0.5-design-base"
         }
       ]
     },
@@ -593,8 +597,8 @@
       "possible_gate_effects": [],
       "authority_refs": [
         {
-          "source": "ADR 0009",
-          "locator": "event matrix and pull-request acquisition"
+          "locator": "event matrix and pull-request acquisition",
+          "source_id": "adr-0009-base"
         }
       ]
     },
@@ -620,8 +624,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 9, 16, and 17"
+          "locator": "sections 9, 16, and 17",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -648,8 +652,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "reviewed policy path and containment boundary"
+          "locator": "reviewed policy path and containment boundary",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -676,8 +680,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "sections 7-14 and 17"
+          "locator": "sections 7-14 and 17",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -706,8 +710,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 9 material changes"
+          "locator": "section 9 material changes",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -726,8 +730,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 9 changed-component routing"
+          "locator": "section 9 changed-component routing",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -747,8 +751,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "section 9 material-change declaration"
+          "locator": "section 9 material-change declaration",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -768,8 +772,8 @@
       ],
       "authority_refs": [
         {
-          "source": "RELEASING.md@v0.4.0",
-          "locator": "release version contract"
+          "locator": "release version contract",
+          "source_id": "releasing-v0.4.0"
         }
       ]
     },
@@ -788,8 +792,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "bundled schema contract"
+          "locator": "bundled schema contract",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -810,8 +814,8 @@
       ],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "template and minimum adoption contract"
+          "locator": "template and minimum adoption contract",
+          "source_id": "profile-v0.4.0"
         }
       ]
     },
@@ -832,8 +836,8 @@
       ],
       "authority_refs": [
         {
-          "source": "templates/AGENTIC_ASSURANCE.md@v0.4.0",
-          "locator": "section 11 verbatim integration block"
+          "locator": "section 11 verbatim integration block",
+          "source_id": "agent-template-v0.4.0"
         }
       ]
     },
@@ -854,8 +858,8 @@
       ],
       "authority_refs": [
         {
-          "source": "templates/CODEOWNERS@v0.4.0",
-          "locator": "default adopted policy locations"
+          "locator": "default adopted policy locations",
+          "source_id": "codeowners-template-v0.4.0"
         }
       ]
     },
@@ -881,8 +885,8 @@
       ],
       "authority_refs": [
         {
-          "source": "CHANGELOG.md@v0.4.0",
-          "locator": "accepted release-tree compatibility invariants"
+          "locator": "accepted release-tree compatibility invariants",
+          "source_id": "changelog-v0.4.0"
         }
       ]
     },
@@ -919,17 +923,18 @@
         "adoption.review-record",
         "adoption.review-temporal-consistency",
         "adoption.issue-integration",
-        "adoption.archived-history-boundary"
+        "adoption.archived-history-boundary",
+        "adoption.profile-classification-review"
       ],
       "possible_gate_effects": [],
       "authority_refs": [
         {
-          "source": "PROFILE.md@v0.4.0",
-          "locator": "aggregate mechanically decidable adopter obligations"
+          "locator": "aggregate mechanically decidable adopter obligations",
+          "source_id": "profile-v0.4.0"
         },
         {
-          "source": "AAP-V05-P0-ORACLE-001",
-          "locator": "selected adopter satisfied conditions"
+          "locator": "selected adopter satisfied conditions",
+          "source_id": "phase0-oracle-r2"
         }
       ]
     },
@@ -948,12 +953,12 @@
       ],
       "authority_refs": [
         {
-          "source": "CHANGELOG.md@v0.4.0",
-          "locator": "forbidden-version-string and archived-marker release-tree invariants"
+          "locator": "forbidden-version-string and archived-marker release-tree invariants",
+          "source_id": "changelog-v0.4.0"
         },
         {
-          "source": "AAP-V05-DIAGNOSTICS-001",
-          "locator": "F0107-F0108"
+          "locator": "F0107-F0108",
+          "source_id": "diagnostics-r1-self"
         }
       ]
     }
@@ -998,12 +1003,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "PROFILE.md@v0.4.0",
-            "locator": "section 6.6"
+            "locator": "section 6.6",
+            "source_id": "profile-v0.4.0"
           },
           {
-            "source": "AAP-V05-P0-ORACLE-001",
-            "locator": "phase0.internal.archived.historical-facts-mechanical-verification-limited"
+            "locator": "phase0.internal.archived.historical-facts-mechanical-verification-limited",
+            "source_id": "phase0-oracle-r2"
           }
         ],
         "compatibility_disposition": "PRESERVE",
@@ -1083,16 +1088,16 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "PROFILE.md@v0.4.0",
-            "locator": "section 17"
+            "locator": "section 17",
+            "source_id": "profile-v0.4.0"
           },
           {
-            "source": "CHANGELOG.md@v0.4.0",
-            "locator": "v0.2.1 stage self-downgrade protection"
+            "locator": "v0.2.1 stage self-downgrade protection",
+            "source_id": "changelog-v0.4.0"
           },
           {
-            "source": "AAP-V05-P0-ORACLE-001",
-            "locator": "phase0.internal.transition.adoption-stage-downgrade"
+            "locator": "phase0.internal.transition.adoption-stage-downgrade",
+            "source_id": "phase0-oracle-r2"
           }
         ],
         "compatibility_disposition": "PRESERVE",
@@ -1108,6 +1113,18 @@
               "source_predicate": null
             }
           ]
+        },
+        "condition_predicate": {
+          "kind": "ENUM_ORDER_RELATION",
+          "left_fact": "head_stage",
+          "relation": "LT",
+          "right_fact": "base_stage",
+          "ordered_values": [
+            "DRAFT",
+            "HUMAN_REVIEWED",
+            "CONFORMANT"
+          ],
+          "on_unsatisfied": "REJECT_FINDING_INSTANCE"
         }
       },
       {
@@ -1173,12 +1190,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "PROFILE.md@v0.4.0",
-            "locator": "section 6 repository-relative containment"
+            "locator": "section 6 repository-relative containment",
+            "source_id": "profile-v0.4.0"
           },
           {
-            "source": "AAP-V05-P0-ORACLE-001",
-            "locator": "phase0.internal.trust.security-policy-path-not-contained"
+            "locator": "phase0.internal.trust.security-policy-path-not-contained",
+            "source_id": "phase0-oracle-r2"
           }
         ],
         "compatibility_disposition": "PRESERVE",
@@ -1249,16 +1266,16 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "PROFILE.md@v0.4.0",
-            "locator": "section 9"
+            "locator": "section 9",
+            "source_id": "profile-v0.4.0"
           },
           {
-            "source": "CHANGELOG.md@v0.4.0",
-            "locator": "v0.2.1 per-component drift satisfaction"
+            "locator": "v0.2.1 per-component drift satisfaction",
+            "source_id": "changelog-v0.4.0"
           },
           {
-            "source": "AAP-V05-P0-ORACLE-001",
-            "locator": "phase0.internal.drift.strict-component-routing-unsatisfied"
+            "locator": "phase0.internal.drift.strict-component-routing-unsatisfied",
+            "source_id": "phase0-oracle-r2"
           }
         ],
         "compatibility_disposition": "PRESERVE",
@@ -1316,12 +1333,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0005"
+            "locator": "F0005",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-yaml-malformed"
+            "locator": "policy-yaml-malformed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-yaml-malformed",
@@ -1344,6 +1361,24 @@
             {
               "group_id": "U-1257",
               "callsite_selector": "load_yaml@3275 in check_adoption_document",
+              "variant_id": "YAML_CONSTRUCTOR_OVERFLOW_INVALID",
+              "source_predicate": "caught exception is OverflowError"
+            },
+            {
+              "group_id": "U-1255",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": "YAML_SYNTAX_OR_CONSTRUCTOR_INVALID",
+              "source_predicate": "yaml.YAMLError excluding the bounded-numeric ConstructorError discriminant"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": "YAML_CONSTRUCTOR_VALUE_INVALID",
+              "source_predicate": "caught exception is ValueError excluding YamlDataModelError and YamlComplexityError"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
               "variant_id": "YAML_CONSTRUCTOR_OVERFLOW_INVALID",
               "source_predicate": "caught exception is OverflowError"
             }
@@ -1390,12 +1425,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0006"
+            "locator": "F0006",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-yaml-invalid-utf8"
+            "locator": "policy-yaml-invalid-utf8",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-yaml-invalid-utf8",
@@ -1406,6 +1441,12 @@
             {
               "group_id": "U-1253",
               "callsite_selector": "load_yaml@3275 in check_adoption_document",
+              "variant_id": null,
+              "source_predicate": null
+            },
+            {
+              "group_id": "U-1253",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
               "variant_id": null,
               "source_predicate": null
             }
@@ -1452,12 +1493,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0007"
+            "locator": "F0007",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-yaml-data-model-invalid"
+            "locator": "policy-yaml-data-model-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-yaml-data-model-invalid",
@@ -1468,6 +1509,12 @@
             {
               "group_id": "U-1257",
               "callsite_selector": "load_yaml@3275 in check_adoption_document",
+              "variant_id": "YAML_DATA_MODEL_INVALID",
+              "source_predicate": "YamlDataModelError"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
               "variant_id": "YAML_DATA_MODEL_INVALID",
               "source_predicate": "YamlDataModelError"
             }
@@ -1530,12 +1577,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0008"
+            "locator": "F0008",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-yaml-resource-budget-exceeded"
+            "locator": "policy-yaml-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-yaml-resource-budget-exceeded",
@@ -1570,6 +1617,36 @@
             {
               "group_id": "U-1257",
               "callsite_selector": "load_yaml@3275 in check_adoption_document",
+              "variant_id": "YAML_RECURSION_LIMIT_EXCEEDED",
+              "source_predicate": "caught exception is RecursionError"
+            },
+            {
+              "group_id": "U-1242",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": null,
+              "source_predicate": null
+            },
+            {
+              "group_id": "U-1255",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": "YAML_NUMERIC_TOKEN_LIMIT_EXCEEDED",
+              "source_predicate": "ConstructorError raised by construct_bounded_yaml_number for an overlong numeric token"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": "YAML_ALIAS_EXPANSION_LIMIT_EXCEEDED",
+              "source_predicate": "YamlComplexityError for a recursive alias expansion"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
+              "variant_id": "YAML_NODE_COUNT_LIMIT_EXCEEDED",
+              "source_predicate": "YamlComplexityError for expanded node count"
+            },
+            {
+              "group_id": "U-1257",
+              "callsite_selector": "load_yaml@3620 in check_artifacts",
               "variant_id": "YAML_RECURSION_LIMIT_EXCEEDED",
               "source_predicate": "caught exception is RecursionError"
             }
@@ -1616,12 +1693,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0009"
+            "locator": "F0009",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-json-malformed"
+            "locator": "policy-json-malformed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-json-malformed",
@@ -1678,12 +1755,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0010"
+            "locator": "F0010",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-json-invalid-utf8"
+            "locator": "policy-json-invalid-utf8",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-json-invalid-utf8",
@@ -1740,12 +1817,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0011"
+            "locator": "F0011",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-json-data-model-invalid"
+            "locator": "policy-json-data-model-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-json-data-model-invalid",
@@ -1817,12 +1894,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0012"
+            "locator": "F0012",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-json-resource-budget-exceeded"
+            "locator": "policy-json-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-json-resource-budget-exceeded",
@@ -1903,12 +1980,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0013"
+            "locator": "F0013",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "adoption-schema-unsatisfied"
+            "locator": "adoption-schema-unsatisfied",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "adoption-schema-unsatisfied",
@@ -1989,12 +2066,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0014"
+            "locator": "F0014",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "adoption-placeholder-unfilled"
+            "locator": "adoption-placeholder-unfilled",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "adoption-placeholder-unfilled",
@@ -2051,12 +2128,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0015"
+            "locator": "F0015",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-declaration-invalid"
+            "locator": "profile-declaration-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-declaration-invalid",
@@ -2119,12 +2196,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0016"
+            "locator": "F0016",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "archived-profile-not-exclusive"
+            "locator": "archived-profile-not-exclusive",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "archived-profile-not-exclusive",
@@ -2181,12 +2258,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0017"
+            "locator": "F0017",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "lite-profile-set-incompatible"
+            "locator": "lite-profile-set-incompatible",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "lite-profile-set-incompatible",
@@ -2243,12 +2320,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0018"
+            "locator": "F0018",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "lite-bundle-invalid"
+            "locator": "lite-bundle-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "lite-bundle-invalid",
@@ -2377,12 +2454,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0019"
+            "locator": "F0019",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "upstream-version-pin-missing"
+            "locator": "upstream-version-pin-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "upstream-version-pin-missing",
@@ -2439,12 +2516,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0020"
+            "locator": "F0020",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "upstream-version-pin-mismatch"
+            "locator": "upstream-version-pin-mismatch",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "upstream-version-pin-mismatch",
@@ -2501,12 +2578,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0021"
+            "locator": "F0021",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "upstream-commit-pin-missing"
+            "locator": "upstream-commit-pin-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "upstream-commit-pin-missing",
@@ -2563,12 +2640,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0022"
+            "locator": "F0022",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "upstream-commit-pin-mismatch"
+            "locator": "upstream-commit-pin-mismatch",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "upstream-commit-pin-mismatch",
@@ -2625,12 +2702,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0023"
+            "locator": "F0023",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "trusted-profile-resource-mismatch"
+            "locator": "trusted-profile-resource-mismatch",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "trusted-profile-resource-mismatch",
@@ -2699,12 +2776,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0024"
+            "locator": "F0024",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "trusted-profile-index-flag-unsafe"
+            "locator": "trusted-profile-index-flag-unsafe",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "trusted-profile-index-flag-unsafe",
@@ -2761,12 +2838,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0025"
+            "locator": "F0025",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-checkout-boundary-mismatch"
+            "locator": "profile-checkout-boundary-mismatch",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-checkout-boundary-mismatch",
@@ -2829,12 +2906,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0026"
+            "locator": "F0026",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "declared-policy-path-not-contained"
+            "locator": "declared-policy-path-not-contained",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "declared-policy-path-not-contained",
@@ -2903,12 +2980,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0027"
+            "locator": "F0027",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-path-control-character"
+            "locator": "policy-path-control-character",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-path-control-character",
@@ -2965,12 +3042,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0028"
+            "locator": "F0028",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-path-trusted-tree-overlap"
+            "locator": "policy-path-trusted-tree-overlap",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-path-trusted-tree-overlap",
@@ -3027,12 +3104,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0029"
+            "locator": "F0029",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-path-nonportable-symlink"
+            "locator": "policy-path-nonportable-symlink",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-path-nonportable-symlink",
@@ -3089,12 +3166,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0030"
+            "locator": "F0030",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "policy-path-in-project-symlink-review-warning"
+            "locator": "policy-path-in-project-symlink-review-warning",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "policy-path-in-project-symlink-review-warning",
@@ -3151,12 +3228,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0031"
+            "locator": "F0031",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "required-artifact-missing"
+            "locator": "required-artifact-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "required-artifact-missing",
@@ -3225,12 +3302,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0032"
+            "locator": "F0032",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "required-artifact-not-regular"
+            "locator": "required-artifact-not-regular",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "required-artifact-not-regular",
@@ -3305,12 +3382,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0033"
+            "locator": "F0033",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "required-artifact-empty"
+            "locator": "required-artifact-empty",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "required-artifact-empty",
@@ -3367,12 +3444,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0034"
+            "locator": "F0034",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "required-system-description-missing"
+            "locator": "required-system-description-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "required-system-description-missing",
@@ -3459,12 +3536,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0035"
+            "locator": "F0035",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "trust-critical-defeater-register-missing"
+            "locator": "trust-critical-defeater-register-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "trust-critical-defeater-register-missing",
@@ -3521,12 +3598,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0036"
+            "locator": "F0036",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "register-schema-unsatisfied"
+            "locator": "register-schema-unsatisfied",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "register-schema-unsatisfied",
@@ -3545,66 +3622,6 @@
               "callsite_selector": "schema_errors@3635 in check_artifacts",
               "variant_id": null,
               "source_predicate": null
-            },
-            {
-              "group_id": "U-1242",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": null,
-              "source_predicate": null
-            },
-            {
-              "group_id": "U-1253",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": null,
-              "source_predicate": null
-            },
-            {
-              "group_id": "U-1255",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_SYNTAX_OR_CONSTRUCTOR_INVALID",
-              "source_predicate": "yaml.YAMLError excluding the bounded-numeric ConstructorError discriminant"
-            },
-            {
-              "group_id": "U-1255",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_NUMERIC_TOKEN_LIMIT_EXCEEDED",
-              "source_predicate": "ConstructorError raised by construct_bounded_yaml_number for an overlong numeric token"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_DATA_MODEL_INVALID",
-              "source_predicate": "YamlDataModelError"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_ALIAS_EXPANSION_LIMIT_EXCEEDED",
-              "source_predicate": "YamlComplexityError for a recursive alias expansion"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_NODE_COUNT_LIMIT_EXCEEDED",
-              "source_predicate": "YamlComplexityError for expanded node count"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_RECURSION_LIMIT_EXCEEDED",
-              "source_predicate": "caught exception is RecursionError"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_CONSTRUCTOR_VALUE_INVALID",
-              "source_predicate": "caught exception is ValueError excluding YamlDataModelError and YamlComplexityError"
-            },
-            {
-              "group_id": "U-1257",
-              "callsite_selector": "load_yaml@3620 in check_artifacts",
-              "variant_id": "YAML_CONSTRUCTOR_OVERFLOW_INVALID",
-              "source_predicate": "caught exception is OverflowError"
             },
             {
               "group_id": "U-SCHEMA-NONMEANINGFUL-1329",
@@ -3661,12 +3678,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0037"
+            "locator": "F0037",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "register-empty"
+            "locator": "register-empty",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "register-empty",
@@ -3723,12 +3740,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0038"
+            "locator": "F0038",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "restricted-disclosure-review-warning"
+            "locator": "restricted-disclosure-review-warning",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "restricted-disclosure-review-warning",
@@ -3791,12 +3808,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0039"
+            "locator": "F0039",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "register-entry-id-duplicate"
+            "locator": "register-entry-id-duplicate",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "register-entry-id-duplicate",
@@ -3867,12 +3884,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0040"
+            "locator": "F0040",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "register-reference-dangling"
+            "locator": "register-reference-dangling",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "register-reference-dangling",
@@ -3935,12 +3952,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0041"
+            "locator": "F0041",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "critical-invariant-reference-missing"
+            "locator": "critical-invariant-reference-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "critical-invariant-reference-missing",
@@ -4003,12 +4020,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0042"
+            "locator": "F0042",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "invariant-intent-authority-missing"
+            "locator": "invariant-intent-authority-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "invariant-intent-authority-missing",
@@ -4065,12 +4082,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0043"
+            "locator": "F0043",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "residual-acceptance-grounds-missing"
+            "locator": "residual-acceptance-grounds-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "residual-acceptance-grounds-missing",
@@ -4133,12 +4150,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0044"
+            "locator": "F0044",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "residual-resolution-grounds-missing"
+            "locator": "residual-resolution-grounds-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "residual-resolution-grounds-missing",
@@ -4195,12 +4212,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0045"
+            "locator": "F0045",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "defeater-closure-grounds-missing"
+            "locator": "defeater-closure-grounds-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "defeater-closure-grounds-missing",
@@ -4257,12 +4274,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0046"
+            "locator": "F0046",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "specification-workflow-declaration-invalid"
+            "locator": "specification-workflow-declaration-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "specification-workflow-declaration-invalid",
@@ -4331,12 +4348,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0047"
+            "locator": "F0047",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "specification-workflow-root-invalid"
+            "locator": "specification-workflow-root-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "specification-workflow-root-invalid",
@@ -4417,12 +4434,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0048"
+            "locator": "F0048",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "specification-workflow-entry-empty"
+            "locator": "specification-workflow-entry-empty",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "specification-workflow-entry-empty",
@@ -4499,12 +4516,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0049"
+            "locator": "F0049",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "specification-workflow-resource-budget-exceeded"
+            "locator": "specification-workflow-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "specification-workflow-resource-budget-exceeded",
@@ -4573,12 +4590,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0050"
+            "locator": "F0050",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "root-assurance-reading-order-missing"
+            "locator": "root-assurance-reading-order-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "root-assurance-reading-order-missing",
@@ -4665,12 +4682,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0051"
+            "locator": "F0051",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "component-map-reference-dangling"
+            "locator": "component-map-reference-dangling",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "component-map-reference-dangling",
@@ -4733,12 +4750,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0052"
+            "locator": "F0052",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "adoption-stage-invalid"
+            "locator": "adoption-stage-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "adoption-stage-invalid",
@@ -4795,12 +4812,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0053"
+            "locator": "F0053",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "reviewed-stage-placeholder-unfilled"
+            "locator": "reviewed-stage-placeholder-unfilled",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "reviewed-stage-placeholder-unfilled",
@@ -4893,12 +4910,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0054"
+            "locator": "F0054",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "reviewed-stage-critical-intent-unrecorded"
+            "locator": "reviewed-stage-critical-intent-unrecorded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "reviewed-stage-critical-intent-unrecorded",
@@ -4955,12 +4972,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0055"
+            "locator": "F0055",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-critical-intent-unacceptable"
+            "locator": "conformant-critical-intent-unacceptable",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-critical-intent-unacceptable",
@@ -5023,12 +5040,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0056"
+            "locator": "F0056",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-critical-residual-open"
+            "locator": "conformant-critical-residual-open",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-critical-residual-open",
@@ -5085,12 +5102,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0057"
+            "locator": "F0057",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-claim-contradicted"
+            "locator": "conformant-claim-contradicted",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-claim-contradicted",
@@ -5147,12 +5164,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0058"
+            "locator": "F0058",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-critical-invariant-contradicted"
+            "locator": "conformant-critical-invariant-contradicted",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-critical-invariant-contradicted",
@@ -5209,12 +5226,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0059"
+            "locator": "F0059",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-noncritical-invariant-contradicted"
+            "locator": "conformant-noncritical-invariant-contradicted",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-noncritical-invariant-contradicted",
@@ -5271,12 +5288,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0060"
+            "locator": "F0060",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-verified-critical-evidence-missing"
+            "locator": "conformant-verified-critical-evidence-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-verified-critical-evidence-missing",
@@ -5343,12 +5360,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0061"
+            "locator": "F0061",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-public-restricted-disclosure"
+            "locator": "conformant-public-restricted-disclosure",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-public-restricted-disclosure",
@@ -5405,12 +5422,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0062"
+            "locator": "F0062",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "conformant-approval-insufficient"
+            "locator": "conformant-approval-insufficient",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "conformant-approval-insufficient",
@@ -5467,12 +5484,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0063"
+            "locator": "F0063",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-record-missing"
+            "locator": "review-record-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-record-missing",
@@ -5565,12 +5582,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0064"
+            "locator": "F0064",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-record-not-contained"
+            "locator": "review-record-not-contained",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-record-not-contained",
@@ -5627,12 +5644,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0065"
+            "locator": "F0065",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-date-future"
+            "locator": "review-date-future",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-date-future",
@@ -5689,12 +5706,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0066"
+            "locator": "F0066",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-approval-url-invalid"
+            "locator": "review-approval-url-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-approval-url-invalid",
@@ -5751,12 +5768,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0067"
+            "locator": "F0067",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-approval-time-invalid"
+            "locator": "review-approval-time-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-approval-time-invalid",
@@ -5813,12 +5830,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0068"
+            "locator": "F0068",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-approval-time-future"
+            "locator": "review-approval-time-future",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-approval-time-future",
@@ -5875,12 +5892,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0069"
+            "locator": "F0069",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "public-security-issues-enabled"
+            "locator": "public-security-issues-enabled",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "public-security-issues-enabled",
@@ -5937,12 +5954,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0070"
+            "locator": "F0070",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "issue-closing-artifact-update-disabled"
+            "locator": "issue-closing-artifact-update-disabled",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "issue-closing-artifact-update-disabled",
@@ -5999,12 +6016,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0071"
+            "locator": "F0071",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "archived-template-marker-unfilled"
+            "locator": "archived-template-marker-unfilled",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "archived-template-marker-unfilled",
@@ -6061,12 +6078,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0072"
+            "locator": "F0072",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "closed negative v0.4 inventory for F0072"
+            "locator": "closed negative v0.4 inventory for F0072",
+            "source_id": "diagnostics-r1-self"
           }
         ],
         "condition_slug": "profile-classification-review-unconfirmed",
@@ -6117,12 +6134,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0073"
+            "locator": "F0073",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-input-invalid"
+            "locator": "transition-input-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-input-invalid",
@@ -6592,12 +6609,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0074"
+            "locator": "F0074",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-policy-path-changed"
+            "locator": "transition-policy-path-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-policy-path-changed",
@@ -6683,12 +6700,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0075"
+            "locator": "F0075",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-policy-target-retargeted"
+            "locator": "transition-policy-target-retargeted",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-policy-target-retargeted",
@@ -6774,12 +6791,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0076"
+            "locator": "F0076",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-effective-profile-removed"
+            "locator": "transition-effective-profile-removed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-effective-profile-removed",
@@ -6865,12 +6882,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0077"
+            "locator": "F0077",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-layout-changed"
+            "locator": "transition-layout-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-layout-changed",
@@ -6956,12 +6973,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0078"
+            "locator": "F0078",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-component-contract-weakened"
+            "locator": "transition-component-contract-weakened",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-component-contract-weakened",
@@ -7047,12 +7064,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0079"
+            "locator": "F0079",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-project-identity-changed"
+            "locator": "transition-project-identity-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-project-identity-changed",
@@ -7132,12 +7149,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0080"
+            "locator": "F0080",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-specification-workflow-changed"
+            "locator": "transition-specification-workflow-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-specification-workflow-changed",
@@ -7217,12 +7234,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0081"
+            "locator": "F0081",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-security-control-changed"
+            "locator": "transition-security-control-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-security-control-changed",
@@ -7314,12 +7331,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0082"
+            "locator": "F0082",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-issue-integration-changed"
+            "locator": "transition-issue-integration-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-issue-integration-changed",
@@ -7399,12 +7416,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0083"
+            "locator": "F0083",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-review-provenance-changed"
+            "locator": "transition-review-provenance-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-review-provenance-changed",
@@ -7502,12 +7519,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0084"
+            "locator": "F0084",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-upstream-pin-changed"
+            "locator": "transition-upstream-pin-changed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-upstream-pin-changed",
@@ -7587,12 +7604,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0085"
+            "locator": "F0085",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-register-entry-removed"
+            "locator": "transition-register-entry-removed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-register-entry-removed",
@@ -7678,12 +7695,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0086"
+            "locator": "F0086",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-register-severity-weakened"
+            "locator": "transition-register-severity-weakened",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-register-severity-weakened",
@@ -7763,12 +7780,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0087"
+            "locator": "F0087",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-register-status-weakened"
+            "locator": "transition-register-status-weakened",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-register-status-weakened",
@@ -7884,12 +7901,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0088"
+            "locator": "F0088",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-verification-reference-removed"
+            "locator": "transition-verification-reference-removed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-verification-reference-removed",
@@ -7975,12 +7992,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0089"
+            "locator": "F0089",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-intent-weakened"
+            "locator": "transition-intent-weakened",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-intent-weakened",
@@ -8072,12 +8089,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0090"
+            "locator": "F0090",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-residual-accepted"
+            "locator": "transition-residual-accepted",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-residual-accepted",
@@ -8157,12 +8174,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0091"
+            "locator": "F0091",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-residual-grounds-rewritten"
+            "locator": "transition-residual-grounds-rewritten",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-residual-grounds-rewritten",
@@ -8248,12 +8265,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0092"
+            "locator": "F0092",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-defeater-closed"
+            "locator": "transition-defeater-closed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-defeater-closed",
@@ -8339,12 +8356,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0093"
+            "locator": "F0093",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-defeater-grounds-rewritten"
+            "locator": "transition-defeater-grounds-rewritten",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-defeater-grounds-rewritten",
@@ -8424,12 +8441,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0094"
+            "locator": "F0094",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-review-commitment-removed-or-postponed"
+            "locator": "transition-review-commitment-removed-or-postponed",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-review-commitment-removed-or-postponed",
@@ -8498,12 +8515,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0095"
+            "locator": "F0095",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "changed-file-set-invalid"
+            "locator": "changed-file-set-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "changed-file-set-invalid",
@@ -8580,12 +8597,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0096"
+            "locator": "F0096",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "changed-file-set-resource-budget-exceeded"
+            "locator": "changed-file-set-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "changed-file-set-resource-budget-exceeded",
@@ -8654,12 +8671,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0097"
+            "locator": "F0097",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "pr-directive-block-invalid"
+            "locator": "pr-directive-block-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "pr-directive-block-invalid",
@@ -8730,12 +8747,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0098"
+            "locator": "F0098",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "pr-directive-resource-budget-exceeded"
+            "locator": "pr-directive-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "pr-directive-resource-budget-exceeded",
@@ -8792,12 +8809,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0099"
+            "locator": "F0099",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "component-routing-contract-invalid"
+            "locator": "component-routing-contract-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "component-routing-contract-invalid",
@@ -8916,12 +8933,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0100"
+            "locator": "F0100",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "component-routing-resource-budget-exceeded"
+            "locator": "component-routing-resource-budget-exceeded",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "component-routing-resource-budget-exceeded",
@@ -9026,12 +9043,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0101"
+            "locator": "F0101",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-version-invalid"
+            "locator": "profile-version-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-version-invalid",
@@ -9100,12 +9117,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0102"
+            "locator": "F0102",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-schema-invalid"
+            "locator": "profile-schema-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-schema-invalid",
@@ -9240,12 +9257,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0103"
+            "locator": "F0103",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-template-invalid"
+            "locator": "profile-template-invalid",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-template-invalid",
@@ -9452,12 +9469,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0104"
+            "locator": "F0104",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-lite-template-system-missing"
+            "locator": "profile-lite-template-system-missing",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-lite-template-system-missing",
@@ -9514,12 +9531,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0105"
+            "locator": "F0105",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-agent-instruction-out-of-sync"
+            "locator": "profile-agent-instruction-out-of-sync",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-agent-instruction-out-of-sync",
@@ -9624,12 +9641,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0106"
+            "locator": "F0106",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-codeowners-default-location-uncovered"
+            "locator": "profile-codeowners-default-location-uncovered",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-codeowners-default-location-uncovered",
@@ -9692,12 +9709,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0107"
+            "locator": "F0107",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-forbidden-version-string-present"
+            "locator": "profile-forbidden-version-string-present",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-forbidden-version-string-present",
@@ -9754,12 +9771,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0108"
+            "locator": "F0108",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "profile-archived-marker-contract-mismatch"
+            "locator": "profile-archived-marker-contract-mismatch",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "profile-archived-marker-contract-mismatch",
@@ -9822,12 +9839,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0109"
+            "locator": "F0109",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "provisional-profile-selected"
+            "locator": "provisional-profile-selected",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "provisional-profile-selected",
@@ -9884,12 +9901,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0110"
+            "locator": "F0110",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "issue-template-default-shadow-risk"
+            "locator": "issue-template-default-shadow-risk",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "issue-template-default-shadow-risk",
@@ -9946,12 +9963,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0111"
+            "locator": "F0111",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "transition-legacy-input-compatibility-used"
+            "locator": "transition-legacy-input-compatibility-used",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "transition-legacy-input-compatibility-used",
@@ -10033,12 +10050,12 @@
         "compatibility_disposition": "PRESERVE",
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0112"
+            "locator": "F0112",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "v0.4.0-legacy-condition",
-            "locator": "review-commitment-overdue"
+            "locator": "review-commitment-overdue",
+            "source_id": "v0.4.0-runtime-surface"
           }
         ],
         "condition_slug": "review-commitment-overdue",
@@ -10095,12 +10112,12 @@
         "compatibility_disposition": "INTENDED_CHANGE_PENDING",
         "authority_refs": [
           {
-            "source": "scripts/validate.py@v0.4.0",
-            "locator": "read_version_file lines 1749-1766"
+            "locator": "read_version_file lines 1749-1766",
+            "source_id": "validator-v0.4.0"
           },
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "F0113"
+            "locator": "F0113",
+            "source_id": "diagnostics-r1-self"
           }
         ],
         "condition_slug": "pinned-profile-version-invalid",
@@ -10177,8 +10194,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "V0.5-DESIGN.md",
-            "locator": "section 7.1 overall precedence"
+            "locator": "section 7.1 overall precedence",
+            "source_id": "v0.5-design-base"
           }
         ]
       },
@@ -10225,8 +10242,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "pull-request acquisition"
+            "locator": "pull-request acquisition",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10265,8 +10282,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "privilege boundary"
+            "locator": "privilege boundary",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10305,8 +10322,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "push event row"
+            "locator": "push event row",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10345,8 +10362,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "merge_group event row"
+            "locator": "merge_group event row",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10385,8 +10402,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "workflow_dispatch event row"
+            "locator": "workflow_dispatch event row",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10425,8 +10442,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "schedule event row"
+            "locator": "schedule event row",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10465,8 +10482,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "unrecognized or unavailable caller event row"
+            "locator": "unrecognized or unavailable caller event row",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10517,8 +10534,8 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "ADR 0009",
-            "locator": "deletion push snapshot acquisition"
+            "locator": "deletion push snapshot acquisition",
+            "source_id": "adr-0009-base"
           }
         ]
       },
@@ -10568,12 +10585,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "ADOPTION_INPUT_UNAVAILABLE"
+            "locator": "ADOPTION_INPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "ADOPTION_INPUT_UNAVAILABLE"
+            "locator": "candidate-local evidence: ADOPTION_INPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10623,12 +10640,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "ASSURANCE_EVIDENCE_UNAVAILABLE"
+            "locator": "ASSURANCE_EVIDENCE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "ASSURANCE_EVIDENCE_UNAVAILABLE"
+            "locator": "candidate-local evidence: ASSURANCE_EVIDENCE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10655,12 +10672,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "CALLER_INVOCATION_UNREACHABLE"
+            "locator": "CALLER_INVOCATION_UNREACHABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "CALLER_INVOCATION_UNREACHABLE"
+            "locator": "candidate-local evidence: CALLER_INVOCATION_UNREACHABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10708,12 +10725,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "CHANGESET_UNAVAILABLE"
+            "locator": "CHANGESET_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "CHANGESET_UNAVAILABLE"
+            "locator": "candidate-local evidence: CHANGESET_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10740,12 +10757,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "DECLARED_STAGE_NOT_APPLICABLE"
+            "locator": "DECLARED_STAGE_NOT_APPLICABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "DECLARED_STAGE_NOT_APPLICABLE"
+            "locator": "candidate-local evidence: DECLARED_STAGE_NOT_APPLICABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10788,12 +10805,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "INTERNAL_FAILURE"
+            "locator": "INTERNAL_FAILURE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "INTERNAL_FAILURE"
+            "locator": "candidate-local evidence: INTERNAL_FAILURE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10838,12 +10855,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PIN_STALENESS_QUERY_UNAVAILABLE"
+            "locator": "PIN_STALENESS_QUERY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "PIN_STALENESS_QUERY_UNAVAILABLE"
+            "locator": "candidate-local evidence: PIN_STALENESS_QUERY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10888,12 +10905,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PIN_STALENESS_RESPONSE_INVALID"
+            "locator": "PIN_STALENESS_RESPONSE_INVALID",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "PIN_STALENESS_RESPONSE_INVALID"
+            "locator": "candidate-local evidence: PIN_STALENESS_RESPONSE_INVALID",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10939,12 +10956,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PIN_TAG_RESOLUTION_UNAVAILABLE"
+            "locator": "PIN_TAG_RESOLUTION_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "PIN_TAG_RESOLUTION_UNAVAILABLE"
+            "locator": "candidate-local evidence: PIN_TAG_RESOLUTION_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -10971,12 +10988,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PROVIDER_ACTION_FAILED"
+            "locator": "PROVIDER_ACTION_FAILED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "PROVIDER_ACTION_FAILED"
+            "locator": "candidate-local evidence: PROVIDER_ACTION_FAILED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11025,12 +11042,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PR_BODY_UNAVAILABLE"
+            "locator": "PR_BODY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "PR_BODY_UNAVAILABLE"
+            "locator": "candidate-local evidence: PR_BODY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11065,12 +11082,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RELEASE_TAG_CHECK_NOT_APPLICABLE"
+            "locator": "RELEASE_TAG_CHECK_NOT_APPLICABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RELEASE_TAG_CHECK_NOT_APPLICABLE"
+            "locator": "candidate-local evidence: RELEASE_TAG_CHECK_NOT_APPLICABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11097,12 +11114,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "REQUIRED_OUTPUT_UNAVAILABLE"
+            "locator": "REQUIRED_OUTPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "REQUIRED_OUTPUT_UNAVAILABLE"
+            "locator": "candidate-local evidence: REQUIRED_OUTPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11129,12 +11146,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "REQUIRED_PROCESS_FAILED"
+            "locator": "REQUIRED_PROCESS_FAILED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "REQUIRED_PROCESS_FAILED"
+            "locator": "candidate-local evidence: REQUIRED_PROCESS_FAILED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11161,12 +11178,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RESULT_OUTPUT_UNAVAILABLE"
+            "locator": "RESULT_OUTPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RESULT_OUTPUT_UNAVAILABLE"
+            "locator": "candidate-local evidence: RESULT_OUTPUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11213,12 +11230,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "ROUTING_INPUT_LIMIT_EXCEEDED"
+            "locator": "ROUTING_INPUT_LIMIT_EXCEEDED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "ROUTING_INPUT_LIMIT_EXCEEDED"
+            "locator": "candidate-local evidence: ROUTING_INPUT_LIMIT_EXCEEDED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11245,12 +11262,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RUNNER_LOST"
+            "locator": "RUNNER_LOST",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RUNNER_LOST"
+            "locator": "candidate-local evidence: RUNNER_LOST",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11277,12 +11294,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RUNNER_UNAVAILABLE"
+            "locator": "RUNNER_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RUNNER_UNAVAILABLE"
+            "locator": "candidate-local evidence: RUNNER_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11309,12 +11326,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+            "locator": "RUNTIME_DEPENDENCY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+            "locator": "candidate-local evidence: RUNTIME_DEPENDENCY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11341,12 +11358,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RUN_CANCELLED"
+            "locator": "RUN_CANCELLED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RUN_CANCELLED"
+            "locator": "candidate-local evidence: RUN_CANCELLED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11378,12 +11395,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "RUN_DEADLINE_EXCEEDED"
+            "locator": "RUN_DEADLINE_EXCEEDED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "RUN_DEADLINE_EXCEEDED"
+            "locator": "candidate-local evidence: RUN_DEADLINE_EXCEEDED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11410,12 +11427,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "STATUS_PUBLICATION_FAILED"
+            "locator": "STATUS_PUBLICATION_FAILED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "STATUS_PUBLICATION_FAILED"
+            "locator": "candidate-local evidence: STATUS_PUBLICATION_FAILED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11447,12 +11464,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE"
+            "locator": "TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE"
+            "locator": "candidate-local evidence: TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11479,12 +11496,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "WORKFLOW_DISPATCH_UNAVAILABLE"
+            "locator": "WORKFLOW_DISPATCH_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "WORKFLOW_DISPATCH_UNAVAILABLE"
+            "locator": "candidate-local evidence: WORKFLOW_DISPATCH_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11511,12 +11528,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "WORKFLOW_IDENTITY_UNAVAILABLE"
+            "locator": "WORKFLOW_IDENTITY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-terminal-mapping-draft",
-            "locator": "WORKFLOW_IDENTITY_UNAVAILABLE"
+            "locator": "candidate-local evidence: WORKFLOW_IDENTITY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11571,12 +11588,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "INPUT_FILE_UNAVAILABLE"
+            "locator": "INPUT_FILE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "INPUT_FILE_UNAVAILABLE"
+            "locator": "candidate-local evidence: INPUT_FILE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11627,12 +11644,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "SCHEMA_REGISTRY_UNAVAILABLE"
+            "locator": "SCHEMA_REGISTRY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "SCHEMA_REGISTRY_UNAVAILABLE"
+            "locator": "candidate-local evidence: SCHEMA_REGISTRY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11682,12 +11699,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PROFILE_CHECKOUT_UNAVAILABLE"
+            "locator": "PROFILE_CHECKOUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "PROFILE_CHECKOUT_UNAVAILABLE"
+            "locator": "candidate-local evidence: PROFILE_CHECKOUT_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11739,12 +11756,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PROJECT_TREE_UNAVAILABLE"
+            "locator": "PROJECT_TREE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "PROJECT_TREE_UNAVAILABLE"
+            "locator": "candidate-local evidence: PROJECT_TREE_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11795,12 +11812,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "BASE_POLICY_UNAVAILABLE"
+            "locator": "BASE_POLICY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "BASE_POLICY_UNAVAILABLE"
+            "locator": "candidate-local evidence: BASE_POLICY_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11848,12 +11865,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "ASSURANCE_DIFF_UNAVAILABLE"
+            "locator": "ASSURANCE_DIFF_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "ASSURANCE_DIFF_UNAVAILABLE"
+            "locator": "candidate-local evidence: ASSURANCE_DIFF_UNAVAILABLE",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       },
@@ -11880,12 +11897,12 @@
         "replacement": null,
         "authority_refs": [
           {
-            "source": "AAP-V05-DIAGNOSTICS-001",
-            "locator": "PROVIDER_OUTCOME_UNSUPPORTED"
+            "locator": "PROVIDER_OUTCOME_UNSUPPORTED",
+            "source_id": "diagnostics-r1-self"
           },
           {
-            "source": "aap50b-semantic-mapping-draft",
-            "locator": "PROVIDER_OUTCOME_UNSUPPORTED"
+            "locator": "candidate-local evidence: PROVIDER_OUTCOME_UNSUPPORTED",
+            "source_id": "diagnostics-r1-self"
           }
         ]
       }
@@ -11914,16 +11931,13 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.split-core-draft-baseline-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "core-lite-draft-pass",
@@ -11931,16 +11945,13 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.lite-core-draft-baseline-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "archived-reviewed-pass",
@@ -11948,13 +11959,9 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.archived-exclusive-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           },
           {
             "internal_condition_key": "phase0.internal.archived.historical-facts-mechanical-verification-limited",
@@ -11970,7 +11977,8 @@
             "code": "F0001",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "transition-stage-downgrade-block",
@@ -11999,7 +12007,8 @@
             "code": "F0002",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "trust-path-traversal-block",
@@ -12034,7 +12043,8 @@
             "code": "F0003",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "drift-routing-strict-block",
@@ -12063,7 +12073,8 @@
             "code": "F0004",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "central-self-check-pass",
@@ -12071,18 +12082,17 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.self-check.pinned-tree-self-check-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "profile.release-tree-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       }
-    ]
+    ],
+    "public_check_state_bound": false,
+    "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
   },
   "validation_contract": {
     "recursive_forbidden_candidate_keys": [
@@ -12166,8 +12176,8 @@
         "assertion": "the selected projection contains exactly the seven accepted Phase 0 case IDs"
       },
       {
-        "rule_id": "PHASE0-SUCCESS-IS-COMPLETION",
-        "assertion": "required-satisfied Phase 0 keys project to CHECK_COMPLETION rather than findings or reasons"
+        "rule_id": "PHASE0-SATISFACTION-NOT-CHECK-COMPLETION",
+        "assertion": "required-satisfied Phase 0 keys project only to SELECTED_CONDITION_SATISFIED; public check completion remains unbound until ADR 0004"
       },
       {
         "rule_id": "PHASE0-TRUST-COLLAPSE",
@@ -12176,6 +12186,26 @@
       {
         "rule_id": "NO-PARITY-AUTHORIZATION",
         "assertion": "implementation_parity_authorized remains false and no implementation or runtime output schema is present"
+      },
+      {
+        "rule_id": "F0002-STAGE-ORDER-PREDICATE",
+        "assertion": "F0002 fixes the immutable relation head_stage < base_stage over DRAFT < HUMAN_REVIEWED < CONFORMANT and its source binding proves the exact same predicate"
+      },
+      {
+        "rule_id": "REGISTER-PARSE-SCHEMA-BOUNDARY",
+        "assertion": "register bounded-parse failures map to adoption.document-parse and F0005/F0006/F0007/F0008; only actual schema evaluator conditions map to F0036"
+      },
+      {
+        "rule_id": "AUTHORITY-SOURCE-CLOSED",
+        "assertion": "every authority reference names one exact registered source_id; mutable unrevisioned document paths are rejected"
+      },
+      {
+        "rule_id": "COMPATIBILITY-CHANGE-SET-CLOSED",
+        "assertion": "the bound compatibility manifest contains exactly the 33 INTENDED_CHANGE_PENDING finding codes with nonempty rationale, impact, migration, and registered authority locators"
+      },
+      {
+        "rule_id": "NORMALIZED-INVENTORY-REPRODUCIBLE",
+        "assertion": "the review-only verifier deterministically reproduces and matches the bound normalized source inventory"
       }
     ]
   },
@@ -12385,5 +12415,134 @@
     "The 36-check graph is semantic input and is not an ADR 0004 canonical plan.",
     "Provider-observed reasons require a separately accepted provider contract before runtime use.",
     "Implementation parity requires a later exact-byte projection and acceptance sequence; this candidate cannot authorize it."
+  ],
+  "authority_sources": {
+    "profile-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "PROFILE.md",
+      "raw_sha256": "fbe90435c3c7324cbda18b7f9c57c4ae50a8953a8d83d2f0773c7d4ede322584",
+      "role": "NORMATIVE_PROFILE"
+    },
+    "changelog-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "CHANGELOG.md",
+      "raw_sha256": "061ee7ec05491630fe19855e673341306d55a54fb2e6ccbd972e93fed5a67ead",
+      "role": "ACCEPTED_OPERATIONAL_HISTORY"
+    },
+    "adoption-guide-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "docs/ADOPTION.md",
+      "raw_sha256": "69fd67e762ea8738af322bbd2f9115be599f23f232f43f2a2d04febe0f5fea64",
+      "role": "VERSIONED_GUIDANCE"
+    },
+    "releasing-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "RELEASING.md",
+      "raw_sha256": "482635b975eaa90d5335e952396dc9c02cb9fab23de0bd2af4aedf453eb20a10",
+      "role": "VERSIONED_RELEASE_PROCESS"
+    },
+    "agent-template-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "templates/AGENTIC_ASSURANCE.md",
+      "raw_sha256": "8429022dbc9a2440a958df7c24824a3b66039cddc35f53032ebc3e2c30d4cabd",
+      "role": "VERSIONED_TEMPLATE"
+    },
+    "codeowners-template-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "templates/github/CODEOWNERS",
+      "raw_sha256": "ed0adb10ef56f904b04ae4b46f68aa862a84d6b3ce32d964c0540abc866de562",
+      "role": "VERSIONED_TEMPLATE"
+    },
+    "validator-v0.4.0": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "path": "scripts/validate.py",
+      "raw_sha256": "c603735db7218c9d4a7da7cafb31501294b1e00ac84290ae4d5256feb27f6298",
+      "role": "EXACT_LEGACY_IMPLEMENTATION"
+    },
+    "v0.5-design-base": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "a34f074ab57214d5fe924ba90c00df313cc2acb6",
+      "path": "docs/V0.5-DESIGN.md",
+      "raw_sha256": "e1a7afc4594b62f1a4ca8d27ed7efebdde157aed56e38af6a79bd56d481084cf",
+      "role": "ACCEPTED_DESIGN"
+    },
+    "adr-0009-base": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "a34f074ab57214d5fe924ba90c00df313cc2acb6",
+      "path": "docs/adr/v0.5/0009-event-matrix.md",
+      "raw_sha256": "1baf9cd904e516da083c6602b479f5cde2f3a8d6ee8b20a0c55bd62a3cb9d1ce",
+      "role": "ACCEPTED_ADR"
+    },
+    "phase0-oracle-r2": {
+      "kind": "EXACT_REPOSITORY_FILE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "revision_sha1": "a34f074ab57214d5fe924ba90c00df313cc2acb6",
+      "path": "tests/characterization/v0.4.0/expected-outcomes.json",
+      "raw_sha256": "20621149949f2473aed8081db0b45a7f036d0f93ee95c5a986a1c75bc5a3b076",
+      "role": "ACCEPTED_COMPATIBILITY_ORACLE"
+    },
+    "diagnostics-r1-self": {
+      "kind": "SELF_COMPATIBILITY_DECISION",
+      "decision_id": "AAP-V05-DIAGNOSTICS-001",
+      "exact_candidate_bytes_bound_only_by_later_acceptance": true,
+      "role": "PROPOSED_ALLOCATION_AUTHORITY"
+    },
+    "v0.4.0-runtime-surface": {
+      "kind": "EXACT_RUNTIME_SURFACE",
+      "repository": "https://github.com/MosslandOpenDevs/agentic-assurance-profile",
+      "annotated_tag_object_sha1": "1373d963a098e13d2f44891e58ee8a47e285c5c3",
+      "revision_sha1": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
+      "source_ref": "validator-v0.4.0",
+      "role": "LEGACY_COMPATIBILITY_EVIDENCE"
+    }
+  },
+  "authority_reference_contract": {
+    "closed_source_id_set": [
+      "adoption-guide-v0.4.0",
+      "adr-0009-base",
+      "agent-template-v0.4.0",
+      "changelog-v0.4.0",
+      "codeowners-template-v0.4.0",
+      "diagnostics-r1-self",
+      "phase0-oracle-r2",
+      "profile-v0.4.0",
+      "releasing-v0.4.0",
+      "v0.4.0-runtime-surface",
+      "v0.5-design-base",
+      "validator-v0.4.0"
+    ],
+    "on_unregistered_source_id": "REJECT",
+    "mutable_unrevisioned_path_reference": "REJECT",
+    "upstream_references_are": "RATIONALE_AND_COMPATIBILITY_EVIDENCE",
+    "proposed_allocation_authority_source_id": "diagnostics-r1-self",
+    "allocation_effective_only_after_external_exact_byte_acceptance": true
+  },
+  "review_artifact_refs": [
+    {
+      "kind": "COMPATIBILITY_CHANGE_MANIFEST",
+      "path": "docs/evidence/v0.5/diagnostic-catalog/compatibility-changes-r1.json",
+      "raw_sha256": "499a7a571502d0d70289d00f2bf655673da36c73c82bfb9df4c25913b9be0f7b"
+    },
+    {
+      "kind": "NORMALIZED_SOURCE_INVENTORY",
+      "path": "docs/evidence/v0.5/diagnostic-catalog/normalized-inventory-r1.json",
+      "raw_sha256": "aa3b9a5d30e41b2e78cb9e45c736ec697ccb04393ab6c300b82ce0e796cbc305"
+    }
   ]
 }

@@ -10,13 +10,15 @@
     "implementation_consumption_allowed": false,
     "implementation_parity_authorized": false,
     "review_class_derived_externally": true,
-    "runtime_ready": false
+    "runtime_ready": false,
+    "review_only_verifier_required_before_acceptance": true,
+    "review_only_verifier_path": "scripts/verify_diagnostic_catalog_candidate.py"
   },
   "catalog_ref": {
     "path": "docs/evidence/v0.5/diagnostic-catalog/catalog-r1.json",
     "catalog_id": "urn:uuid:6d6187ea-521e-4f3e-98d9-cb716877a84b",
     "catalog_revision": 1,
-    "raw_sha256_review_evidence": "4293658b4fea19180f8593a5d4d287cd33ff56ca3982fca4ad8134630f3ee42b"
+    "raw_sha256_review_evidence": "da541828f462784eeb504af1436e6c689dc7f429814a18c729e2dc48362a0cec"
   },
   "exact_source": {
     "release": "v0.4.0",
@@ -51,7 +53,7 @@
     "upstream_producer_set_closed": true,
     "upstream_producer_line_count": 84,
     "required_fact_binding_set_closed": true,
-    "required_fact_finding_leaf_count": 78,
+    "required_fact_finding_leaf_count": 83,
     "report_emit_return_set_closed": true,
     "report_emit_return_count": 30,
     "report_results_read_set_closed": true,
@@ -84,7 +86,8 @@
         "D-1699-PUBLIC-ROOT"
       ],
       "predicates_are_disjoint": true
-    }
+    },
+    "direct_emitter_function_count": 41
   },
   "semantic_mapping": {
     "closed": true,
@@ -182,13 +185,28 @@
             {
               "callsite_selector": "load_yaml@3620 in check_artifacts",
               "disposition": "PROJECT_FINDING",
-              "owning_check_id": "adoption.register-conformance",
-              "notes": "A register document is unusable before schema evaluation.",
+              "owning_check_id": "adoption.document-parse",
+              "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
               "target": {
                 "kind": "FINDING",
-                "finding_code": "F0036",
-                "owning_check_id": "adoption.register-conformance",
-                "condition_slug": "register-schema-unsatisfied"
+                "finding_code": "F0008",
+                "owning_check_id": "adoption.document-parse",
+                "condition_slug": "policy-yaml-resource-budget-exceeded",
+                "fact_bindings": {
+                  "closed": true,
+                  "required_key_set": [
+                    "limit_kind"
+                  ],
+                  "on_missing_required_key": "REJECT",
+                  "on_extra_key": "REJECT",
+                  "on_null": "REJECT",
+                  "bindings": {
+                    "limit_kind": {
+                      "kind": "LITERAL",
+                      "value": "BYTE_SIZE"
+                    }
+                  }
+                }
               }
             },
             {
@@ -512,13 +530,13 @@
             {
               "callsite_selector": "load_yaml@3620 in check_artifacts",
               "disposition": "PROJECT_FINDING",
-              "owning_check_id": "adoption.register-conformance",
-              "notes": "A register document is unusable before schema evaluation.",
+              "owning_check_id": "adoption.document-parse",
+              "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
               "target": {
                 "kind": "FINDING",
-                "finding_code": "F0036",
-                "owning_check_id": "adoption.register-conformance",
-                "condition_slug": "register-schema-unsatisfied"
+                "finding_code": "F0006",
+                "owning_check_id": "adoption.document-parse",
+                "condition_slug": "policy-yaml-invalid-utf8"
               }
             },
             {
@@ -678,13 +696,13 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0005",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-malformed"
                   }
                 },
                 {
@@ -836,13 +854,28 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0008",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-resource-budget-exceeded",
+                    "fact_bindings": {
+                      "closed": true,
+                      "required_key_set": [
+                        "limit_kind"
+                      ],
+                      "on_missing_required_key": "REJECT",
+                      "on_extra_key": "REJECT",
+                      "on_null": "REJECT",
+                      "bindings": {
+                        "limit_kind": {
+                          "kind": "LITERAL",
+                          "value": "NUMERIC_VALUE"
+                        }
+                      }
+                    }
                   }
                 },
                 {
@@ -1004,13 +1037,13 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0007",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-data-model-invalid"
                   }
                 },
                 {
@@ -1162,13 +1195,28 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0008",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-resource-budget-exceeded",
+                    "fact_bindings": {
+                      "closed": true,
+                      "required_key_set": [
+                        "limit_kind"
+                      ],
+                      "on_missing_required_key": "REJECT",
+                      "on_extra_key": "REJECT",
+                      "on_null": "REJECT",
+                      "bindings": {
+                        "limit_kind": {
+                          "kind": "LITERAL",
+                          "value": "ALIAS_EXPANSION"
+                        }
+                      }
+                    }
                   }
                 },
                 {
@@ -1320,13 +1368,28 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0008",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-resource-budget-exceeded",
+                    "fact_bindings": {
+                      "closed": true,
+                      "required_key_set": [
+                        "limit_kind"
+                      ],
+                      "on_missing_required_key": "REJECT",
+                      "on_extra_key": "REJECT",
+                      "on_null": "REJECT",
+                      "bindings": {
+                        "limit_kind": {
+                          "kind": "LITERAL",
+                          "value": "NODE_COUNT"
+                        }
+                      }
+                    }
                   }
                 },
                 {
@@ -1478,13 +1541,28 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0008",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-resource-budget-exceeded",
+                    "fact_bindings": {
+                      "closed": true,
+                      "required_key_set": [
+                        "limit_kind"
+                      ],
+                      "on_missing_required_key": "REJECT",
+                      "on_extra_key": "REJECT",
+                      "on_null": "REJECT",
+                      "bindings": {
+                        "limit_kind": {
+                          "kind": "LITERAL",
+                          "value": "NESTING"
+                        }
+                      }
+                    }
                   }
                 },
                 {
@@ -1621,13 +1699,13 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0005",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-malformed"
                   }
                 },
                 {
@@ -1764,13 +1842,13 @@
                 {
                   "callsite_selector": "load_yaml@3620 in check_artifacts",
                   "disposition": "PROJECT_FINDING",
-                  "owning_check_id": "adoption.register-conformance",
-                  "notes": "A register document is unusable before schema evaluation.",
+                  "owning_check_id": "adoption.document-parse",
+                  "notes": "Register input is safely acquired but rejected at the bounded document-parse boundary before schema evaluation.",
                   "target": {
                     "kind": "FINDING",
-                    "finding_code": "F0036",
-                    "owning_check_id": "adoption.register-conformance",
-                    "condition_slug": "register-schema-unsatisfied"
+                    "finding_code": "F0005",
+                    "owning_check_id": "adoption.document-parse",
+                    "condition_slug": "policy-yaml-malformed"
                   }
                 },
                 {
@@ -8036,7 +8114,23 @@
               }
             },
             "cross_field_predicate": "ADOPTION_STAGES.index(head_stage) < ADOPTION_STAGES.index(base_stage)",
-            "on_unsatisfied_cross_field_predicate": "REJECT"
+            "on_unsatisfied_cross_field_predicate": "REJECT",
+            "catalog_condition_predicate_ref": {
+              "finding_code": "F0002",
+              "field": "condition_predicate",
+              "required_exact_value": {
+                "kind": "ENUM_ORDER_RELATION",
+                "left_fact": "head_stage",
+                "relation": "LT",
+                "right_fact": "base_stage",
+                "ordered_values": [
+                  "DRAFT",
+                  "HUMAN_REVIEWED",
+                  "CONFORMANT"
+                ],
+                "on_unsatisfied": "REJECT_FINDING_INSTANCE"
+              }
+            }
           }
         }
       },
@@ -12961,12 +13055,12 @@
     "legacy_ok_text_is_positive_plan_evidence": false
   },
   "terminal_mapping": {
-    "schema_version": "aap-v0.5-terminal-crosswalk-draft-1",
+    "schema_version": 2,
     "artifact_status": "NON_EXECUTABLE_ACCEPTANCE_CANDIDATE_DRAFT",
     "source_revision": "00e2fe46d4eb01a4147f149851a48a3017cbb796",
     "derived_from": {
       "method": "closed static inventory of exact v0.4.0 parser, process, workflow, and provider outcome families",
-      "review_data_schema": "aap-v0.5-terminal-crosswalk-candidate-1"
+      "review_data_schema": "aap-v0.5-terminal-crosswalk-candidate-2"
     },
     "inventory_family_set_closed": true,
     "inventory_family_set_closed_meaning": "At the named source revision, every identified local source-terminal and provider-outcome family is represented by one of the 41 crosswalk rows. This is family-domain closure only; it does not assert that every current branch emits a discriminant or that provider outcomes are observable.",
@@ -13080,7 +13174,6 @@
       "values": [
         "ADOPTION_INPUT_UNAVAILABLE",
         "ASSURANCE_EVIDENCE_UNAVAILABLE",
-        "BOUND_TO_OWNING_CHECK_REASON",
         "CALLER_EVENT_UNSUPPORTED",
         "CALLER_INVOCATION_UNREACHABLE",
         "CHANGESET_UNAVAILABLE",
@@ -13114,16 +13207,16 @@
         "WORKFLOW_DISPATCH_UNAVAILABLE",
         "WORKFLOW_IDENTITY_UNAVAILABLE"
       ],
-      "binding_sentinel": {
-        "code": "BOUND_TO_OWNING_CHECK_REASON",
-        "meaning": "The terminal family does not choose a generic reason. Runtime construction must bind the accepted reason already attached to the owning incomplete check.",
-        "runtime_reason_identity": false
+      "non_identity_reason_source_variant": {
+        "kind": "REASON_FROM_OWNING_CHECK",
+        "payload": "NONE",
+        "meaning": "Use the accepted reason already attached to the owning incomplete check; the terminal family does not choose another reason identity."
       }
     },
     "normalization_rules": [
-      "WHEN_NONCOMPLETED_FROM_TERMINAL and OWNING_NONCOMPLETION_REASON normalize to BOUND_TO_OWNING_CHECK_REASON.",
+      "WHEN_NONCOMPLETED_FROM_TERMINAL and OWNING_NONCOMPLETION_REASON normalize to reason_source_ref {kind: REASON_FROM_OWNING_CHECK}.",
       "PYTHON_RUNTIME_SETUP_FAILED normalizes to RUNTIME_DEPENDENCY_UNAVAILABLE.",
-      "Null reason targets normalize to an empty target_reason_codes list.",
+      "Absent legacy reason targets normalize to an empty reason_source_refs array.",
       "A row with more than one proposed terminal family requires its required_future_discriminant before runtime projection.",
       "Provider-domain closure does not imply provider observation, caller reachability, output delivery, or status-publication readiness."
     ],
@@ -13145,9 +13238,6 @@
         "proposed_terminal_families": [
           "TERM_INVOCATION_HELP"
         ],
-        "target_reason_codes": [],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE",
         "current_observable_projection": "argparse writes help and raises SystemExit(0) before handler dispatch",
         "required_future_discriminant": "INVOCATION_HELP distinct from a semantic report exit 0",
@@ -13155,7 +13245,14 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "CLOSED_BY_ARGPARSE_CONTRACT_TEST_MISSING"
+        "draft_closure_status": "CLOSED_BY_ARGPARSE_CONTRACT_TEST_MISSING",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": []
       },
       {
         "family_id": "TP-CLI-USAGE",
@@ -13174,9 +13271,6 @@
         "proposed_terminal_families": [
           "TERM_INVOCATION_USAGE_ERROR"
         ],
-        "target_reason_codes": [],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE",
         "current_observable_projection": "argparse writes usage to stderr and raises SystemExit(2)",
         "required_future_discriminant": "ARGPARSE_GRAMMAR_ERROR versus post-parse OPTION_COMBINATION_ERROR",
@@ -13184,7 +13278,14 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "CLOSED_FAMILY_TEST_MISSING"
+        "draft_closure_status": "CLOSED_FAMILY_TEST_MISSING",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": []
       },
       {
         "family_id": "TP-VALIDATOR-REPORT",
@@ -13209,9 +13310,6 @@
           "TERM_REPORT_PASS",
           "TERM_REPORT_FAIL"
         ],
-        "target_reason_codes": [],
-        "target_check": "FROM_TYPED_PLAN",
-        "target_finding": "FROM_SEMANTIC_RESULTS",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "aggregate has_errors selects exit 1 or 0; text or JSON is printed",
         "required_future_discriminant": "typed OverallOutcome and complete planned-check states; exit must agree with report",
@@ -13219,7 +13317,15 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "CLOSED_SOURCE_FAMILY_TYPED_IDENTITY_ABSENT"
+        "draft_closure_status": "CLOSED_SOURCE_FAMILY_TYPED_IDENTITY_ABSENT",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "FROM_TYPED_PLAN"
+        },
+        "finding_source_ref": {
+          "kind": "FINDINGS_FROM_TYPED_SEMANTIC_RESULTS"
+        },
+        "reason_source_refs": []
       },
       {
         "family_id": "TP-VALIDATOR-INDETERMINATE",
@@ -13236,11 +13342,6 @@
         "proposed_terminal_families": [
           "TERM_REPORT_INDETERMINATE"
         ],
-        "target_reason_codes": [
-          "BOUND_TO_OWNING_CHECK_REASON"
-        ],
-        "target_check": "ONE_OR_MORE_COMPLETION_REQUIRED_CHECKS",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "not representable; Report.emit selects only exit 0 or 1",
         "required_future_discriminant": "OverallOutcome.INDETERMINATE with explicit incomplete check and accepted reason_code",
@@ -13248,7 +13349,19 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "OPEN_NOT_IMPLEMENTED"
+        "draft_closure_status": "OPEN_NOT_IMPLEMENTED",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "ONE_OR_MORE_COMPLETION_REQUIRED_CHECKS"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REASON_FROM_OWNING_CHECK"
+          }
+        ]
       },
       {
         "family_id": "TP-VALIDATOR-IMPORT-BOOTSTRAP",
@@ -13265,11 +13378,6 @@
         "proposed_terminal_families": [
           "TERM_BOOTSTRAP_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "RUNTIME_DEPENDENCY_UNAVAILABLE"
-        ],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "plain ERROR on stdout and sys.exit(1) before parser construction",
         "required_future_discriminant": "PYYAML_UNAVAILABLE | JSONSCHEMA_UNAVAILABLE, emitted on the bootstrap channel without pretending to be a policy finding",
@@ -13277,7 +13385,19 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "CLOSED_BRANCHES_IDENTITY_NOT_ALLOCATED"
+        "draft_closure_status": "CLOSED_BRANCHES_IDENTITY_NOT_ALLOCATED",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-VALIDATOR-UNCAUGHT",
@@ -13294,11 +13414,6 @@
         "proposed_terminal_families": [
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "INTERNAL_FAILURE"
-        ],
-        "target_check": "CURRENT_OR_RUN_BOUNDARY",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "no top-level exception guard; traceback and interpreter exit commonly collapse to exit 1",
         "required_future_discriminant": "INTERNAL_FAILURE caught at a trusted boundary after preserving any already-completed check results",
@@ -13306,7 +13421,20 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "OPEN_EXCEPTION_UNIVERSE"
+        "draft_closure_status": "OPEN_EXCEPTION_UNIVERSE",
+        "target_owner_ref": {
+          "kind": "RUN_BOUNDARY_SELECTOR",
+          "selector": "CURRENT_OR_RUN_BOUNDARY"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "INTERNAL_FAILURE"
+          }
+        ]
       },
       {
         "family_id": "TP-VALIDATOR-RESULT-WRITE",
@@ -13323,11 +13451,6 @@
         "proposed_terminal_families": [
           "TERM_OUTPUT_LOST"
         ],
-        "target_reason_codes": [
-          "RESULT_OUTPUT_UNAVAILABLE"
-        ],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "stdout print failure is uncaught; a consumer cannot distinguish absent, truncated or malformed output",
         "required_future_discriminant": "atomic typed-result handoff plus consumer validation of full document, catalog and plan binding",
@@ -13335,7 +13458,19 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "OPEN_NO_ACKNOWLEDGEMENT"
+        "draft_closure_status": "OPEN_NO_ACKNOWLEDGEMENT",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RESULT_OUTPUT_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-VALIDATOR-SIGNAL",
@@ -13351,9 +13486,6 @@
         "proposed_terminal_families": [
           "TERM_SIGNAL"
         ],
-        "target_reason_codes": [],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE",
         "current_observable_projection": "no signal handler; operating-system/interpreter convention applies",
         "required_future_discriminant": "bounded signal number supplied by the process supervisor; do not translate into a semantic reason",
@@ -13361,7 +13493,14 @@
         "current_runtime_typed_projection_available": false,
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
-        "draft_closure_status": "CLOSED_FAMILY_SUPERVISOR_TEST_MISSING"
+        "draft_closure_status": "CLOSED_FAMILY_SUPERVISOR_TEST_MISSING",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": []
       },
       {
         "family_id": "TP-SELF-CHECK-CHECKOUT-ACTION",
@@ -13379,11 +13518,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "PROVIDER_ACTION_FAILED"
-        ],
-        "target_check": "self-check.bootstrap",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "external action success/failure controls later-step reachability and job conclusion; no typed report",
         "required_future_discriminant": "provider action identity, step identity and provider conclusion acquired by a trusted adapter",
@@ -13398,7 +13532,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "self-check.bootstrap"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PROVIDER_ACTION_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-SELF-CHECK-PYTHON-ACTION",
@@ -13416,11 +13563,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "RUNTIME_DEPENDENCY_UNAVAILABLE"
-        ],
-        "target_check": "self-check.bootstrap",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "external action failure produces job failure and skips dependent steps",
         "required_future_discriminant": "provider action conclusion distinct from dependency installation and validator execution",
@@ -13435,7 +13577,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "self-check.bootstrap"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-SELF-CHECK-DEPENDENCY-INSTALL",
@@ -13453,11 +13608,6 @@
         "proposed_terminal_families": [
           "TERM_BOOTSTRAP_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "RUNTIME_DEPENDENCY_UNAVAILABLE"
-        ],
-        "target_check": "self-check.bootstrap",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "pip exit controls job failure; no typed bootstrap report",
         "required_future_discriminant": "DEPENDENCY_INSTALL_START_FAILED | DEPENDENCY_INSTALL_EXIT_NONZERO | DEPENDENCY_INSTALL_DEADLINE",
@@ -13472,7 +13622,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_PROCESS_DETAIL",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "self-check.bootstrap"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-SELF-CHECK-VALIDATOR-RUN",
@@ -13498,11 +13661,6 @@
           "TERM_OUTPUT_LOST",
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "BOUND_TO_OWNING_CHECK_REASON"
-        ],
-        "target_check": "self-check canonical plan",
-        "target_finding": "FROM_REPORT",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "validator exit 0/1 directly controls the step and job; no consumer validates report completeness",
         "required_future_discriminant": "typed report plus exit agreement; process exit without a valid report must never be inferred as policy FAIL",
@@ -13517,7 +13675,19 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_OUTPUT_BINDING",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "self-check canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "FINDINGS_FROM_TYPED_REPORT"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REASON_FROM_OWNING_CHECK"
+          }
+        ]
       },
       {
         "family_id": "TP-SELF-CHECK-REGRESSION-TESTS",
@@ -13534,11 +13704,6 @@
         "proposed_terminal_families": [
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "REQUIRED_PROCESS_FAILED"
-        ],
-        "target_check": "release.regression-suite",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "unittest process exit controls job failure; it is not part of the validator semantic report",
         "required_future_discriminant": "TEST_FAILURE versus test-runner/bootstrap/internal non-completion if this becomes a typed public check",
@@ -13553,7 +13718,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_SEMANTIC_BOUNDARY_DECISION",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "release.regression-suite"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "REQUIRED_PROCESS_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-SELF-CHECK-ACTIONLINT",
@@ -13573,11 +13751,6 @@
           "TERM_PROVIDER_NONCOMPLETION",
           "TERM_REPORT_FAIL"
         ],
-        "target_reason_codes": [
-          "PROVIDER_ACTION_FAILED"
-        ],
-        "target_check": "release.workflow-static-analysis",
-        "target_finding": "ONLY_IF_ACTION_OUTPUT_IS_ADAPTED_TO_TYPED_FINDINGS",
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "container action success/failure is a separate GitHub job conclusion",
         "required_future_discriminant": "action completed with lint violations versus action image/pull/runtime/provider failure",
@@ -13592,7 +13765,21 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_ACTION_COLLAPSE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "release.workflow-static-analysis"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "ONLY_IF_ACTION_OUTPUT_IS_ADAPTED_TO_TYPED_FINDINGS"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PROVIDER_ACTION_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-WORKFLOW-IDENTITY-CONTEXT-UNAVAILABLE",
@@ -13612,11 +13799,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "WORKFLOW_IDENTITY_UNAVAILABLE"
-        ],
-        "target_check": null,
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "workflow command error and shell exit 1",
         "required_future_discriminant": "missing repository, ref and SHA context represented as provider non-completion, not workflow-identity mismatch finding",
@@ -13631,7 +13813,19 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "CLOSED_BRANCH_IDENTITY_NOT_ALLOCATED",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "NONE"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "WORKFLOW_IDENTITY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-RESERVE-CHECKOUT-INSPECTION-FAILURE",
@@ -13653,11 +13847,6 @@
           "TERM_BOOTSTRAP_NONCOMPLETION",
           "TERM_REPORT_FAIL"
         ],
-        "target_reason_codes": [
-          "TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE"
-        ],
-        "target_check": "workflow.trusted-checkout-boundary",
-        "target_finding": "OCCUPIED_PATH_ONLY",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "inspection I/O failure and deterministic occupied-path finding both use SystemExit/nonzero",
         "required_future_discriminant": "DESTINATION_INSPECTION_IO_FAILED versus DESTINATION_OCCUPIED",
@@ -13672,7 +13861,21 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_COLLAPSED_BRANCHES",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "workflow.trusted-checkout-boundary"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "OCCUPIED_PATH_ONLY"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "TRUSTED_CHECKOUT_DESTINATION_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-CHECKOUT-ACTIONS",
@@ -13695,11 +13898,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "PROVIDER_ACTION_FAILED"
-        ],
-        "target_check": "CURRENT_JOB_PLAN",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "external action failure marks its job failed and skips later steps; failure cause is only action/provider output",
         "required_future_discriminant": "ADOPTER_CHECKOUT_FAILED versus TRUSTED_PROFILE_CHECKOUT_FAILED, with job and action identity",
@@ -13714,7 +13912,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "CURRENT_JOB_PLAN"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PROVIDER_ACTION_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-PYTHON-SETUP-ACTIONS",
@@ -13734,11 +13945,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "RUNTIME_DEPENDENCY_UNAVAILABLE"
-        ],
-        "target_check": "CURRENT_JOB_PLAN",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "external action failure marks job failed; no typed reason",
         "required_future_discriminant": "provider action outcome and exact planned job",
@@ -13753,7 +13959,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "CURRENT_JOB_PLAN"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DEPENDENCY-INSTALLS",
@@ -13773,11 +13992,6 @@
         "proposed_terminal_families": [
           "TERM_BOOTSTRAP_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "RUNTIME_DEPENDENCY_UNAVAILABLE"
-        ],
-        "target_check": "CURRENT_JOB_PLAN",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "pip exit controls job; no typed reason",
         "required_future_discriminant": "start, nonzero exit and deadline causes with exact planned job",
@@ -13792,7 +14006,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_PROCESS_DETAIL",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "CURRENT_JOB_PLAN"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNTIME_DEPENDENCY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-PIN-READER",
@@ -13815,13 +14042,6 @@
           "TERM_PROCESS_NONCOMPLETION",
           "TERM_OUTPUT_LOST"
         ],
-        "target_reason_codes": [
-          "ADOPTION_INPUT_UNAVAILABLE",
-          "INTERNAL_FAILURE",
-          "REQUIRED_OUTPUT_UNAVAILABLE"
-        ],
-        "target_check": "adoption.upstream-pin",
-        "target_finding": "DETERMINISTIC_PIN_CONDITIONS",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "deterministic policy findings, path/input acquisition errors, internal exceptions and GITHUB_OUTPUT write failures all collapse to step nonzero",
         "required_future_discriminant": "stable field/predicate identity before prose; separate acquire, parse, evaluate and publish-output phases",
@@ -13836,7 +14056,29 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_MAJOR_COLLAPSE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "adoption.upstream-pin"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "DETERMINISTIC_PIN_CONDITIONS"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "ADOPTION_INPUT_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "INTERNAL_FAILURE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "REQUIRED_OUTPUT_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-STRUCTURE-OUTPUT",
@@ -13856,11 +14098,6 @@
         "proposed_terminal_families": [
           "TERM_OUTPUT_LOST"
         ],
-        "target_reason_codes": [
-          "REQUIRED_OUTPUT_UNAVAILABLE"
-        ],
-        "target_check": "declared-stage plan",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "adoption_stage is passed through GITHUB_OUTPUT; missing output participates in a job if-expression without a typed missing-output state",
         "required_future_discriminant": "producer completed, output key present, output grammar valid, output bound to exact source report",
@@ -13875,7 +14112,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_NO_CONSUMER_ACKNOWLEDGEMENT",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "declared-stage plan"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "REQUIRED_OUTPUT_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-RELEASE-TAG-STEP-SKIP",
@@ -13892,11 +14142,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_SKIPPED"
         ],
-        "target_reason_codes": [
-          "RELEASE_TAG_CHECK_NOT_APPLICABLE"
-        ],
-        "target_check": "adoption.release-tag-binding",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "step is skipped when version is unreleased; provider skip has no semantic state",
         "required_future_discriminant": "trusted plan records NOT_APPLICABLE before provider scheduling; skipped step itself is not proof",
@@ -13911,7 +14156,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "CLOSED_CONDITION_SEMANTIC_REASON_NOT_ALLOCATED",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "adoption.release-tag-binding"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RELEASE_TAG_CHECK_NOT_APPLICABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-RELEASE-TAG-FETCH",
@@ -13931,11 +14189,6 @@
           "TERM_PROCESS_NONCOMPLETION",
           "TERM_REPORT_FAIL"
         ],
-        "target_reason_codes": [
-          "PIN_TAG_RESOLUTION_UNAVAILABLE"
-        ],
-        "target_check": "adoption.release-tag-binding",
-        "target_finding": "TAG_ABSENCE_ONLY_IF_DETERMINISTICALLY_ESTABLISHED",
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "any git fetch failure is described as a nonexistent tag and exits 1; transport/auth/provider errors are indistinguishable",
         "required_future_discriminant": "TAG_ABSENT_ESTABLISHED | FETCH_TRANSPORT_FAILED | FETCH_AUTH_FAILED | FETCH_INTERNAL_FAILED | TAG_COMMIT_MISMATCH",
@@ -13950,7 +14203,21 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_CAUSE_COLLAPSE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "adoption.release-tag-binding"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "TAG_ABSENCE_ONLY_IF_DETERMINISTICALLY_ESTABLISHED"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PIN_TAG_RESOLUTION_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-STRUCTURE-VALIDATOR",
@@ -13976,11 +14243,6 @@
           "TERM_OUTPUT_LOST",
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "BOUND_TO_OWNING_CHECK_REASON"
-        ],
-        "target_check": "structure canonical plan",
-        "target_finding": "FROM_REPORT",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "validator exit directly becomes step/job conclusion; no typed result handoff validation",
         "required_future_discriminant": "typed report, exact plan/catalog binding and exit agreement",
@@ -13995,7 +14257,19 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_OUTPUT_BINDING",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "structure canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "FINDINGS_FROM_TYPED_REPORT"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REASON_FROM_OWNING_CHECK"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-STALENESS-NONCOMPLETION",
@@ -14017,12 +14291,6 @@
           "TERM_PROCESS_NONCOMPLETION",
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "PIN_STALENESS_QUERY_UNAVAILABLE",
-          "PIN_STALENESS_RESPONSE_INVALID"
-        ],
-        "target_check": "adoption.pin-staleness",
-        "target_finding": "TRAILING_WARNING_ONLY",
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "known query/response errors explicitly SystemExit(0); unexpected errors are ignored by continue-on-error and job can remain green",
         "required_future_discriminant": "CURRENT | TRAILING | QUERY_UNAVAILABLE | EMPTY_RESPONSE | INVALID_RESPONSE | INTERNAL_FAILURE; optional non-completion remains visible",
@@ -14037,7 +14305,25 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_CONTINUE_ON_ERROR_ERASES_RESULT",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "adoption.pin-staleness"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "TRAILING_WARNING_ONLY"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PIN_STALENESS_QUERY_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PIN_STALENESS_RESPONSE_INVALID"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DECLARED-STAGE-JOB-CONDITION",
@@ -14055,13 +14341,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_SKIPPED"
         ],
-        "target_reason_codes": [
-          "DECLARED_STAGE_NOT_APPLICABLE",
-          "PREREQUISITE_FAILED",
-          "REQUIRED_OUTPUT_UNAVAILABLE"
-        ],
-        "target_check": "declared-stage canonical plan",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "DRAFT, failed/skipped structure dependency and missing adoption_stage output can all prevent execution; GitHub reports a skipped job without an AAP state",
         "required_future_discriminant": "trusted pre-scheduling state distinguishing stage N/A, failed dependency and missing/invalid output; blocked_by required for prerequisite failure",
@@ -14074,7 +14353,28 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_FALSE_GREEN_PROVIDER_SKIP",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "declared-stage canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "DECLARED_STAGE_NOT_APPLICABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PREREQUISITE_FAILED"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "REQUIRED_OUTPUT_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DECLARED-STAGE-VALIDATOR",
@@ -14100,11 +14400,6 @@
           "TERM_OUTPUT_LOST",
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "BOUND_TO_OWNING_CHECK_REASON"
-        ],
-        "target_check": "declared-stage canonical plan",
-        "target_finding": "FROM_REPORT",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "validator exit directly becomes step/job conclusion; no typed result handoff validation",
         "required_future_discriminant": "typed report, exact plan/catalog binding and exit agreement",
@@ -14119,7 +14414,19 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_OUTPUT_BINDING",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "declared-stage canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "FINDINGS_FROM_TYPED_REPORT"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REASON_FROM_OWNING_CHECK"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DRIFT-JOB-CONDITION",
@@ -14137,17 +14444,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_SKIPPED"
         ],
-        "target_reason_codes": [
-          "CALLER_EVENT_UNSUPPORTED",
-          "MANUAL_RUN_HAS_NO_REVIEW_TRANSITION",
-          "MERGE_GROUP_HAS_NO_SINGLE_PR_TRANSITION",
-          "PRIVILEGED_PULL_REQUEST_TARGET_UNSUPPORTED",
-          "PUSH_HAS_NO_REVIEW_TRANSITION",
-          "PUSH_TARGET_SNAPSHOT_UNAVAILABLE",
-          "SCHEDULE_HAS_NO_REVIEW_TRANSITION"
-        ],
-        "target_check": "transition-drift capability",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "all non-pull_request callers skip the job and emit no applicability/completion record",
         "required_future_discriminant": "ADR 0009 event classification must occur in a trusted always-reachable adapter before job gating; provider skip never substitutes for the state",
@@ -14160,7 +14456,44 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "CLOSED_EVENT_VOCABULARY_RUNTIME_ABSENT",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "transition-drift capability"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "CALLER_EVENT_UNSUPPORTED"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "MANUAL_RUN_HAS_NO_REVIEW_TRANSITION"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "MERGE_GROUP_HAS_NO_SINGLE_PR_TRANSITION"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PRIVILEGED_PULL_REQUEST_TARGET_UNSUPPORTED"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PUSH_HAS_NO_REVIEW_TRANSITION"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PUSH_TARGET_SNAPSHOT_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "SCHEDULE_HAS_NO_REVIEW_TRANSITION"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DRIFT-CHANGESET",
@@ -14178,13 +14511,6 @@
         "proposed_terminal_families": [
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "CHANGESET_UNAVAILABLE",
-          "INTERNAL_FAILURE",
-          "ROUTING_INPUT_LIMIT_EXCEEDED"
-        ],
-        "target_check": "transition-drift capability",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "Git diff failure, nonempty Git diagnostics, file I/O, malformed record handling and size limit failures become raw step failure",
         "required_future_discriminant": "GIT_START_FAILED | GIT_EXIT_NONZERO | GIT_DIAGNOSTIC_UNTRUSTED | INPUT_LIMIT | INPUT_IO | NORMALIZATION_INTERNAL",
@@ -14199,7 +14525,28 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_RAW_STEP_FAILURE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "transition-drift capability"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "CHANGESET_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "INTERNAL_FAILURE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "ROUTING_INPUT_LIMIT_EXCEEDED"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DRIFT-PR-BODY",
@@ -14217,11 +14564,6 @@
         "proposed_terminal_families": [
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "PR_BODY_UNAVAILABLE"
-        ],
-        "target_check": "transition-drift capability",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "printf stages PR prose; process/I/O failure becomes raw step failure and later steps are skipped",
         "required_future_discriminant": "authoritative empty body versus failure to materialize provider body bytes",
@@ -14236,7 +14578,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_NO_OUTPUT_ACKNOWLEDGEMENT",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "transition-drift capability"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PR_BODY_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DRIFT-MATERIALIZER",
@@ -14262,13 +14617,6 @@
           "TERM_REPORT_FAIL",
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "ASSURANCE_EVIDENCE_UNAVAILABLE",
-          "INTERNAL_FAILURE",
-          "PULL_REQUEST_REVISIONS_UNAVAILABLE"
-        ],
-        "target_check": "transition-drift capability",
-        "target_finding": "ONLY_DETERMINISTIC_POLICY_OR_TRUST_CONDITIONS",
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "deterministic conditions, missing revisions, Git start/exit/stderr failures, 60-second evidence deadline, resource limits, malformed Git output, file I/O and uncaught internal errors collapse to raw exit 1",
         "required_future_discriminant": "separate acquired-condition findings from REVISION_UNAVAILABLE and EVIDENCE_START_FAILED | EVIDENCE_EXIT_NONZERO | EVIDENCE_DEADLINE | EVIDENCE_LIMIT | EVIDENCE_MALFORMED_OUTPUT | EVIDENCE_IO | INTERNAL_FAILURE",
@@ -14283,7 +14631,29 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_MAJOR_COLLAPSE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "transition-drift capability"
+        },
+        "finding_source_ref": {
+          "kind": "CLOSED_SOURCE_SELECTOR",
+          "selector": "ONLY_DETERMINISTIC_POLICY_OR_TRUST_CONDITIONS"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "ASSURANCE_EVIDENCE_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "INTERNAL_FAILURE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PULL_REQUEST_REVISIONS_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-DRIFT-VALIDATOR",
@@ -14309,11 +14679,6 @@
           "TERM_OUTPUT_LOST",
           "TERM_PROCESS_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "BOUND_TO_OWNING_CHECK_REASON"
-        ],
-        "target_check": "transition-drift canonical plan",
-        "target_finding": "FROM_REPORT",
         "compatibility_disposition": "PRESERVE_WITH_STRUCTURED_IDENTITY",
         "current_observable_projection": "validator exit directly becomes drift job conclusion; no typed result handoff validation",
         "required_future_discriminant": "typed report, exact plan/catalog/event binding and exit agreement",
@@ -14328,7 +14693,19 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_OUTPUT_BINDING",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "transition-drift canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "FINDINGS_FROM_TYPED_REPORT"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REASON_FROM_OWNING_CHECK"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-IMPLICIT-STEP-SKIP",
@@ -14350,11 +14727,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_SKIPPED"
         ],
-        "target_reason_codes": [
-          "PREREQUISITE_FAILED"
-        ],
-        "target_check": "EACH_SKIPPED_PLANNED_CHECK",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "default success() semantics skip later steps after a failure; individual planned checks do not receive explicit completion states",
         "required_future_discriminant": "provider step graph bound to canonical plan; blocked_by points to an existing failed or noncompleted prerequisite",
@@ -14369,7 +14741,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_PROVIDER_GRAPH_NOT_MATERIALIZED",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "EACH_SKIPPED_PLANNED_CHECK"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PREREQUISITE_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-CONTINUE-ON-ERROR",
@@ -14388,13 +14773,6 @@
           "TERM_PROCESS_NONCOMPLETION",
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "INTERNAL_FAILURE",
-          "PIN_STALENESS_QUERY_UNAVAILABLE",
-          "PIN_STALENESS_RESPONSE_INVALID"
-        ],
-        "target_check": "adoption.pin-staleness",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "failed staleness step does not fail the job and no later adapter reads steps outcome/conclusion",
         "required_future_discriminant": "capture both provider step outcome and conclusion, plus a typed optional check state",
@@ -14409,7 +14787,28 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_FAILURE_ERASED",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "adoption.pin-staleness"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "INTERNAL_FAILURE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PIN_STALENESS_QUERY_UNAVAILABLE"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "PIN_STALENESS_RESPONSE_INVALID"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-CANCELLATION",
@@ -14428,11 +14827,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_CANCELLED"
         ],
-        "target_reason_codes": [
-          "RUN_CANCELLED"
-        ],
-        "target_check": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "provider cancellation can stop all remaining steps; no in-workflow finalizer or trusted report is guaranteed",
         "required_future_discriminant": "trusted provider-side observation outside the cancelled job; an always() step alone is insufficient",
@@ -14445,7 +14839,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUN_CANCELLED"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-DEFINITION-OR-DISPATCH-REJECTED",
@@ -14464,11 +14871,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_NONCOMPLETION"
         ],
-        "target_reason_codes": [
-          "WORKFLOW_DISPATCH_UNAVAILABLE"
-        ],
-        "target_check": "CANONICAL_PLAN_INVOCATION",
-        "target_finding": null,
         "compatibility_disposition": "DEFER_TO_PROVIDER_CONTRACT",
         "current_observable_projection": "invalid workflow definition, unsupported call contract, provider policy rejection or dispatch failure can prevent every job from being created; repository code emits no report",
         "required_future_discriminant": "provider-side invocation record distinguishing definition rejection, call-input rejection, policy rejection and provider dispatch failure",
@@ -14481,7 +14883,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER_PRE_JOB",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "CANONICAL_PLAN_INVOCATION"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "WORKFLOW_DISPATCH_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-ADOPTER-CALLER-INVOCATION-UNREACHABLE",
@@ -14501,11 +14916,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_SKIPPED"
         ],
-        "target_reason_codes": [
-          "CALLER_INVOCATION_UNREACHABLE"
-        ],
-        "target_check": "CANONICAL_PLAN_INVOCATION",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "the reusable workflow cannot observe a caller call-job hidden behind false if/needs or absent on a required activity; a skipped caller job may be reported successful without invoking this workflow",
         "required_future_discriminant": "accepted static caller provenance plus provider invocation identity for every required activity; absence must invalidate complete GateCoverage",
@@ -14518,7 +14928,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_OUTSIDE_REUSABLE_WORKFLOW_OBSERVABILITY",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "CANONICAL_PLAN_INVOCATION"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "CALLER_INVOCATION_UNREACHABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-RUNNER-UNAVAILABLE-OR-LOST",
@@ -14543,12 +14966,6 @@
           "TERM_PROVIDER_NONCOMPLETION",
           "TERM_OUTPUT_LOST"
         ],
-        "target_reason_codes": [
-          "RUNNER_LOST",
-          "RUNNER_UNAVAILABLE"
-        ],
-        "target_check": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "a job may remain queued, fail to acquire a runner, or lose its runner before output; no repository finalizer is guaranteed",
         "required_future_discriminant": "provider-side job lifecycle observation outside the affected runner, including queued/start/last-heartbeat/conclusion facts",
@@ -14563,7 +14980,24 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNNER_LOST"
+          },
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUNNER_UNAVAILABLE"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-TIMEOUT",
@@ -14582,11 +15016,6 @@
         "proposed_terminal_families": [
           "TERM_PROVIDER_TIMED_OUT"
         ],
-        "target_reason_codes": [
-          "RUN_DEADLINE_EXCEEDED"
-        ],
-        "target_check": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS",
-        "target_finding": null,
         "compatibility_disposition": "PRESERVE_GATE_STRENGTH_ADD_IDENTITY",
         "current_observable_projection": "neither workflow declares timeout-minutes; provider maximum or external cancellation can end work without a typed report",
         "required_future_discriminant": "accepted per-job deadline plus trusted provider-side timed_out conclusion distinct from cancellation",
@@ -14599,7 +15028,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER_NO_EXPLICIT_DEADLINE",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CHECK_SET_SELECTOR",
+          "selector": "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "RUN_DEADLINE_EXCEEDED"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-STATUS-PUBLICATION",
@@ -14620,11 +15062,6 @@
         "proposed_terminal_families": [
           "TERM_STATUS_PUBLICATION_FAILED"
         ],
-        "target_reason_codes": [
-          "STATUS_PUBLICATION_FAILED"
-        ],
-        "target_check": "CANONICAL_PLAN_STATUS_IDENTITY",
-        "target_finding": null,
         "compatibility_disposition": "DEFER_TO_PROVIDER_CONTRACT",
         "current_observable_projection": "GitHub derives check/status conclusions from jobs; no explicit publisher or durable consumer acknowledgement binds the status identity to a typed report",
         "required_future_discriminant": "provider acknowledgement containing non-substitutable status identity, producer revision, report digest, plan identity and final conclusion; publisher cannot self-attest delivery",
@@ -14637,7 +15074,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_EXTERNAL_PROVIDER",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "CANONICAL_PLAN_STATUS_IDENTITY"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "STATUS_PUBLICATION_FAILED"
+          }
+        ]
       },
       {
         "family_id": "TP-WORKFLOW-LOST-REUSABLE-OUTPUT",
@@ -14657,11 +15107,6 @@
         "proposed_terminal_families": [
           "TERM_OUTPUT_LOST"
         ],
-        "target_reason_codes": [
-          "REQUIRED_OUTPUT_UNAVAILABLE"
-        ],
-        "target_check": "declared-stage canonical plan",
-        "target_finding": null,
         "compatibility_disposition": "INTENDED_CHANGE_REQUIRED",
         "current_observable_projection": "missing, malformed or stale reusable output has no independent terminal record and can alter downstream reachability",
         "required_future_discriminant": "output presence, grammar, producer step outcome, exact source report digest and consumer acknowledgement",
@@ -14676,7 +15121,20 @@
         "current_runtime_projection_ready": false,
         "family_inventory_included": true,
         "draft_closure_status": "OPEN_NO_END_TO_END_BINDING",
-        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1"
+        "provider_propagation_contract_ref": "GITHUB_PROVIDER_PROPAGATION_CANDIDATE_1",
+        "target_owner_ref": {
+          "kind": "CANDIDATE_PLAN_ROLE",
+          "role": "declared-stage canonical plan"
+        },
+        "finding_source_ref": {
+          "kind": "NONE"
+        },
+        "reason_source_refs": [
+          {
+            "kind": "REGISTERED_REASON",
+            "reason_code": "REQUIRED_OUTPUT_UNAVAILABLE"
+          }
+        ]
       }
     ],
     "coverage_summary": {
@@ -14686,7 +15144,7 @@
       "every_runtime_projection_unavailable": true,
       "every_family_has_source_locator": true,
       "every_family_has_future_discriminant": true,
-      "reason_code_count": 35,
+      "reason_code_count": 34,
       "inventory_family_set_closed": true,
       "current_runtime_projection_ready": false
     },
@@ -14735,6 +15193,74 @@
         "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks"
       ],
       "adapter_observation_ready": false
+    },
+    "typed_reference_contract": {
+      "closed": true,
+      "runtime_identity": false,
+      "owner_ref_kinds": [
+        "NONE",
+        "PUBLIC_CHECK",
+        "WORKFLOW_JOB",
+        "CHECK_SET_SELECTOR",
+        "RUN_BOUNDARY_SELECTOR",
+        "CANDIDATE_PLAN_ROLE"
+      ],
+      "check_set_selectors": [
+        "ALL_INCOMPLETE_COMPLETION_REQUIRED_CHECKS",
+        "CURRENT_JOB_PLAN",
+        "EACH_SKIPPED_PLANNED_CHECK",
+        "FROM_TYPED_PLAN",
+        "ONE_OR_MORE_COMPLETION_REQUIRED_CHECKS"
+      ],
+      "run_boundary_selectors": [
+        "CURRENT_OR_RUN_BOUNDARY"
+      ],
+      "candidate_plan_roles": [
+        "CANONICAL_PLAN_INVOCATION",
+        "CANONICAL_PLAN_STATUS_IDENTITY",
+        "adoption.pin-staleness",
+        "adoption.release-tag-binding",
+        "adoption.upstream-pin",
+        "declared-stage canonical plan",
+        "declared-stage plan",
+        "release.regression-suite",
+        "release.workflow-static-analysis",
+        "self-check canonical plan",
+        "self-check.bootstrap",
+        "structure canonical plan",
+        "transition-drift canonical plan",
+        "transition-drift capability",
+        "workflow.trusted-checkout-boundary"
+      ],
+      "finding_source_ref_kinds": [
+        "NONE",
+        "REGISTERED_FINDING",
+        "FINDINGS_FROM_TYPED_SEMANTIC_RESULTS",
+        "FINDINGS_FROM_TYPED_REPORT",
+        "CLOSED_SOURCE_SELECTOR"
+      ],
+      "finding_source_selectors": [
+        "DETERMINISTIC_PIN_CONDITIONS",
+        "OCCUPIED_PATH_ONLY",
+        "ONLY_DETERMINISTIC_POLICY_OR_TRUST_CONDITIONS",
+        "ONLY_IF_ACTION_OUTPUT_IS_ADAPTED_TO_TYPED_FINDINGS",
+        "TAG_ABSENCE_ONLY_IF_DETERMINISTICALLY_ESTABLISHED",
+        "TRAILING_WARNING_ONLY"
+      ],
+      "reason_source_ref_kinds": [
+        "REGISTERED_REASON",
+        "REASON_FROM_OWNING_CHECK"
+      ],
+      "public_check_validation": "REQUIRE_CATALOG_MEMBERSHIP",
+      "registered_finding_validation": "REQUIRE_CATALOG_MEMBERSHIP",
+      "registered_reason_validation": "REQUIRE_CATALOG_MEMBERSHIP",
+      "workflow_job_validation": "REQUIRE_EXACT_WORKFLOW_PATH_AND_JOB_ID",
+      "on_unregistered_or_unlisted_reference": "REJECT",
+      "reason_from_owning_check_shape": {
+        "exact_keys": [
+          "kind"
+        ]
+      }
     }
   },
   "workflow_surface_inventory": [
@@ -15234,16 +15760,13 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.split-core-draft-baseline-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "core-lite-draft-pass",
@@ -15251,16 +15774,13 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.lite-core-draft-baseline-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "archived-reviewed-pass",
@@ -15268,13 +15788,9 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.adopter.archived-exclusive-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "adoption.bundle-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           },
           {
             "internal_condition_key": "phase0.internal.archived.historical-facts-mechanical-verification-limited",
@@ -15290,7 +15806,8 @@
             "code": "F0001",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "transition-stage-downgrade-block",
@@ -15319,7 +15836,8 @@
             "code": "F0002",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "trust-path-traversal-block",
@@ -15354,7 +15872,8 @@
             "code": "F0003",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "drift-routing-strict-block",
@@ -15383,7 +15902,8 @@
             "code": "F0004",
             "exact_multiplicity": 1
           }
-        ]
+        ],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       },
       {
         "case_id": "central-self-check-pass",
@@ -15391,18 +15911,17 @@
         "condition_projections": [
           {
             "internal_condition_key": "phase0.internal.self-check.pinned-tree-self-check-satisfied",
-            "projection_kind": "CHECK_COMPLETION",
-            "check_id": "profile.release-tree-conformance",
-            "state": {
-              "applicability": "APPLICABLE",
-              "completion": "COMPLETED",
-              "outcome": "PASS"
-            }
+            "projection_kind": "SELECTED_CONDITION_SATISFIED",
+            "public_check_completion": "DEFERRED_UNTIL_ADR_0004",
+            "compatibility_claim": "SELECTED_PHASE0_CONDITION_ONLY"
           }
         ],
-        "exact_findings": []
+        "exact_findings": [],
+        "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
       }
-    ]
+    ],
+    "public_check_state_bound": false,
+    "finding_set_scope": "SELECTED_PHASE0_CONDITION_SET_ONLY"
   },
   "compatibility_dispositions": {
     "allowed": [
@@ -15417,11 +15936,29 @@
     "all_309_semantic_groups_exactly_once": true,
     "all_243_direct_emitter_lines_exactly_once_except_disjoint_line_1699": true,
     "all_84_upstream_producer_lines_exactly_once": true,
-    "all_targets_registered_in_catalog": true,
     "all_callsite_dispatch_sets_closed": true,
     "unlisted_callsite_rejected": true,
     "phase0_case_set_and_multiplicity_exact": true,
     "candidate_cannot_accept_itself": true,
-    "runtime_and_parity_authorization_false": true
-  }
+    "runtime_and_parity_authorization_false": true,
+    "all_semantic_mapping_identity_targets_registered_in_catalog": true,
+    "all_terminal_projection_references_closed": true,
+    "phase0_public_check_state_bound": false,
+    "authority_source_ids_closed": true,
+    "review_only_verifier_required_before_acceptance": true,
+    "compatibility_change_manifest_exact": true,
+    "normalized_inventory_reproducible": true
+  },
+  "review_artifact_refs": [
+    {
+      "kind": "COMPATIBILITY_CHANGE_MANIFEST",
+      "path": "docs/evidence/v0.5/diagnostic-catalog/compatibility-changes-r1.json",
+      "raw_sha256": "499a7a571502d0d70289d00f2bf655673da36c73c82bfb9df4c25913b9be0f7b"
+    },
+    {
+      "kind": "NORMALIZED_SOURCE_INVENTORY",
+      "path": "docs/evidence/v0.5/diagnostic-catalog/normalized-inventory-r1.json",
+      "raw_sha256": "aa3b9a5d30e41b2e78cb9e45c736ec697ccb04393ab6c300b82ce0e796cbc305"
+    }
+  ]
 }

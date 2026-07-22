@@ -27,14 +27,23 @@ acceptance sequence in
   exact release source and closes semantic producers separately from terminal
   paths. It also projects the seven accepted Phase 0 conditions without
   changing their ledger bytes.
+- [`compatibility-changes-r1.json`](compatibility-changes-r1.json) records the
+  legacy collapse, proposed distinction, rationale, impact, and migration note
+  for the closed set of 33 `INTENDED_CHANGE_PENDING` allocations.
+- [`normalized-inventory-r1.json`](normalized-inventory-r1.json) preserves the
+  deterministic source inventory consumed by the review-only verifier.
 
 | Review artifact | Raw SHA-256 |
 |---|---|
-| `catalog-r1.json` | `4293658b4fea19180f8593a5d4d287cd33ff56ca3982fca4ad8134630f3ee42b` |
-| `legacy-v0.4.0-mapping-r1.json` | `29d41201faa0322aab0f067698af7590787fa5cc8b46cc8efe5969ebb382b8d1` |
+| `catalog-r1.json` | `da541828f462784eeb504af1436e6c689dc7f429814a18c729e2dc48362a0cec` |
+| `legacy-v0.4.0-mapping-r1.json` | `281803836ca4034a3cf441c46b6e608434dea9245e5fa18c90e2954deac79100` |
+| `compatibility-changes-r1.json` | `499a7a571502d0d70289d00f2bf655673da36c73c82bfb9df4c25913b9be0f7b` |
+| `normalized-inventory-r1.json` | `aa3b9a5d30e41b2e78cb9e45c736ec697ccb04393ab6c300b82ce0e796cbc305` |
 
-The mapping binds the catalog hash. These values are ordinary review evidence,
-not ADR 0003 canonical serialization or an acceptance digest.
+The mapping binds the catalog hash. The catalog and mapping also bind the
+compatibility-change and normalized-inventory artifacts. These values are
+ordinary review evidence, not ADR 0003 canonical serialization or an
+acceptance digest.
 
 These JSON files are decision data, not the public v0.5 report or catalog wire
 format. ADR 0003 still owns field spelling, canonical serialization, digest,
@@ -58,6 +67,12 @@ byte-identical on the Slice 50B working base
 Line locators in the mapping always mean those exact bytes, never an implicit
 latest file.
 
+The catalog's `authority_sources` registry separately binds every mutable
+upstream rationale document to repository, commit, path, and raw SHA-256.
+Candidate-local compatibility labels resolve to the proposed decision ID; they
+do not pretend to be external authority. Allocation becomes normative only if
+a later acceptance record binds the exact candidate bytes.
+
 ## What “closed” means here
 
 The mapping has independent closed sets for:
@@ -79,8 +94,15 @@ provider conclusion, the row records the required future discriminant and is
 parsing rendered English. Unknown source or provider families fail closure;
 they do not inherit a catch-all success.
 
-The catalog contains 113 proposed finding identities. Exactly 112 bind one or
-more v0.4 producer groups. Only `F0072` is a prospective allocation with an
+Terminal `target_check`/`target_finding` sentinel strings are not public
+identities. Terminal crosswalk `schema_version: 2` replaces the prior draft's
+strings with closed typed owner, finding-source, and reason-source references.
+Public identities must resolve in the catalog;
+candidate plan roles and selectors resolve only in their explicit non-runtime
+vocabularies. ADR 0004 still owns the future canonical plan.
+
+The catalog contains 113 proposed finding-code allocations. Exactly 112 bind
+one or more v0.4 producer groups. Only `F0072` is a prospective allocation with an
 explicit closed negative v0.4 inventory; the mapping does not pretend that
 v0.4 emitted it. `F0015`, `F0071`, and `F0097` are instead bound to closed
 v0.4 source predicates that require a future typed discriminant. All four
@@ -95,6 +117,12 @@ The compatibility dispositions are:
   before preserving or changing a known defect. Revision 1 allocates no row
   with this disposition.
 
+Register input handling preserves the ADR 0002 finding-versus-reason boundary.
+A safely acquired register rejected by bounded YAML parsing maps to
+`adoption.document-parse` and `F0005`/`F0006`/`F0007`/`F0008`; an inaccessible
+register remains `INPUT_FILE_UNAVAILABLE`. `F0036` is reserved for actual
+register-schema evaluation after parsing succeeds.
+
 ## Positive completion is not inferred from prose
 
 The 32 legacy `OK:` emitters are evidence that a renderer call was reached;
@@ -107,23 +135,29 @@ flow observations, not public check state.
 ## Phase 0 selected projection
 
 The projection below is intentionally narrower than an ADR 0004 plan. It maps
-only the accepted seven-seed condition set and does not bind
+only the accepted seven-seed condition set and does not bind public check
+completion,
 `completion_required`, `GateCoverage`, `GatePlanIdentity`, complete dependency
 edges, `OverallOutcome`, or public exit projection.
 
-| Phase 0 case | Selected public result |
+| Phase 0 case | Selected condition projection |
 |---|---|
-| split/core DRAFT | `adoption.bundle-conformance` completed with no selected finding |
-| lite/core DRAFT | `adoption.bundle-conformance` completed with no selected finding |
-| archived reviewed | `adoption.archived-history-boundary` completed with warning `F0001` |
+| split/core DRAFT | selected baseline condition satisfied; public check completion deferred to ADR 0004 |
+| lite/core DRAFT | selected baseline condition satisfied; public check completion deferred to ADR 0004 |
+| archived reviewed | selected archived condition satisfied plus warning `F0001` |
 | stage downgrade | `transition.policy-regression` completed with blocking `F0002` |
 | security path escape | `adoption.repository-containment` completed with blocking `F0003` |
 | strict unrouted component | `transition.component-routing` completed with blocking `F0004` |
-| pinned release self-check | `profile.release-tree-conformance` completed with no selected finding |
+| pinned release self-check | selected release-tree condition satisfied; public check completion deferred to ADR 0004 |
 
 The trust-path seed produces two legacy `ERROR:` lines but one semantic
 `F0003` instance. The mapping fixes that collapse explicitly; line count is not
 finding multiplicity.
+
+`F0002` includes the immutable ordered relation
+`head_stage < base_stage` over `DRAFT < HUMAN_REVIEWED < CONFORMANT`; independent
+enum membership is not enough to construct that finding. The v0.4 source
+binding must prove the same catalog predicate or reject the instance.
 
 ## Required implementation discriminants
 
@@ -150,7 +184,7 @@ Every mapped finding that has required facts carries a closed binding for the
 exact required key set. Source-fixed values are literal; context-dependent
 values name a registered trusted semantic input or a closed source-predicate
 dispatch. Missing, extra, null, unknown, or out-of-domain facts are rejected.
-These bindings cover all 78 finding leaves that require facts; they are mapping
+These bindings cover all 83 finding leaves that require facts; they are mapping
 evidence only and do not define ADR 0003 wire spelling.
 
 GitHub step `outcome` and effective step `conclusion` are separate axes. The
@@ -178,12 +212,19 @@ implementation may consume them.
 
 ## Reconciliation evidence
 
-The candidate was reconciled against independently generated inventories from
-the exact source:
+The candidate is reconciled against the committed normalized inventory derived
+from the exact source by:
 
-- 36 proposed public checks, 113 finding identities, and 41 non-completion
+```bash
+python scripts/verify_diagnostic_catalog_candidate.py
+```
+
+The verifier is standard-library, read-only review tooling. It is not imported
+by the validator or either workflow and cannot accept the candidate. It checks:
+
+- 36 proposed public checks, 113 proposed finding allocations, and 41 non-completion
   reasons;
-- 243 direct result emitters in 43 functions: 195 error, 16 warning, 32
+- 243 direct result emitters in 41 functions: 195 error, 16 warning, 32
   success;
 - 84 upstream producer branches, including all 50 regression branches;
 - 309 closed semantic groups: 198 direct findings, 27 typed non-completions,
@@ -191,15 +232,19 @@ the exact source:
   dispatches, five callsite-reason dispatches, four variant-and-callsite
   dispatches, five source-predicate dispatches, one context-state promotion,
   and six pre-plan invocation errors;
-- all 78 finding leaves with required facts bound by literal, closed source
+- all 83 finding leaves with required facts bound by literal, closed source
   predicate, or registered trusted-context contracts;
 - 30 direct `Report.emit` returns and eight `report.results` control reads;
 - all 41 parser, process, workflow, and provider terminal families; and
 - every job, step, guard, dependency, output, and provider-conclusion family
   across five jobs and 36 steps in the two runtime workflows.
 
-Review validation rejects duplicate identifiers, dangling owners or reasons,
-uncovered or multiply covered source locators, overlapping mapping predicates,
-unregistered targets, and any Phase 0 projection mismatch. Test and workflow
-results belong to the named review-candidate checkpoint; they are not encoded
-as self-acceptance in these files.
+The verifier rejects duplicate identifiers, non-reciprocal finding source
+bindings (including callsite, variant, and predicate drift), out-of-schema fact
+values, unclosed typed terminal references, uncovered or multiply covered
+source locators, authority-source drift, catalog/hash mismatches, invalid F0002
+stage relations, register parse/schema conflation, forged Phase 0 public-check
+completion, and Phase 0 projection mismatch.
+Review records bind its exact inputs separately. Test and workflow results
+belong to the named review-candidate checkpoint; they are not encoded as
+self-acceptance in these files.
