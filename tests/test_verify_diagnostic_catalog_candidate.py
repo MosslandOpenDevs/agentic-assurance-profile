@@ -402,6 +402,36 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             )
             self.assertEqual(path.read_bytes(), NORMALIZED_INVENTORY.read_bytes())
 
+    def test_inventory_generation_does_not_require_old_cross_hashes(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "diagnostic_candidate_verifier_generation_test",
+            VERIFIER,
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory(
+            prefix="diagnostic-normalized-inventory-regeneration-test-"
+        ) as temporary:
+            path = Path(temporary) / "inventory.json"
+            with mock.patch.object(
+                module,
+                "validate_review_artifact_hash_references",
+                side_effect=AssertionError(
+                    "generation must not require the previous inventory hash"
+                ),
+            ):
+                report = module.verify(
+                    REPO_ROOT,
+                    CATALOG,
+                    MAPPING,
+                    COMPATIBILITY_CHANGES,
+                    path,
+                    write_inventory_path=path,
+                )
+        self.assertTrue(report["normalized_inventory_written"])
+
     def test_bound_release_source_hash_tamper_fails_closed(self) -> None:
         def tamper_catalog(catalog: dict) -> None:
             catalog["source_scope"]["exact_runtime_sources"][0][
