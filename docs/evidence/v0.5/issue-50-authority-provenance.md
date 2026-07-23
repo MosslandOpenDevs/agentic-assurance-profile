@@ -142,6 +142,13 @@ The following facts were checked against GitHub's official documentation on
 2026-07-22. The policy in ADR 0005 is an inference from the threat model; the
 provider documentation does not itself define AAP authority.
 
+The links below are mutable convenience references, not immutable authority
+artifacts. This evidence note binds only the bounded propositions stated here
+and their retrieval date; it authorizes no provider adapter. Any future adapter
+must pin the exact API version when the interface is versioned. It should also
+retain a reproducible source revision or snapshot for the provider claims on
+which its accepted contract relies.
+
 ### Pull-request reviews and protected branches
 
 GitHub can require approving reviews, code-owner review, dismissal of stale
@@ -188,8 +195,9 @@ Source: [REST API endpoints for pull-request reviews](https://docs.github.com/en
 
 A future adapter should therefore bind provider-issued review and account
 identifiers, the reviewed commit, the approval state observed at acceptance,
-and separately observed current or dismissal state rather than trust mutable
-prose or an in-repository URL alone. An adopter-recorded URL is display data:
+and later provider observations and accepted policy evaluations concerning
+dismissal, revocation, or staleness rather than trust mutable prose or an
+in-repository URL alone. An adopter-recorded URL is display data:
 authenticated API calls must be derived from canonical provider/repository/PR/
 review IDs and an allowlisted HTTPS origin, never by sending credentials to an
 arbitrary recorded URL. That would verify a narrower forge fact without
@@ -244,7 +252,7 @@ than liveness evidence.
 | Forge review event | The provider recorded a named account/event/state for a commit. | Exclusive human control of the account, informed review, or distinct real-world personhood. |
 | CODEOWNERS + required review | The configured owner account/team and provider gate may constrain merge. | Multiple active humans, review quality, or historical continuous enforcement without retained evidence. |
 | `SOLE_OWNER_ATTESTED` | The repository reports owner decision and no independent approval. | Independent review. |
-| `INDEPENDENTLY_REVIEWED` | The repository reports an actual different human maintainer's qualifying approval. | Machine-authenticated real-world identity unless a separate anchor establishes it. |
+| `INDEPENDENTLY_REVIEWED` | The repository reports a qualifying approval by one actual human maintainer, distinct from another actual human maintainer who held owner-decision responsibility for the change. | Machine-authenticated real-world identity unless a separate anchor establishes it. |
 | Valid commit/tag signature | The signature/key or provider signing path verified for the bytes. | Human presence, exclusive key custody, understanding, or approval. |
 | OIDC token or artifact attestation | Workload/producer and artifact provenance under the issuer's claims. | Human review, human actor liveness, or policy acceptance. |
 | Green CI | The named automation completed under its producer assumptions. | Human authority, complete semantics, or freedom from bypass/gaming. |
@@ -263,7 +271,9 @@ than liveness evidence.
    path, valid cryptography proves the signing event but not the decision
    maker.
 4. **Sole owner.** The owner cannot manufacture independent human review by
-   self-approval or a second account. The honest process fact is
+   self-approval, a second account, or having an agent or bot author, draft, or
+   open the change that the same owner sponsors and reviews. Delegated drafting
+   does not create a second human maintainer. The honest process fact is
    `SOLE_OWNER_ATTESTED` plus separately reported automation.
 5. **Mutable control plane.** Administrators, bypass actors, team membership,
    rulesets, stale-review policy, and signing configuration may change. Current
@@ -353,7 +363,11 @@ cover at least:
 - dismissed/stale approvals, a latest-push mismatch, author/co-author/latest-
   pusher conflicts, roster changes, bypass, and historical-setting gaps;
 - sole-owner, same-person second-account, AI, bot, external-opinion, and green
-  CI cases that must never become independent human review;
+  CI cases that must never become independent human review, including an
+  agent- or bot-authored, drafted, or opened change approved by the same sole
+  human maintainer who sponsors or owns it, plus missing, conflicting, or
+  disputed human identity, maintainer eligibility, and authorship or
+  owner-decision relationships;
 - provider absence, `401`, `403`, `404`, rate limit, timeout, malformed data,
   and unsupported host as typed non-completion rather than PASS;
 - signatures, OIDC, and artifact attestations remaining orthogonal to human

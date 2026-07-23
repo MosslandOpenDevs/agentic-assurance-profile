@@ -168,6 +168,18 @@ descriptions of what actually occurred:
 - `AUTOMATION_VERIFIED` records mechanical evidence and is independent of both
   human-review classes.
 
+For this repository, `INDEPENDENTLY_REVIEWED` therefore requires two distinct
+actual human maintainers in the bound process: the human maintainer exercising
+owner-decision responsibility for the change and a different approving human
+maintainer who did not substantively author it. An agent- or bot-authored,
+drafted, or opened change does not supply the missing second human maintainer,
+and delegating drafting to automation does not sever the owner maintainer's
+responsibility. If either person's actual-human identity, maintainer
+eligibility, or authorship/owner-decision relationship is unknown or disputed,
+the repository must not report `INDEPENDENTLY_REVIEWED`. It may report
+`SOLE_OWNER_ATTESTED` only when that class's own facts are established;
+otherwise the human-review class remains not established.
+
 An AI review, a second account controlled by the same person, an external
 technical opinion that is not a qualifying maintainer approval, a bot review,
 or green CI is not `INDEPENDENTLY_REVIEWED`. GitHub's inability to accept
@@ -214,7 +226,8 @@ A future provider-specific authority-provenance capability is eligible only
 through a separate accepted decision and versioned catalog/plan. It must name:
 
 1. the exact claim it verifies and every stronger claim it declines;
-2. the provider and trusted API or transparency source;
+2. the provider, exact API version when the interface is versioned, and trusted
+   API or transparency source;
 3. canonical provider, repository, pull-request, review, and account
    identities and bindings to revision, diff, scope, time, and governance
    roster;
