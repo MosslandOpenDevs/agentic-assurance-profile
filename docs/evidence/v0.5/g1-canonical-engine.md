@@ -1,15 +1,14 @@
 # v0.5 Gate G1 — canonical engine decision record
 
-> **DRAFT — VERDICT PENDING — NON-NORMATIVE — NOT ACCEPTED**
+> **OUTCOME: `DEFER` — recorded in [#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56#issuecomment-5069013026) on 2026-07-24 — NON-NORMATIVE**
 >
 > This record marshals the go/no-go evidence for Gate G1 as defined in
 > [V0.5-DESIGN.md §"Gate G1 — canonical engine go/no-go"](../../V0.5-DESIGN.md).
 > It does not itself decide G1. Per the repository's decision pattern the
-> recorded outcome is an owner act in
-> [#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56);
-> until then the verdict field below stays empty. Nothing here changes an
-> adopter obligation; [PROFILE.md](../../../PROFILE.md) remains the only
-> normative text.
+> outcome is the owner's act in
+> [#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56#issuecomment-5069013026),
+> reproduced under "Recorded outcome" below. Nothing here changes an adopter
+> obligation; [PROFILE.md](../../../PROFILE.md) remains the only normative text.
 
 ## Question
 
@@ -73,11 +72,14 @@ recorded decision.
 
 ## Recorded outcome
 
-_Pending — the maintainer records `GO(scope)` / `DEFER` / `NO_GO` in_
-[#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56).
-When recorded as `DEFER` or `NO_GO`, update the `G1 final record` lifecycle line
-in [V0.5-DESIGN.md](../../V0.5-DESIGN.md) and freeze that design per its
-lifecycle contract.
+**`DEFER`** — recorded by the maintainer on 2026-07-24 in
+[#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56#issuecomment-5069013026).
+v0.5 ships the Foundation; the canonical Snapshot engine is not authorized on
+the current evidence and is revisited in a later minor. #57/#58 (G1-GO) stay
+blocked and the #56 spike is not opened. [V0.5-DESIGN.md](../../V0.5-DESIGN.md)
+is now **FROZEN** with `G1 final record = DEFER` per its lifecycle contract. A
+future GO requires a fresh reviewed G1 pre-registration meeting the §G1 evidence
+bar above.
 
 ## References
 
