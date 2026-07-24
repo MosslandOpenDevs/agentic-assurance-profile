@@ -4,6 +4,17 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Docs: restructured the README to about half its length (~490 → ~245 lines).
+  The sections that duplicated the detailed docs — Adoption model, Public
+  repository safety, Repository layout, and the issue-model sections — now give
+  a short overview and point to the canonical `docs/` ([ADOPTION.md](docs/ADOPTION.md),
+  [DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md)); the executable
+  adoption path is promoted to a dedicated **Adopting the profile (for an AI
+  agent or a human)** section so an agent that enters via the README can still
+  follow pin → classify → brownfield → optional `aap check` pre-flight → handoff
+  end-to-end. No section's normative content is dropped — it moves to the
+  canonical doc. `README.ko.md` mirrors the new structure. Documentation only.
+
 - Docs: prose diet + agent-actionability pass. Tightened the README (broke
   run-on sentences, sharpened the opening hook) and made the AI-agent adoption
   path an executable step list. Wired the `aap check` pre-flight into the agent

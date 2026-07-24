@@ -195,7 +195,7 @@ Who actually produced a piece of cited evidence, established from the commit rec
 
 ### Two-ledger model (두 장부 모델)
 
-Keeping two logically separate records: a **public assurance view** — a sanitized projection safe for the repository and its users — and a **restricted security record** for material that would be dangerous public: unpatched vulnerability details, privileged topology, private evidence, reporter identity. Public assurance is a projection, not the complete private security record; suspected exploitable findings route through the private channel, never a public issue. ([PROFILE.md §13](../PROFILE.md); [README](../README.md) "Two-ledger model"; [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md))
+Keeping two logically separate records: a **public assurance view** — a sanitized projection safe for the repository and its users — and a **restricted security record** for material that would be dangerous public: unpatched vulnerability details, privileged topology, private evidence, reporter identity. Public assurance is a projection, not the complete private security record; suspected exploitable findings route through the private channel, never a public issue. ([PROFILE.md §13](../PROFILE.md); [README](../README.md) "Public repository safety"; [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md))
 
 ## Related documents
 

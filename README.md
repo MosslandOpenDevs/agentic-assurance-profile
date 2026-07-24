@@ -32,6 +32,8 @@ Intent
 
 A project can adopt the profile without changing editor, programming language, agent vendor, deployment platform, or existing specification workflow.
 
+**Told to "apply this profile" to a repository (human or AI agent)?** Go to [Adopting the profile](#adopting-the-profile-for-an-ai-agent-or-a-human).
+
 ---
 
 ## Why this exists
@@ -116,54 +118,15 @@ Where a mechanism above produces output, the profile references that output rath
 
 ## Public repository safety
 
-### The central rule
-
 > **Public assurance is a sanitized projection of project knowledge, not the project's complete private security record.**
 
-Applying this profile to a public repository does not require publishing actionable weaknesses. Public transparency and responsible vulnerability handling are separate obligations.
+Applying this profile to a public repository does not require publishing actionable weaknesses: public transparency and responsible vulnerability handling are separate obligations. Keep a **two-ledger** split — a public assurance view (safe for the repo and its users) and a restricted security record (private advisory or another access-controlled system) for anything still actionable or sensitive. Safe-to-publish material includes product purpose and non-goals, high-level trust boundaries, stable claims and invariants, and sanitized evidence status; secrets, privileged topology, unpatched reproduction steps, and reporter identity stay restricted. When uncertain, route privately first — content committed publicly cannot be made meaningfully private by deleting the latest version.
 
-### Two-ledger model
+Assurance material carries a disclosure class — `PUBLIC`, `SUMMARY_ONLY`, `RESTRICTED`, or `EMBARGOED` (defined in [PROFILE.md §13](PROFILE.md) and [docs/GLOSSARY.md](docs/GLOSSARY.md)). A control may be published as "under restricted review" only when that status does not itself reveal the attack path; omit even the status when disclosure would create material risk.
 
-Use two logically separate records:
+**Security reporting** — every public adopting repository must ship a `SECURITY.md`, enable GitHub **Private Vulnerability Reporting**, route suspected exploitable vulnerabilities away from public Issues into a draft Security Advisory for triage and coordinated disclosure, and publish only a sanitized profile update after a fix or disclosure is approved.
 
-1. **Public assurance view** — safe for the repository and its users.
-2. **Restricted security record** — maintained through private security advisories, a private tracker, or another access-controlled system.
-
-| Generally safe to publish | Keep restricted while actionable or sensitive |
-|---|---|
-| Product purpose and explicit non-goals | Secrets, tokens, keys, credentials, or personal data |
-| High-level trust boundaries | Internal hostnames, privileged topology, or access paths that materially reduce attack cost |
-| Stable claim and invariant statements | Reproduction steps or proof-of-concept for an unpatched vulnerability |
-| Non-sensitive control categories | Exact bypass conditions for an active control gap |
-| Test names and reproducible public checks | Sensitive logs, production snapshots, private evidence, or user records |
-| Sanitized evidence status | Embargoed findings and affected-version analysis before coordinated disclosure |
-| Publicly acceptable limitations | Residuals whose details reveal an immediately exploitable weakness |
-| Published advisories after coordination | Private reporter identity or confidential correspondence |
-
-When uncertain, route the report privately first. It can be sanitized and published later; information committed publicly cannot be made meaningfully private by deleting the latest version.
-
-### Disclosure classes
-
-Projects may classify assurance material as:
-
-- `PUBLIC` — full detail may be committed publicly;
-- `SUMMARY_ONLY` — publish only a non-actionable statement and status;
-- `RESTRICTED` — do not commit the material to a public repository;
-- `EMBARGOED` — hold privately until a fix and coordinated disclosure decision.
-
-The public profile may state that a control or evidence obligation is under restricted review, but it should not reveal the attack path. Even that status should be omitted when disclosure would itself create material risk.
-
-### Security reporting
-
-Every public adopting repository should:
-
-1. include a `SECURITY.md`;
-2. enable GitHub **Private Vulnerability Reporting** where available;
-3. direct suspected exploitable vulnerabilities away from public Issues;
-4. use a draft GitHub Security Advisory or another private channel for triage, reproduction, remediation, and coordinated disclosure;
-5. publish only a sanitized profile update after the issue is fixed or disclosure is otherwise approved.
-
-See [SECURITY.md](SECURITY.md) and [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md).
+See [SECURITY.md](SECURITY.md) and [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the security-reporting lifecycle and how disclosure classes route through issues and advisories.
 
 ---
 
@@ -173,30 +136,9 @@ The division of responsibility is simple:
 
 > **Profile artifacts describe durable project state. Issues track work required to change or clarify that state.**
 
-| GitHub object or repository artifact | Function |
-|---|---|
-| `PROFILE.md` | Generic normative obligations of this profile |
-| Local claims, invariants, and residuals | Current project truth and accepted uncertainty |
-| GitHub Issue | Proposal, question, non-sensitive gap, or work item |
-| Pull Request | Reviewable change to implementation and/or profile artifacts |
-| CI and evidence artifact | Reproducible support for a claim or invariant |
-| GitHub Security Advisory | Confidential handling of an exploitable or sensitive vulnerability |
-| Release/tag | Versioned snapshot of code, profile pin, evidence, and residual state |
+`PROFILE.md` plus the local claims, invariants, and residuals are the durable truth; Issues, pull requests, CI evidence, Security Advisories, and release tags are the work and evidence that move that state. Closing an Issue or merging a pull request does **not** by itself resolve an assurance item — a change lands only when the durable artifacts (claims, invariants, residuals) and their evidence are updated too.
 
-### Stable IDs, not issue numbers, define meaning
-
-Profile requirements and local assurance items should have stable IDs, for example:
-
-```text
-AAP-CORE-004
-CLAIM-IDENTITY-002
-INV-AUTH-007
-RES-DATA-003
-```
-
-Issues and pull requests reference those IDs. The IDs must not be derived from GitHub issue numbers, because issues may be moved, closed, duplicated, or split while the assurance item remains part of the system's history.
-
-Example issue field:
+Profile requirements and local assurance items carry stable IDs (`AAP-CORE-004`, `CLAIM-IDENTITY-002`, `INV-AUTH-007`, `RES-DATA-003`). Issues and pull requests reference those IDs; the IDs are never derived from GitHub issue numbers, which may be moved, closed, duplicated, or split while the assurance item persists. Each relevant Issue and PR states its affected IDs:
 
 ```markdown
 ## Affected assurance IDs
@@ -206,212 +148,42 @@ Example issue field:
 - RES-DATA-003
 ```
 
-### Issue closure is not assurance resolution
-
-Merging code or closing an Issue is insufficient by itself. A change is complete only when the applicable durable artifacts are updated:
-
-```text
-Issue or change proposal
-  → Pull Request
-  → implementation / control update
-  → deterministic verification
-  → independent contradiction search when required
-  → evidence bound to revision or deployment
-  → claims / invariants / residuals updated
-  → Issue closed
-```
-
-A pull request may use `Closes #123` only when merging it actually completes the issue's declared acceptance criteria, including required profile and evidence updates. Otherwise use a non-closing reference such as `Related to #123`.
-
-### Where an Issue belongs
-
-| Topic | Correct location |
-|---|---|
-| Generic profile wording, schema, terminology, or compatibility | This central profile repository |
-| Project-specific adoption, conformance gap, domain invariant, or evidence work | The adopting project's repository |
-| Exploitable or potentially exploitable security finding | Private vulnerability report / draft Security Advisory |
-| General security hardening with no sensitive exploit detail | Public project Issue, if disclosure is safe |
-| Published vulnerability after remediation | Public advisory and sanitized documentation/Issue references |
-
-See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete routing rules.
+The full state/work model, the stable-ID namespaces, the Issue/PR routing (central profile vs. adopting project vs. private security report), `Closes #` vs. `Related to #` rules, and the closure-vs-resolution lifecycle are in [docs/DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md).
 
 ---
 
-## Adoption model
+## Adopting the profile (for an AI agent or a human)
 
-**Adoption begins by classifying the profile, not by copying files.** Which active profiles apply — or whether the exclusive `archived` profile applies instead — is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). Every specialized active profile inherits the `core` obligations: for an active adopter, declare `[core]` when none applies; otherwise canonically list the fired specialized profiles without `core`. The layout follows from that classification — never from the repository's size.
+Adoption begins by **classifying the profile, not by copying files** — the applicable profile set is a *finding* about what the repository is and promises, determined from evidence before any file is written, and it sizes everything downstream. Layout follows from that classification, never from repository size: a confirmed `core`-only repository may use the `layout: lite` single-`assurance.yaml` form, while any specialized active profile — or the exclusive `archived` profile — uses the split layout with one file per register. The upstream profile is pinned by version and full commit SHA — never a floating `main`, never a copy-modified untracked local fork. Creating the files alone is not adoption; it ends with a human decision, not a merge.
 
-At `core` alone, adoption has four required profile files. `specification_workflow.root` must point at a material-change workflow entry document that actually exists — normally an existing `CONTRIBUTING`, ADR, or spec file; only a repository with none writes a fifth. The lite layout (declared with `layout: lite` in `adoption.yaml`) concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description into a single `assurance.yaml`. The system description may instead come from a recorded mapping to an existing artifact:
+**If you were told to "apply this profile" to a repository — even from a bare prompt with nothing but this link — do not begin by copying templates.** First confirm a **named human owner or governing body exists** ([docs/ADOPTION.md §1](docs/ADOPTION.md)); adoption cannot proceed without one. Then:
 
-```text
-AGENTS.md
-AGENTIC_ASSURANCE.md
-.agentic-assurance/
-├── adoption.yaml
-└── assurance.yaml
-```
+1. **Pin** this profile by both version *and* full 40-character commit SHA. A floating `main` is not a valid pin ([Versioning](#versioning), [docs/ADOPTION.md §2](docs/ADOPTION.md)).
+2. **Classify** the target from what it *is and promises*, never from its size ([docs/ADOPTION.md §4.0](docs/ADOPTION.md); the triggers and suggested profile set are in [PROFILE.md §5](PROFILE.md)). Bias toward escalation. Declare `[core]` only for an active repository where no specialized trigger fires; select `archived` only as an exclusive alternative when evidence establishes full reference-only eligibility. Write the set into `adoption.yaml`'s enforced `profiles:` field — not only the handoff prose.
+3. **Follow** the applicable path in [docs/ADOPTION.md §4](docs/ADOPTION.md): the active path is read-only reconstruction (§4.1) and behavior classification (§4.2) **without changing functional code**, then the §4.3 review items and §4.4 staged remediation; the `archived` path is the narrower §4.1/§4.3 branch that records the four §6.6 historical facts.
+4. *(optional)* Before handoff, run the [§3.6.1 `aap check` pre-flight](docs/ADOPTION.md) (or full §3.6 validation) from your pinned checkout to catch structural gaps early — `python3 scripts/aap.py check --project-root /path/to/your/repo` (exit `0` pass / `1` findings / `2` setup / `3` internal). It is a convenience self-check, **not the gate of record and not owner approval**; the reusable workflow remains the enforced gate.
+5. **Hand off** on a branch as a draft pull request — **do not merge.** Merging is the human owner's act after the §4.3 review. Close with a summary in the owner's working language stating that nothing is decided yet and listing each decision the owner must make ([docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)); never describe the draft as settled, complete, or done.
 
-For any specialized active profile (or at `core` by preference), the split layout gives each active register its own file:
-
-```text
-AGENTS.md
-AGENTIC_ASSURANCE.md
-.agentic-assurance/
-└── adoption.yaml
-assurance/
-├── SYSTEM.md
-├── INVARIANTS.yaml
-└── RESIDUALS.yaml
-```
-
-`archived` also uses split-path conventions, but it does not inherit active-register obligations: its assurance minimum is the system artifact containing the four §6.6 historical facts, alongside the root adoption and agent-instruction files.
-
-Additional artifacts are introduced only when applicable:
-
-```text
-assurance/
-├── CLAIMS.yaml
-├── DEFEATERS.yaml
-├── THREAT_MODEL.md
-├── decisions/
-├── reviews/
-└── evidence/
-```
-
-The upstream profile must be pinned by version and full commit SHA. An adopting agent must not silently follow a floating `main` branch or copy and modify the profile as an untracked local fork.
-
-### Suggested profiles
-
-| Profile | Intended use |
-|---|---|
-| `core` | Any repository substantially produced or maintained by AI agents |
-| `service` | Deployed website, API, worker, stateful backend, or operational service |
-| `trust-critical` | Identity, authorization, privacy, security, financial, governance, or public-verifiability claims |
-| `data-curation` | Externally sourced, editorial, scored, classified, or recommended data |
-| `agent-runtime` | Model-driven agents or workflows operating in production |
-| `archived` | Repositories retained solely for historical reference, not supported or intended for current use, with no active operation, functional maintenance, or feature development |
-
-`service`, `trust-critical`, `data-curation`, and `agent-runtime` inherit all `core` obligations even when `core` is omitted from `profiles:`. `archived` is declared alone and records its four required historical facts in the system artifact mapped by `paths.system` (default `assurance/SYSTEM.md`). That artifact must be non-empty at every stage; from `HUMAN_REVIEWED`, none of the four exact shipped archived prompt markers may remain.
-
-### Brownfield adoption sequence
-
-For an existing repository, start here and continue through step 8 only if classification confirms an active profile:
-
-1. classify the profile from what the repository is and promises — collect any `service` / `trust-critical` / `data-curation` / `agent-runtime` trigger with `file:line` evidence and declare `[core]` only when none fires and the `archived` criteria do not apply; if the evidence instead supports `archived`, stop and use the short path below ([§4.0](docs/ADOPTION.md));
-2. inspect existing specifications, tests, workflows, policies, and release controls;
-3. reconstruct the as-built system without changing functional code;
-4. classify conclusions as `VERIFIED`, `INFERRED`, `UNKNOWN`, or `CONTRADICTED`;
-5. obtain human review of purpose and non-goals; critical claims and invariants; behavior classified as `INTENDED`, `ACCIDENTAL`, `COMPATIBILITY`, `UNKNOWN`, or `DEPRECATED`; critical residuals; and public-claim limitations;
-6. record conformance gaps and residuals;
-7. remediate through separate, scoped Issues and pull requests;
-8. bind evidence to a commit, artifact digest, release, or deployment identifier.
-
-For a candidate `archived` repository, use this narrower path instead:
-
-1. collect evidence that the repository is retained solely for historical reference, is not supported or intended for current use, and has no active operation, functional maintenance, or feature development;
-2. declare `[archived]` alone and record all four §6.6 facts in the system artifact mapped by `paths.system`: that reference-only and inactive status; historical purpose; known material limitations; and the last supported revision or release (or explicitly that none exists);
-3. obtain the human owner's confirmation of the archived eligibility, the artifact mapping, and each of the four facts using [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md).
-
-The active path's as-built reconstruction, behavior classification, active claim/invariant/residual registers, and remediation plan do not apply to an `archived` adoption. Do not create empty active artifacts as stand-ins.
-
-Initial adoption, factual corrections, and upkeep of the pin, stage, review record, or agent-instruction metadata do not by themselves count as functional maintenance. Changing code, dependencies, or behavior to support current use does; reclassify under the applicable active profiles before that work.
-
-Creating the files alone is not adoption.
-
-**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. Instead:
-
-1. **Pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)).
-2. **Classify** the target repository from what it is and promises ([§4.0](docs/ADOPTION.md)): declare `[core]` only for an active classification with no specialized trigger, and select `archived` only as an exclusive alternative when evidence establishes the full reference-only eligibility above.
-3. **Follow** the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md) and declare the classified set in `adoption.yaml`'s `profiles:` field.
-4. *(optional)* Before handoff, run the §3.6.1 pre-flight self-check from your pinned checkout ([docs/ADOPTION.md](docs/ADOPTION.md)) — a convenience, not the gate of record.
-5. **Hand off** to the human owner on a branch, without merging.
-
-The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
-
-See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
-
-### Checking an adoption locally (alpha)
-
-From a checkout of this profile at the commit you pinned, a read-only, offline command checks an adopting repository:
-
-```bash
-python3 scripts/aap.py check --project-root /path/to/your/repo
-```
-
-It returns exit `0` (pass) / `1` (findings) / `2` (setup) / `3` (internal); see [docs/ADOPTION.md §3.6.1](docs/ADOPTION.md) for the exit codes, the agent invocation, and the full scope. It is an alpha convenience, not the gate of record — the reusable workflow remains the enforced gate.
+The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction — give an agent that prompt rather than a bare "apply the profile"; the steps above hold even when all you were given is this link. Map existing repository conventions onto profile artifacts via [docs/MAPPINGS.md](docs/MAPPINGS.md) instead of creating parallel files. Owners reviewing a draft start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
 ---
 
 ## Repository layout
 
-Layout of this central repository:
+Top-level layout of this central repository:
 
 ```text
 .
-├── .github/
-│   ├── CODEOWNERS
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── adoption-question.yml
-│   │   ├── clarification.yml
-│   │   ├── config.yml
-│   │   ├── profile-change.yml
-│   │   └── tooling-defect.yml
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── workflows/
-│       ├── adopter-validate.yml
-│       └── self-check.yml
-├── .gitignore
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── GOVERNANCE.md
-├── LICENSE                  (Apache-2.0)
-├── LICENSE-docs             (CC-BY-4.0)
-├── PROFILE.md
-├── README.ko.md
-├── README.md
-├── RELEASING.md
-├── SECURITY.md
-├── VERSION
-├── docs/
-│   ├── ADOPTION.md
-│   ├── DISCLOSURE-AND-ISSUES.md
-│   ├── GLOSSARY.md
-│   ├── MAPPINGS.md
-│   ├── REVIEW-GUIDE.md
-│   └── V0.5-DESIGN.md
-├── schemas/
-│   ├── adoption.schema.json
-│   ├── assurance-lite.schema.json
-│   ├── claims.schema.json
-│   ├── defeaters.schema.json
-│   ├── invariants.schema.json
-│   └── residuals.schema.json
-├── scripts/
-│   └── validate.py
-└── templates/
-    ├── AGENTIC_ASSURANCE.md
-    ├── AGENTS.md
-    ├── CLAIMS.yaml
-    ├── DEFEATERS.yaml
-    ├── INVARIANTS.yaml
-    ├── LICENSE              (CC0-1.0)
-    ├── RESIDUALS.yaml
-    ├── SYSTEM.md
-    ├── THREAT_MODEL.md
-    ├── adoption.yaml
-    ├── assurance.minimal.yaml
-    ├── assurance.yaml
-    └── github/
-        ├── CODEOWNERS
-        ├── ISSUE_TEMPLATE/
-        │   ├── bug.yml
-        │   ├── config.yml
-        │   ├── conformance-gap.yml
-        │   ├── evidence-gap.yml
-        │   ├── feature.yml
-        │   └── residual-review.yml
-        └── PULL_REQUEST_TEMPLATE.md
+├── PROFILE.md        # sole normative text — the obligations this profile governs
+├── README.md         # this overview (README.ko.md is the Korean translation)
+├── schemas/          # JSON Schemas for the adopter YAML artifacts (claims, defeaters, invariants, residuals, adoption)
+├── scripts/          # validate.py — the `aap` validator (see docs/ADOPTION.md §3.6)
+├── templates/        # files an adopter copies into their repo (assurance YAML, AGENTS.md, github/ scaffolding, …)
+├── docs/             # informative guides: ADOPTION.md, DISCLOSURE-AND-ISSUES.md, GLOSSARY.md, REVIEW-GUIDE.md, MAPPINGS.md
+└── .github/          # this repo's own CODEOWNERS, issue/PR templates, and CI workflows
 ```
+
+Root also holds the usual governance files (CHANGELOG, CONTRIBUTING, GOVERNANCE, RELEASING, SECURITY, VERSION). For the full contents of `templates/` and what to copy where, see [docs/ADOPTION.md](docs/ADOPTION.md).
 
 ---
 
@@ -433,30 +205,13 @@ The release process is defined in [RELEASING.md](RELEASING.md). The root `VERSIO
 
 ## Contributing
 
-The proposed development direction is recorded in the non-normative
-[v0.5 working design and delivery plan](docs/V0.5-DESIGN.md). Its lifecycle and
-acceptance status are stated in that document.
+The proposed development direction is recorded in the non-normative [v0.5 working design and delivery plan](docs/V0.5-DESIGN.md).
 
-Use public Issues for:
+Use public Issues for profile clarification, non-sensitive schema or validator defects, workflow-compatibility questions, documentation improvements, and proposals that expose no active vulnerability. **Do not** use public Issues for suspected exploitable vulnerabilities — follow [SECURITY.md](SECURITY.md).
 
-- profile clarification;
-- non-sensitive schema or validator defects;
-- compatibility with an existing workflow;
-- proposals that do not expose an active vulnerability;
-- documentation improvements.
+A pull request should identify: affected profile IDs; behavioral and compatibility impact; evidence added or changed; new, resolved, or modified residuals; disclosure classification; and the Issue or advisory it addresses.
 
-Do not use public Issues for suspected exploitable vulnerabilities. Follow [SECURITY.md](SECURITY.md).
-
-Pull requests should identify:
-
-- affected profile IDs;
-- behavioral and compatibility impact;
-- evidence added or changed;
-- new, resolved, or modified residuals;
-- disclosure classification;
-- the Issue or advisory they address.
-
-Decision authority and approval rules for changes to the normative text, schemas, and templates are defined in [GOVERNANCE.md](GOVERNANCE.md).
+Decision authority and approval rules for the normative text, schemas, and templates are defined in [GOVERNANCE.md](GOVERNANCE.md).
 
 ---
 

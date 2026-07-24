@@ -8,6 +8,8 @@
 **저장소:** `MosslandOpenDevs/agentic-assurance-profile`  
 **현재 성숙도:** 참조 프로필이며 인증 제도가 아님
 
+> **규범 상태:** [PROFILE.md](PROFILE.md)가 규범 문서입니다. 이 README와 모든 번역은 참고용 요약이며, 서로 다를 경우 PROFILE.md가 우선합니다.
+
 코드 생성은 값싸지만, 그 주변의 추론은 그렇지 않습니다. 이 프로필은 그 추론을 오래가고 검사 가능한 저장소 산출물로 남깁니다:
 
 - 이 시스템을 왜 이렇게 설계했는가
@@ -31,6 +33,8 @@ Intent
 ```
 
 이 프로필을 채택(adoption)하기 위해 에디터, 프로그래밍 언어, 에이전트 벤더, 배포 플랫폼, 기존 명세 workflow를 바꿀 필요는 없습니다.
+
+**저장소에 "이 프로필을 적용하라"는 지시를 받았습니까(사람 또는 AI 에이전트)?** [프로필 적용하기](#프로필-적용하기-ai-에이전트-또는-사람)를 참고하십시오.
 
 ---
 
@@ -88,7 +92,7 @@ OpenDevs Agentic Assurance Profile의 성격은 다음과 같습니다.
 - 공개 취약점 장부
 - 비밀 정보, 악용 가능한 공격 경로, 민감한 내부 구조, 개인정보, 미조치 발견 사항을 공개할 이유
 
-**Active 채택에서 conformance(적합)는 채택한 프로필이 정한 대로 약속, 통제, 증거, 남은 의심이 표현되어 있다는 뜻입니다. 배타적인 `archived`에서는 참고 전용 자격과 네 가지 필수 역사 정보가 표현되고 human owner에게 확인되었다는 뜻이며, 현재 운영에 대한 assurance를 주장하지 않습니다. 어느 쪽도 “취약점이 없다”는 뜻이 아닙니다.**
+**Active 채택에서 conformance(적합)는 채택한 프로필이 정한 대로 약속, 통제, 증거, 남은 의심이 표현되어 있다는 뜻입니다. 배타적인 `archived`에서는 참고 전용 자격과 네 가지 필수 역사 정보가 표현되고 human owner에게 확인되었다는 뜻이며, 현재 운영에 대한 assurance를 주장하지 않습니다. 어느 쪽도 "취약점이 없다"는 뜻이 아닙니다.**
 
 ---
 
@@ -110,60 +114,21 @@ OpenDevs Agentic Assurance Profile의 성격은 다음과 같습니다.
 
 채택하는 프로젝트는 이미 가진 것을 재사용하면 됩니다. 기존 산출물의 이름만 바꿔 달려고 병렬 문서 체계를 새로 만드는 일은 이 프로필이 의도하는 바가 아닙니다.
 
-위 수단들이 산출물을 내놓을 때, 이 프로필은 그것을 다시 만들지 않고 참조합니다. 명세 workflow는 의도와 변경 범위를, 검증 도구와 attestation은 증거를, 리뷰 결과는 반증 요인 후보를 공급합니다. 그 산출물을 register에서 참조하되 그것이 증명하는 범위를 넘겨 말하지 않는 방법은 [docs/MAPPINGS.md §5](docs/MAPPINGS.md)에 정리했습니다. 어떤 도구도 대신 만들어 주지 않는 부분도 같은 곳에서 다룹니다. 의도, 주장의 문구, 반증 요인의 처리, 잔차의 수용은 사람의 결정으로 남습니다([PROFILE.md §3](PROFILE.md)).
+위 수단들이 산출물을 내놓을 때, 이 프로필은 그것을 다시 만들지 않고 참조합니다. 명세 workflow는 의도와 변경 범위를, 검증 도구와 attestation은 증거를, 리뷰 결과는 반증 요인 후보를 공급합니다. 그 산출물을 register에서 참조하되 그것이 증명하는 범위를 넘겨 말하지 않는 방법은 [docs/MAPPINGS.md §5](docs/MAPPINGS.md)에 정리했습니다. 어떤 도구도 대신 만들어 주지 않는 부분도 있습니다. 의도, 주장의 문구, 반증 요인의 처리, 잔차의 수용은 사람의 결정으로 남습니다([PROFILE.md §3](PROFILE.md)).
 
 ---
 
 ## 공개 저장소에서의 안전
 
-### 핵심 원칙
-
 > **공개 assurance는 프로젝트가 아는 것을 공개해도 안전하도록 정제해 내놓은 단면이지, 프로젝트의 비공개 보안 기록 전체가 아닙니다.**
 
-이 프로필을 공개 저장소에 적용한다고 해서 실제로 악용 가능한 약점까지 공개해야 하는 것은 아닙니다. 공개 투명성과 책임 있는 취약점 처리는 서로 다른 의무입니다.
+이 프로필을 공개 저장소에 적용한다고 해서 실제로 악용 가능한 약점까지 공개해야 하는 것은 아닙니다. 공개 투명성과 책임 있는 취약점 처리는 서로 다른 의무입니다. 기록을 **두 장부**로 나눠 둡니다 — 저장소와 그 사용자에게 공개해도 안전한 공개 assurance 뷰와, 아직 악용 가능하거나 민감한 것을 담는 제한된 보안 기록(비공개 advisory나 그 밖의 접근 통제 시스템)입니다. 공개해도 안전한 자료에는 제품의 목적과 비목표, 개략적인 신뢰 경계, 안정된 주장과 불변조건, 정제를 거친 증거 현황이 있습니다. secret, 권한 있는 내부 구조, 미조치 취약점의 재현 절차, 신고자 신원은 제한된 채로 둡니다. 판단이 서지 않으면 먼저 비공개 경로로 보냅니다 — 한 번 공개 저장소에 올라간 정보는 최신판에서 지워도 실질적으로 비공개가 되지 않습니다.
 
-### 두 장부 모델
+assurance 자료에는 공개 등급(disclosure class)이 붙습니다 — `PUBLIC`, `SUMMARY_ONLY`, `RESTRICTED`, `EMBARGOED`([PROFILE.md §13](PROFILE.md)과 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정의). 통제는 그 상태를 밝히는 것이 공격 경로 자체를 드러내지 않을 때에 한해 "제한된 검토 중"으로 공개할 수 있습니다. 공개가 실질적 위험을 낳는다면 상태 표시 자체를 생략합니다.
 
-기록을 논리적으로 둘로 나눕니다.
+**보안 신고** — 모든 공개 채택 저장소는 `SECURITY.md`를 두고, GitHub **Private Vulnerability Reporting**을 켜며, 악용이 의심되는 취약점을 공개 Issue가 아닌 draft Security Advisory로 보내 triage와 조율된 공개(coordinated disclosure)를 진행하고, 수정이나 공개가 승인된 뒤에만 정제된 프로필 갱신을 공개해야 합니다.
 
-1. **공개 assurance 뷰(단면)** — 저장소와 그 사용자에게 공개해도 안전한 내용
-2. **제한된 보안 기록** — 비공개 Security Advisory, 비공개 트래커 등 접근이 통제된 시스템으로 관리하는 내용
-
-| 대체로 공개해도 안전한 것 | 악용 가능하거나 민감한 상태로 남아 있는 동안 제한할 것 |
-|---|---|
-| 제품의 목적과 명시적 비목표 | secret, token, key, credential, 개인정보 |
-| 개략적인 신뢰 경계 | 공격 비용을 실질적으로 낮추는 내부 호스트명, 권한 구조, 접근 경로 |
-| 안정된 주장·불변조건 문구 | 미조치 취약점의 재현 절차나 개념 증명 |
-| 민감하지 않은 통제 범주 | 아직 메워지지 않은 통제 공백의 정확한 우회 조건 |
-| 테스트 이름과 재현 가능한 공개 검사 | 민감한 로그, production 스냅샷, 비공개 증거, 사용자 기록 |
-| 정제를 거친 증거 현황 | 조율된 공개 전의 embargo 대상 발견 사항과 영향 버전 분석 |
-| 공개해도 무방한 한계 | 세부를 밝히는 순간 곧바로 악용 가능한 잔차 |
-| 조율을 마치고 공개한 advisory | 신고자 신원과 비공개 서신 |
-
-판단이 서지 않으면 먼저 비공개 경로로 보냅니다. 비공개로 받은 내용은 나중에 정제해 공개할 수 있습니다. 반대로 한 번 공개 저장소에 올라간 정보는 최신판에서 지워도 실질적으로 비공개가 되지 않습니다.
-
-### 공개 등급
-
-프로젝트는 assurance 자료에 다음과 같은 공개 등급(disclosure class)을 매길 수 있습니다.
-
-- `PUBLIC` — 전체 내용을 공개 저장소에 기록해도 됩니다.
-- `SUMMARY_ONLY` — 악용에 쓸 수 없는 요약과 상태만 공개합니다.
-- `RESTRICTED` — 공개 저장소에 commit하지 않습니다.
-- `EMBARGOED` — 수정이 이루어지고 조율된 공개 여부가 결정될 때까지 비공개로 둡니다.
-
-공개 프로필에는 어떤 통제나 증거 의무가 제한된 경로에서 검토 중이라는 사실까지는 적을 수 있습니다. 다만 공격 경로는 드러내지 않습니다. 그 상태를 밝히는 것만으로도 실질적 위험이 생긴다면 상태 표시 자체를 생략합니다.
-
-### 보안 신고
-
-공개 채택 저장소에는 다음을 권장합니다.
-
-1. `SECURITY.md`를 둡니다.
-2. 가능하다면 GitHub **Private Vulnerability Reporting**을 켭니다.
-3. 악용이 의심되는 취약점은 공개 Issue가 아닌 다른 경로로 안내합니다.
-4. triage, 재현, 수정, 조율된 공개는 draft GitHub Security Advisory 등 비공개 채널에서 진행합니다.
-5. 문제를 고쳤거나 공개가 승인된 뒤에만 정제된 프로필 갱신을 공개합니다.
-
-자세한 내용은 [SECURITY.md](SECURITY.md)와 [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md)에 있습니다.
+보안 신고 lifecycle과 공개 등급이 Issue·advisory로 어떻게 라우팅되는지는 [SECURITY.md](SECURITY.md)와 [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md)에 있습니다.
 
 ---
 
@@ -173,30 +138,9 @@ OpenDevs Agentic Assurance Profile의 성격은 다음과 같습니다.
 
 > **프로필 산출물은 오래 유지되는 프로젝트 상태를 기술합니다. Issue는 그 상태를 바꾸거나 분명히 하는 데 필요한 작업을 추적합니다.**
 
-| GitHub 객체 또는 저장소 산출물 | 기능 |
-|---|---|
-| `PROFILE.md` | 이 프로필의 공통 규범 의무 |
-| 프로젝트별 주장, 불변조건, 잔차 | 프로젝트의 현재 사실과 감수하기로 한 불확실성 |
-| GitHub Issue | 제안, 질문, 민감하지 않은 공백, 작업 항목 |
-| Pull Request | 구현이나 프로필 산출물의 검토 가능한 변경 |
-| CI·증거 산출물 | 주장이나 불변조건을 재현 가능하게 뒷받침하는 근거 |
-| GitHub Security Advisory | 악용 가능하거나 민감한 취약점의 비공개 처리 |
-| Release/tag | 코드, 프로필 고정, 증거, 잔차 상태를 묶은 버전 스냅샷 |
+`PROFILE.md`와 로컬 주장·불변조건·잔차가 오래가는 사실이고, Issue, Pull Request, CI 증거, Security Advisory, release tag는 그 상태를 움직이는 작업과 증거입니다. Issue를 닫거나 Pull Request를 merge하는 것만으로는 assurance 항목이 해소되지 **않습니다** — 오래가는 산출물(주장, 불변조건, 잔차)과 그 증거까지 갱신되어야 변경이 완료됩니다.
 
-### 의미는 Issue 번호가 아니라 안정된 ID에 둡니다
-
-프로필 요구사항과 로컬 assurance 항목에는 변하지 않는 ID를 붙입니다. 예를 들면 다음과 같습니다.
-
-```text
-AAP-CORE-004
-CLAIM-IDENTITY-002
-INV-AUTH-007
-RES-DATA-003
-```
-
-Issue와 Pull Request는 이 ID를 참조합니다. ID를 GitHub Issue 번호에서 따오면 안 됩니다. Issue는 옮겨지고, 닫히고, 중복되고, 쪼개질 수 있지만, assurance 항목은 시스템 역사의 일부로 계속 남기 때문입니다.
-
-Issue 필드 예시는 다음과 같습니다.
+프로필 요구사항과 로컬 assurance 항목에는 변하지 않는 ID를 붙입니다(`AAP-CORE-004`, `CLAIM-IDENTITY-002`, `INV-AUTH-007`, `RES-DATA-003`). Issue와 Pull Request는 이 ID를 참조합니다. ID를 GitHub Issue 번호에서 따오면 안 됩니다 — Issue는 옮겨지고 닫히고 중복되고 쪼개질 수 있지만 assurance 항목은 계속 남기 때문입니다. 관련된 각 Issue와 PR은 영향을 받는 ID를 밝힙니다.
 
 ```markdown
 ## Affected assurance IDs
@@ -206,212 +150,42 @@ Issue 필드 예시는 다음과 같습니다.
 - RES-DATA-003
 ```
 
-### Issue를 닫는 것과 assurance를 끝내는 것은 다릅니다
-
-코드를 merge하거나 Issue를 닫는 것만으로는 부족합니다. 관련된 영속 산출물까지 갱신해야 변경이 완료됩니다.
-
-```text
-Issue or change proposal
-  → Pull Request
-  → implementation / control update
-  → deterministic verification
-  → independent contradiction search when required
-  → evidence bound to revision or deployment
-  → claims / invariants / residuals updated
-  → Issue closed
-```
-
-`Closes #123`은 Pull Request를 merge하는 것만으로 Issue가 내건 수용 기준(필요한 프로필·증거 갱신 포함)이 실제로 모두 충족될 때만 씁니다. 그렇지 않으면 `Related to #123`처럼 Issue를 닫지 않는 참조를 씁니다.
-
-### Issue를 어디에 올릴 것인가
-
-| 주제 | 올릴 곳 |
-|---|---|
-| 프로필 공통 문구, schema, 용어, 호환성 | 이 중앙 프로필 저장소 |
-| 프로젝트별 채택, conformance 공백, 도메인 불변조건, 증거 작업 | 채택한 프로젝트의 저장소 |
-| 악용 가능하거나 그럴 소지가 있는 보안 발견 사항 | 비공개 취약점 신고 / draft Security Advisory |
-| 민감한 악용 세부가 없는 일반적인 보안 강화 | 공개해도 안전하다면 프로젝트의 공개 Issue |
-| 수정을 마치고 공개한 취약점 | 공개 advisory와 정제된 문서·Issue 참조 |
-
-전체 분류 규칙은 [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md)에 있습니다.
+상태/작업 모델 전체, 안정된 ID의 namespace, Issue/PR 라우팅(중앙 프로필 vs. 채택 프로젝트 vs. 비공개 보안 신고), `Closes #`와 `Related to #` 규칙, 닫힘과 해소를 구분하는 lifecycle은 [docs/DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md)에 있습니다.
 
 ---
 
-## 채택 방식
+## 프로필 적용하기 (AI 에이전트 또는 사람)
 
-**채택은 파일 복사가 아니라 프로필 분류에서 시작합니다.** 어떤 active 프로필이 해당하는지, 아니면 배타적인 `archived` 프로필이 해당하는지는 저장소가 *무엇이고 무엇을 약속하는가*에 대한 판정이며, 파일을 만들기 전에 증거로 정합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). 모든 specialized active 프로필은 `core` 의무를 상속합니다. active 채택에서는 해당 specialized 프로필이 하나도 없을 때 `[core]`를 선언하고, 하나라도 있으면 걸린 specialized 프로필만 적는 것이 canonical 선언입니다. 구성(layout)은 그 분류를 따라 정해지는 것이지, 저장소 크기로 정해지지 않습니다.
+채택은 **파일 복사가 아니라 프로필 분류에서 시작합니다.** 해당하는 프로필 집합은 저장소가 무엇이고 무엇을 약속하는가에 대한 *판정*이며, 파일을 하나라도 쓰기 전에 증거로 정하고, 그 뒤의 모든 것의 규모를 결정합니다. 구성(layout)은 그 분류를 따라 정해지지 저장소 크기로 정해지지 않습니다. `core` 하나만으로 확인된 저장소는 `layout: lite`의 `assurance.yaml` 단일 파일 형태를 쓸 수 있고, specialized active 프로필이 하나라도 있거나 배타적인 `archived` 프로필이면 레지스터마다 파일을 따로 두는 split 구성을 씁니다. 상위 프로필은 버전과 전체 commit SHA로 고정(pin)하며 — 유동적인 `main`도, 복사해 고친 버전 추적 없는 로컬 fork도 안 됩니다. 파일을 만들었다고 채택이 아닙니다. 채택은 merge가 아니라 사람의 결정으로 끝납니다.
 
-`core` 하나만 해당할 때는 필수 프로필 파일 네 개로 채택합니다. 여기에 더해 `specification_workflow.root`가 실제로 존재하는 중대 변경 workflow 진입 문서를 가리켜야 합니다 — 보통 이미 있는 `CONTRIBUTING`·ADR·명세 문서를 재사용하므로, 그런 문서가 아예 없는 저장소만 다섯 번째 파일을 새로 씁니다. `adoption.yaml`에 `layout: lite`를 선언하고 목적, 비목표, 최소 하나의 불변조건, 최소 하나의 잔차, 그리고 일반적으로 system 설명까지 `assurance.yaml` 한 파일에 모읍니다. system 설명은 기존 산출물을 가리키도록 기록한 mapping으로 대신할 수도 있습니다.
+**당신이 저장소에 "이 프로필을 적용하라"는 지시를 받았다면 — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오.** 먼저 **이름이 명시된 human owner 또는 거버넌스 주체가 존재하는지** 확인합니다([docs/ADOPTION.md §1](docs/ADOPTION.md)). 그런 주체 없이는 채택을 진행할 수 없습니다. 그런 다음:
 
-```text
-AGENTS.md
-AGENTIC_ASSURANCE.md
-.agentic-assurance/
-├── adoption.yaml
-└── assurance.yaml
-```
+1. 이 프로필을 버전 *그리고* 전체 40자 commit SHA로 함께 **고정(pin)**합니다. 유동적인 `main`은 유효한 pin이 아닙니다([버전 관리](#버전-관리), [docs/ADOPTION.md §2](docs/ADOPTION.md)).
+2. 대상 저장소를 그 크기가 아니라 그것이 *무엇이고 무엇을 약속하는가*로 **분류**합니다([docs/ADOPTION.md §4.0](docs/ADOPTION.md); 트리거와 권장 프로필 집합은 [PROFILE.md §5](PROFILE.md)에 있습니다). 애매하면 상위 프로필로 올려 잡습니다. specialized 트리거가 하나도 걸리지 않는 active 저장소일 때만 `[core]`를 선언하고, 참고 전용 자격이 증거로 온전히 확립될 때에 한해 `archived`를 배타적인 대안으로 선택합니다. 분류한 집합은 handoff 문구뿐 아니라 강제되는 `adoption.yaml`의 `profiles:` 필드에 적습니다.
+3. [docs/ADOPTION.md §4](docs/ADOPTION.md)의 해당 경로를 **따릅니다.** active 경로는 **기능 코드를 바꾸지 않고** 읽기 전용으로 시스템을 복원하고(§4.1) 동작을 분류한 다음(§4.2), §4.3 검토 항목과 §4.4 단계적 보완으로 이어집니다. `archived` 경로는 §6.6의 네 가지 역사 정보를 기록하는 더 좁은 §4.1/§4.3 분기입니다.
+4. *(선택)* handoff 전에, 고정한 체크아웃에서 [§3.6.1 `aap check` pre-flight](docs/ADOPTION.md)(또는 전체 §3.6 검증)를 실행해 구조적 공백을 일찍 잡아냅니다 — `python3 scripts/aap.py check --project-root /path/to/your/repo`(종료 코드 `0` 통과 / `1` findings / `2` 설정 / `3` 내부). 편의용 self-check이며 **기록상의 gate도, owner 승인도 아닙니다.** 강제되는 gate는 여전히 재사용 workflow입니다.
+5. 결과를 브랜치에 draft pull request로 올려 **넘깁니다 — merge하지 마십시오.** merge는 §4.3 검토를 마친 human owner의 몫입니다. owner가 쓰는 언어로 아직 아무것도 결정되지 않았음을 밝히고 owner가 내려야 할 결정을 하나하나 나열한 요약으로 마무리합니다([docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)). draft를 확정되었다거나 완전하다거나 끝났다고 절대 말하지 마십시오.
 
-specialized active 프로필을 선언할 때는(또는 `core`에서도 원한다면) active 레지스터마다 파일을 따로 두는 split 구성을 사용합니다.
-
-```text
-AGENTS.md
-AGENTIC_ASSURANCE.md
-.agentic-assurance/
-└── adoption.yaml
-assurance/
-├── SYSTEM.md
-├── INVARIANTS.yaml
-└── RESIDUALS.yaml
-```
-
-`archived`도 split 경로 관례를 사용하지만 active 레지스터 의무를 상속하지는 않습니다. assurance 최소 구성은 §6.6의 네 가지 역사 정보를 담은 system 산출물이며, 루트의 채택·에이전트 지시 파일도 함께 둡니다.
-
-다음 산출물은 해당 사항이 있을 때만 도입합니다.
-
-```text
-assurance/
-├── CLAIMS.yaml
-├── DEFEATERS.yaml
-├── THREAT_MODEL.md
-├── decisions/
-├── reviews/
-└── evidence/
-```
-
-상위 프로필은 버전과 전체 commit SHA로 고정(pin)해야 합니다. 채택 작업을 맡은 에이전트가 유동적인 `main` 브랜치를 말없이 따라가거나, 프로필을 복사해 버전 추적 없는 로컬 fork로 고쳐 쓰면 안 됩니다.
-
-### 권장 프로필
-
-| 프로필 | 용도 |
-|---|---|
-| `core` | AI 에이전트가 상당 부분을 만들거나 유지하는 모든 저장소 |
-| `service` | 배포된 웹사이트, API, worker, 상태를 가진 백엔드, 운영 서비스 |
-| `trust-critical` | 신원, 인가, 프라이버시, 보안, 금융, 거버넌스, 공개 검증 가능성을 내세우는 경우 |
-| `data-curation` | 외부에서 수집하거나 편집, 채점, 분류, 추천을 거치는 데이터 |
-| `agent-runtime` | production에서 동작하는 모델 기반 에이전트나 workflow |
-| `archived` | 오직 역사적 참고용으로 보존되고 현재 사용을 지원하거나 의도하지 않으며, 실제 운영·기능적 유지보수·기능 개발이 없는 저장소 |
-
-`service`, `trust-critical`, `data-curation`, `agent-runtime`은 `profiles:`에 `core`를 적지 않아도 모든 `core` 의무를 상속합니다. `archived`는 단독으로 선언하고, `paths.system`이 가리키는 system 산출물(기본값 `assurance/SYSTEM.md`)에 네 가지 필수 역사 정보를 기록합니다. 이 산출물은 모든 단계에서 비어 있지 않아야 하며, `HUMAN_REVIEWED`부터는 배포된 archived 템플릿의 네 가지 정확한 prompt marker가 하나도 남아 있으면 안 됩니다.
-
-### brownfield 채택 순서
-
-기존 저장소는 여기서 시작하고, 분류 결과가 active 프로필일 때만 8단계까지 계속합니다.
-
-1. 저장소가 무엇이고 무엇을 약속하는지로 프로필을 분류합니다 — `service` / `trust-critical` / `data-curation` / `agent-runtime` 트리거를 `file:line` 증거와 함께 모으고, 하나도 걸리지 않으며 `archived` 조건에도 해당하지 않을 때만 `[core]`를 선언합니다. 증거가 `archived`에 해당한다면 여기서 멈추고 아래의 짧은 경로를 따릅니다([§4.0](docs/ADOPTION.md)).
-2. 기존 명세, 테스트, workflow, 정책, release 통제를 살핍니다.
-3. 기능 코드는 건드리지 않고, 실제로 만들어진 그대로의 시스템을 복원합니다.
-4. 그렇게 내린 결론을 `VERIFIED`, `INFERRED`, `UNKNOWN`, `CONTRADICTED`로 분류합니다.
-5. 목적과 비목표, 핵심 주장과 불변조건, `INTENDED`·`ACCIDENTAL`·`COMPATIBILITY`·`UNKNOWN`·`DEPRECATED`로 분류한 동작, 핵심 잔차, 공개 주장의 한계를 human owner에게 검토받습니다.
-6. conformance 공백과 잔차를 기록합니다.
-7. 범위를 좁힌 별도의 Issue와 Pull Request로 보완합니다.
-8. 증거를 commit, 산출물 digest, release, 배포 식별자에 결부합니다.
-
-`archived` 후보 저장소는 대신 다음의 좁은 경로를 따릅니다.
-
-1. 저장소가 오직 역사적 참고용으로 보존되고 현재 사용을 지원하거나 의도하지 않으며, 실제 운영·기능적 유지보수·기능 개발이 없다는 증거를 수집합니다.
-2. `[archived]`만 단독 선언하고, `paths.system`이 가리키는 system 산출물에 §6.6의 네 가지 사실을 모두 기록합니다 — 위의 참고 전용·비활성 상태, 역사적 목적, 알려진 중대한 한계, 마지막 지원 revision 또는 release(없다면 없다는 명시적 진술).
-3. [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에 따라 human owner에게 `archived` 자격, 산출물 mapping, 네 가지 사실 각각을 확인받습니다.
-
-active 경로의 as-built system 복원, 동작 분류, active claim/invariant/residual 레지스터, 보완 계획은 `archived` 채택에 적용되지 않습니다. 빈 active 산출물을 대신 만들지 마십시오.
-
-최초 `archived` 채택, 역사적 사실 정정, pin·stage·review record·agent 지침 메타데이터 유지 작업 자체는 기능적 유지보수가 아닙니다. 현재 사용을 지원하려고 코드·의존성·동작을 바꾸는 일은 기능적 유지보수이므로, 그 전에 해당 active 프로필로 다시 분류해야 합니다.
-
-파일만 만들었다고 채택한 것이 아닙니다.
-
-**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 대신:
-
-1. 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고).
-2. 대상 저장소를 그것이 무엇이고 무엇을 약속하는지로 **분류**합니다([§4.0](docs/ADOPTION.md)): active 분류이면서 specialized 트리거가 하나도 없을 때만 `[core]`를 선언하고, 위의 참고 전용 자격 전체가 증거로 확립될 때만 `archived`를 배타적인 대안으로 선택합니다.
-3. [docs/ADOPTION.md §4](docs/ADOPTION.md)의 active 또는 archived brownfield 경로 중 해당하는 절차를 **따르고**, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언합니다.
-4. *(선택)* hand-off 전에, 고정한 체크아웃에서 §3.6.1 pre-flight self-check를 실행합니다([docs/ADOPTION.md](docs/ADOPTION.md)) — 편의 기능이며 기록상의 gate가 아닙니다.
-5. 결과를 브랜치에 올려 merge 없이 human owner에게 **넘깁니다**.
-
-[§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
-
-실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오. 채택 결과를 검토하는 human owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하십시오. 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
-
-### 로컬에서 채택 점검하기 (alpha)
-
-고정한 커밋의 이 프로필 체크아웃에서, 읽기 전용·오프라인 명령이 채택 저장소를 점검합니다.
-
-```bash
-python3 scripts/aap.py check --project-root /path/to/your/repo
-```
-
-종료 코드 `0`(통과) / `1`(findings) / `2`(설정) / `3`(내부)를 반환합니다. 종료 코드·에이전트 호출 형태·전체 범위는 [docs/ADOPTION.md §3.6.1](docs/ADOPTION.md)을 참고하십시오. alpha 편의 기능이며 기록상의 gate가 아닙니다 — 강제되는 gate는 여전히 재사용 workflow입니다.
+[§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 에이전트에게는 그저 "프로필을 적용하라"고만 하지 말고 그 프롬프트를 건네십시오. 다만 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. draft를 검토하는 owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하고, 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
 
 ---
 
 ## 저장소 구성
 
-이 중앙 저장소는 다음과 같이 구성되어 있습니다.
+이 중앙 저장소의 최상위 구성은 다음과 같습니다.
 
 ```text
 .
-├── .github/
-│   ├── CODEOWNERS
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── adoption-question.yml
-│   │   ├── clarification.yml
-│   │   ├── config.yml
-│   │   ├── profile-change.yml
-│   │   └── tooling-defect.yml
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── workflows/
-│       ├── adopter-validate.yml
-│       └── self-check.yml
-├── .gitignore
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── GOVERNANCE.md
-├── LICENSE                  (Apache-2.0)
-├── LICENSE-docs             (CC-BY-4.0)
-├── PROFILE.md
-├── README.ko.md
-├── README.md
-├── RELEASING.md
-├── SECURITY.md
-├── VERSION
-├── docs/
-│   ├── ADOPTION.md
-│   ├── DISCLOSURE-AND-ISSUES.md
-│   ├── GLOSSARY.md
-│   ├── MAPPINGS.md
-│   ├── REVIEW-GUIDE.md
-│   └── V0.5-DESIGN.md
-├── schemas/
-│   ├── adoption.schema.json
-│   ├── assurance-lite.schema.json
-│   ├── claims.schema.json
-│   ├── defeaters.schema.json
-│   ├── invariants.schema.json
-│   └── residuals.schema.json
-├── scripts/
-│   └── validate.py
-└── templates/
-    ├── AGENTIC_ASSURANCE.md
-    ├── AGENTS.md
-    ├── CLAIMS.yaml
-    ├── DEFEATERS.yaml
-    ├── INVARIANTS.yaml
-    ├── LICENSE              (CC0-1.0)
-    ├── RESIDUALS.yaml
-    ├── SYSTEM.md
-    ├── THREAT_MODEL.md
-    ├── adoption.yaml
-    ├── assurance.minimal.yaml
-    ├── assurance.yaml
-    └── github/
-        ├── CODEOWNERS
-        ├── ISSUE_TEMPLATE/
-        │   ├── bug.yml
-        │   ├── config.yml
-        │   ├── conformance-gap.yml
-        │   ├── evidence-gap.yml
-        │   ├── feature.yml
-        │   └── residual-review.yml
-        └── PULL_REQUEST_TEMPLATE.md
+├── PROFILE.md        # sole normative text — the obligations this profile governs
+├── README.md         # this overview (README.ko.md is the Korean translation)
+├── schemas/          # JSON Schemas for the adopter YAML artifacts (claims, defeaters, invariants, residuals, adoption)
+├── scripts/          # validate.py — the `aap` validator (see docs/ADOPTION.md §3.6)
+├── templates/        # files an adopter copies into their repo (assurance YAML, AGENTS.md, github/ scaffolding, …)
+├── docs/             # informative guides: ADOPTION.md, DISCLOSURE-AND-ISSUES.md, GLOSSARY.md, REVIEW-GUIDE.md, MAPPINGS.md
+└── .github/          # this repo's own CODEOWNERS, issue/PR templates, and CI workflows
 ```
+
+루트에는 통상적인 거버넌스 파일(CHANGELOG, CONTRIBUTING, GOVERNANCE, RELEASING, SECURITY, VERSION)도 있습니다. `templates/`의 전체 내용과 무엇을 어디에 복사할지는 [docs/ADOPTION.md](docs/ADOPTION.md)를 참고하십시오.
 
 ---
 
@@ -433,28 +207,11 @@ release 절차는 [RELEASING.md](RELEASING.md)에 정의되어 있습니다. 루
 
 ## 기여 방법
 
-제안된 개발 방향은 비규범 문서인
-[v0.5 작업 설계 및 실행 계획](docs/V0.5-DESIGN.md)에 기록되어 있습니다.
-문서의 lifecycle과 승인 상태는 해당 문서 머리말을 따릅니다.
+제안된 개발 방향은 비규범 문서인 [v0.5 작업 설계 및 실행 계획](docs/V0.5-DESIGN.md)에 기록되어 있습니다.
 
-다음 주제는 공개 Issue로 다룹니다.
+프로필 내용을 분명히 하려는 질문, 민감하지 않은 schema·validator 결함, workflow 호환성 질문, 문서 개선, 현재 유효한 취약점을 드러내지 않는 제안은 공개 Issue로 다룹니다. 악용이 의심되는 취약점은 공개 Issue에 올리지 **말고** [SECURITY.md](SECURITY.md)를 따릅니다.
 
-- 프로필 내용을 분명히 하려는 질문
-- 민감하지 않은 schema·validator 결함
-- 기존 workflow와의 호환성
-- 현재 유효한 취약점을 드러내지 않는 제안
-- 문서 개선
-
-악용이 의심되는 취약점은 공개 Issue에 올리지 말고 [SECURITY.md](SECURITY.md)를 따릅니다.
-
-Pull Request에는 다음을 밝힙니다.
-
-- 영향을 받는 프로필 ID
-- 동작과 호환성에 미치는 영향
-- 추가하거나 바꾼 증거
-- 새로 생기거나 해소되거나 수정된 잔차
-- 공개 등급 분류
-- 다루는 Issue 또는 advisory
+Pull Request에는 다음을 밝힙니다 — 영향을 받는 프로필 ID, 동작과 호환성에 미치는 영향, 추가하거나 바꾼 증거, 새로 생기거나 해소되거나 수정된 잔차, 공개 등급 분류, 다루는 Issue 또는 advisory.
 
 규범 문서, schema, 템플릿을 바꾸는 결정 권한과 승인 규칙은 [GOVERNANCE.md](GOVERNANCE.md)에 정의되어 있습니다.
 
