@@ -436,6 +436,8 @@ When first applying this file to an existing active repository, produce a review
 10. exact files created or changed;
 11. a handoff summary for the human owner, in the owner's working language, that states nothing is decided, lists each pending decision in plain language, and instructs that the pull request must not be merged until those decisions are made.
 
+Before handoff, the drafting agent SHOULD run any available local structure pre-flight over the files it created (see the upstream adoption instructions) and resolve or record any findings; a local pre-flight is a convenience, never the acceptance gate.
+
 For the exclusive `archived` profile, produce the narrower reviewable proposal instead: evidence that the repository is retained solely for historical reference, is not supported or intended for current use, and has no active operation, functional maintenance, or feature development; the exclusive profile declaration and artifact mapping; all four §6.6 facts in the mapped system artifact; the exact files changed; and a handoff asking the owner to confirm both the reference-only eligibility/classification and each fact using `docs/REVIEW-GUIDE.md`. Do not fabricate empty active claims, invariants, defeaters, or residuals for an archived repository.
 
 Do not describe adoption as complete merely because the documents were created. In the handoff summary, the drafting agent must not describe its result as "settled" or "complete" — completion language is reserved for the human owner's acceptance.

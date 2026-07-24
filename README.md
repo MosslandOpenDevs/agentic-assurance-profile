@@ -8,7 +8,7 @@
 
 > **Normative status:** [PROFILE.md](PROFILE.md) is the normative text. This README and all translations are informative summaries; where they disagree, PROFILE.md governs.
 
-The profile helps a project preserve the parts of software development that code generation does not make cheap:
+Code generation is cheap; the reasoning around it is not. This profile keeps that reasoning as durable, inspectable repository artifacts:
 
 - why the system is designed this way;
 - which properties must remain true;
@@ -58,7 +58,7 @@ The objective is not to eliminate all uncertainty. It is to make the boundary be
 
 ## Origins
 
-This profile descends from a question Donald Knuth answered for an earlier era. *TeX: The Program* treated a program as something to be explained to people, not merely executed: the reasoning, the invariants, and the argument for correctness were part of the work itself. AI coding agents invert the economics that once made that discipline optional. Implementation is now cheap, but design rationale, invariants, evidence, and known limitations do not write themselves — and they are exactly what a project loses when code is produced faster than intent can be recorded.
+This profile descends from a question Donald Knuth answered for an earlier era. *TeX: The Program* treated a program as something to be explained to people, not merely executed: the reasoning, the invariants, and the argument for correctness were part of the work itself. AI coding agents invert the economics that once made that discipline optional. Implementation is now cheap. Design rationale, invariants, evidence, and known limitations are not — and they are what a project loses when code outpaces the record of intent.
 
 The immediate origin is practical. [Passport](https://passport.moss.land), a Mossland project, was built almost entirely by AI coding agents, without a conventional code editor. Working that way makes the gap concrete: the owner's role shifts from writing code to governing claims, invariants, evidence, and residual risk — and that governance needs a durable, inspectable form. This profile is that form.
 
@@ -75,7 +75,7 @@ The OpenDevs Agentic Assurance Profile is:
 - compatible with existing specification, issue, pull-request, test, CI, and release workflows;
 - a way to connect human intent, implementation controls, verification evidence, and residual uncertainty.
 
-Neighboring tool categories answer different questions. A specification workflow records what a change is meant to do. An analysis or code-review tool finds risk in the code as written. A provenance tool records what an agent actually did. This profile asks the question left over: **do the promises a human approved, and the risk that human accepted, still hold after the change?** Answering it needs artifacts that outlive any single change — which is why the unit is the repository rather than the pull request, and why the profile consumes the other categories' output as evidence instead of reproducing it.
+Neighboring tool categories answer different questions. A specification workflow records what a change is meant to do. An analysis or code-review tool finds risk in the code as written. A provenance tool records what an agent actually did. This profile asks the question left over: **do the promises a human approved, and the risk that human accepted, still hold after the change?** Answering it needs artifacts that outlive any single change. That is why the unit is the repository, not the pull request — and why the profile consumes other tools' output as evidence rather than reproducing it.
 
 ## What this project is not
 
@@ -110,7 +110,7 @@ This profile is intentionally a thin coordination layer rather than a replacemen
 
 An adopting project should reuse what it already has. The profile should not create a parallel document system merely to rename existing artifacts.
 
-Where a mechanism above produces output, the profile references that output rather than regenerating it: a specification workflow supplies intent and change scope, verification tooling and attestations supply evidence, review findings supply defeater candidates. [docs/MAPPINGS.md §5](docs/MAPPINGS.md) shows how to reference that output from the registers without overstating what it proves — and which parts no tool supplies, because intent, claim wording, defeater disposition, and residual acceptance remain human decisions ([PROFILE.md §3](PROFILE.md)).
+Where a mechanism above produces output, the profile references that output rather than regenerating it: a specification workflow supplies intent and change scope, verification tooling and attestations supply evidence, review findings supply defeater candidates. [docs/MAPPINGS.md §5](docs/MAPPINGS.md) shows how to reference that output from the registers without overstating what it proves. Some parts no tool supplies: intent, claim wording, defeater disposition, and residual acceptance stay human decisions ([PROFILE.md §3](PROFILE.md)).
 
 ---
 
@@ -241,7 +241,7 @@ See [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the complete
 
 **Adoption begins by classifying the profile, not by copying files.** Which active profiles apply — or whether the exclusive `archived` profile applies instead — is a finding about what the repository *is and promises*, determined from evidence before any file is written ([docs/ADOPTION.md §4.0](docs/ADOPTION.md)). Every specialized active profile inherits the `core` obligations: for an active adopter, declare `[core]` when none applies; otherwise canonically list the fired specialized profiles without `core`. The layout follows from that classification — never from the repository's size.
 
-At `core` alone, adoption has four required profile files, and `specification_workflow.root` must point at a material-change workflow entry document that actually exists — normally an existing `CONTRIBUTING`, ADR, or spec file, so only a repository that has none writes a fifth. The lite layout, declared with `layout: lite` in `adoption.yaml`, concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description in a single `assurance.yaml`; the system description may instead be supplied by a recorded mapping to an existing artifact:
+At `core` alone, adoption has four required profile files. `specification_workflow.root` must point at a material-change workflow entry document that actually exists — normally an existing `CONTRIBUTING`, ADR, or spec file; only a repository with none writes a fifth. The lite layout (declared with `layout: lite` in `adoption.yaml`) concentrates purpose, non-goals, at least one invariant, at least one residual, and normally the system description into a single `assurance.yaml`. The system description may instead come from a recorded mapping to an existing artifact:
 
 ```text
 AGENTS.md
@@ -318,22 +318,27 @@ Initial adoption, factual corrections, and upkeep of the pin, stage, review reco
 
 Creating the files alone is not adoption.
 
-**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), declaring `[core]` only for an active classification with no specialized trigger and selecting `archived` only as an exclusive alternative when evidence establishes the full reference-only eligibility above; (3) then follow the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
+**If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. Instead:
+
+1. **Pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)).
+2. **Classify** the target repository from what it is and promises ([§4.0](docs/ADOPTION.md)): declare `[core]` only for an active classification with no specialized trigger, and select `archived` only as an exclusive alternative when evidence establishes the full reference-only eligibility above.
+3. **Follow** the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md) and declare the classified set in `adoption.yaml`'s `profiles:` field.
+4. *(optional)* Before handoff, run the §3.6.1 pre-flight self-check from your pinned checkout ([docs/ADOPTION.md](docs/ADOPTION.md)) — a convenience, not the gate of record.
+5. **Hand off** to the human owner on a branch, without merging.
+
+The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
 
 See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
 ### Checking an adoption locally (alpha)
 
-An early, source-checkout command runs the profile's adopter checks against your current checkout, read-only and offline:
+From a checkout of this profile at the commit you pinned, a read-only, offline command checks an adopting repository:
 
 ```bash
-# from a checkout of this profile at the commit you pinned
 python3 scripts/aap.py check --project-root /path/to/your/repo
 ```
 
-`aap check` resolves the adoption declaration (`<project-root>/.agentic-assurance/adoption.yaml`) and the pinned profile's schemas for you — so you no longer pass those low-level paths by hand — then reports an `ADOPTER_SNAPSHOT` result with an explicit exit code: `0` the declared policy checks passed, `1` the engine reported findings, `2` a usage or setup problem (for example, no adoption declaration was found), `3` an unexpected error. `PASS` means only that the *declared* checks passed, not that every possible check ran. Run it from a checkout pinned to the same version your `adoption.yaml` declares; a mismatched pin is itself a finding.
-
-This is an alpha and a convenience, not the gate of record. The command name `aap` is provisional, no package is published, and the snapshot check deliberately excludes drift and `base`/`head` transition comparison, a stable machine-readable output, and the `init`/`review`/`migrate` commands. The reusable workflow remains the enforced gate, and it wraps the same validator unchanged.
+It returns exit `0` (pass) / `1` (findings) / `2` (setup) / `3` (internal); see [docs/ADOPTION.md §3.6.1](docs/ADOPTION.md) for the exit codes, the agent invocation, and the full scope. It is an alpha convenience, not the gate of record — the reusable workflow remains the enforced gate.
 
 ---
 
@@ -482,4 +487,4 @@ This repository uses three licenses, split by path:
 | [LICENSE-docs](LICENSE-docs) | CC-BY-4.0 | `PROFILE.md`, `README.md`, `README.ko.md`, `docs/`, `SECURITY.md`, and all other prose |
 | [templates/LICENSE](templates/LICENSE) | CC0-1.0 | Everything under `templates/` |
 
-Code is licensed under Apache-2.0 so that the schemas, validator, and workflow automation can be reused under a standard, patent-aware code license. Prose is licensed under CC-BY-4.0 so that the profile text and documentation can be shared and adapted with attribution. Templates are dedicated to the public domain under CC0-1.0 so that copying them into adopting repositories carries no attribution obligation.
+Code uses Apache-2.0 so the schemas, validator, and workflow automation are reusable under a standard, patent-aware license. Prose uses CC-BY-4.0 so it can be shared and adapted with attribution. Templates use CC0-1.0 so copying them into adopting repositories carries no attribution obligation.

@@ -30,10 +30,14 @@ This is an existing repository, so follow the brownfield sequence in §4:
    active profile, or the exclusive classification and four facts for
    `archived`. Do not declare adoption complete; approval decisions
    belong to the human owner.
-5. Keep all changes on a branch and open a draft pull request;
+5. Optionally, before opening the pull request, run the §3.6.1
+   local pre-flight from the pinned checkout and resolve or record
+   any findings; it is a convenience self-check, not the gate of
+   record and not owner approval.
+6. Keep all changes on a branch and open a draft pull request;
    do not merge to the default branch — merging is the human
    owner's act after the §4.3 review.
-6. End with a handoff summary addressed to the human owner,
+7. End with a handoff summary addressed to the human owner,
    written in the owner's working language: state first that
    nothing is decided yet and the pull request must not be merged
    until the owner has answered; then list each decision the
@@ -253,6 +257,21 @@ It also emits non-blocking warnings: `trust-critical` without a defeaters file; 
 
 Entries classified `RESTRICTED` may be committed to a private repository, but they bind its visibility: the repository must not be made public while `RESTRICTED` material is present. Before any publication, sanitize `RESTRICTED` entries to `SUMMARY_ONLY` or `PUBLIC`, or move them to the restricted record ([DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md)). The validator's `RESTRICTED` warnings exist to keep this constraint visible on every run.
 
+### 3.6.1 Convenience pre-flight: `aap check` (alpha)
+
+From the same pinned checkout, `python3 .assurance-profile-pin/scripts/aap.py check --project-root .` runs the same adopter checks with the adoption declaration (`<project-root>/.agentic-assurance/adoption.yaml`) and the pinned schemas resolved for you, so you pass no low-level paths. It reports an `ADOPTER_SNAPSHOT` result with an explicit exit code:
+
+| Code | Meaning |
+|---|---|
+| `0` | the declared policy checks passed |
+| `1` | the engine reported findings |
+| `2` | a usage or setup problem (for example, no adoption declaration was found) |
+| `3` | an unexpected error |
+
+`PASS` means only that the declared checks passed, not that every possible check ran; run it from a checkout pinned to the version your `adoption.yaml` declares — a mismatched pin is itself a finding.
+
+This is an alpha convenience, not the gate of record: the `aap` name is provisional, no package is published, and the snapshot deliberately excludes drift and `base`/`head` transition comparison, a stable machine-readable output, and the `init`/`review`/`migrate` commands. The `validate.py` command above remains the authoritative local command, and the reusable workflow (§3.4) remains the enforced gate — it wraps the same validator unchanged.
+
 ### 3.7 Impact routing (optional): wire code changes to invariants
 
 An invariant register protects against regressions only when the changes that enter an invariant's territory are confronted with it. The optional `components` map in `adoption.yaml` makes that confrontation mechanical — it is what turns the register from documentation into a regression gate:
@@ -460,7 +479,7 @@ For an `archived` adoption, the owner instead confirms that the repository is re
 
 An agent may draft all of this; it may approve none of it.
 
-The adoption draft should arrive as an open pull request and stay unmerged until this review completes; merging the pull request is then the natural durable record that the owner reviewed and accepted the draft as the §4.3 baseline. If the draft was merged early, nothing is lost — corrections and the review record land as follow-up pull requests, as the first pilot did — but branch-until-reviewed is the intended flow. [REVIEW-GUIDE.md](REVIEW-GUIDE.md) is the owner-side companion for making these decisions, walking through each of them in plain language.
+The adoption draft should arrive as an open pull request and stay unmerged until this review completes; merging the pull request is then the natural durable record that the owner reviewed and accepted the draft as the §4.3 baseline. Running the §3.6.1 local pre-flight (or the full §3.6 validation) before opening that pull request catches structural gaps — a missing reading-order block, a leftover `REPLACE_WITH_` placeholder — before they reach the owner; it is a pre-flight, not a substitute for this §4.3 human review or the CI gate. If the draft was merged early, nothing is lost — corrections and the review record land as follow-up pull requests, as the first pilot did — but branch-until-reviewed is the intended flow. [REVIEW-GUIDE.md](REVIEW-GUIDE.md) is the owner-side companion for making these decisions, walking through each of them in plain language.
 
 ### 4.4 Staged remediation
 
