@@ -8,7 +8,7 @@
 **저장소:** `MosslandOpenDevs/agentic-assurance-profile`  
 **현재 성숙도:** 참조 프로필이며 인증 제도가 아님
 
-코드 생성이 아무리 값싸져도 소프트웨어 개발에는 여전히 비싼 부분이 남습니다. 이 프로필은 프로젝트가 바로 그 부분을 잃지 않도록 돕습니다.
+코드 생성은 값싸지만, 그 주변의 추론은 그렇지 않습니다. 이 프로필은 그 추론을 오래가고 검사 가능한 저장소 산출물로 남깁니다:
 
 - 이 시스템을 왜 이렇게 설계했는가
 - 어떤 성질이 계속 참이어야 하는가
@@ -58,7 +58,7 @@ AI 코딩 에이전트가 구현을 만들어 내고 고치는 속도는, 팀이
 
 ## 기원
 
-이 프로필의 뿌리는 Donald Knuth가 한 세대 전에 답했던 질문에 닿아 있습니다. 《TeX: The Program》은 프로그램을 단지 실행되는 물건이 아니라 사람에게 설명해야 할 대상으로 다뤘습니다. 추론 과정과 불변조건, 프로그램이 왜 옳은지를 밝히는 논증이 작업 그 자체의 일부였습니다. AI 코딩 에이전트는 그 규율을 선택 사항으로 만들어 주던 경제 구조를 뒤집었습니다. 구현은 값싸졌지만 설계 근거, 불변조건, 증거, 알려진 한계는 저절로 쓰이지 않습니다. 그리고 코드가 의도를 기록하는 속도보다 빨리 나올 때 프로젝트가 잃는 것이 바로 이것들입니다.
+이 프로필의 뿌리는 Donald Knuth가 한 세대 전에 답했던 질문에 닿아 있습니다. 《TeX: The Program》은 프로그램을 단지 실행되는 물건이 아니라 사람에게 설명해야 할 대상으로 다뤘습니다. 추론 과정과 불변조건, 프로그램이 왜 옳은지를 밝히는 논증이 작업 그 자체의 일부였습니다. AI 코딩 에이전트는 그 규율을 선택 사항으로 만들어 주던 경제 구조를 뒤집었습니다. 구현은 값싸졌습니다. 설계 근거, 불변조건, 증거, 알려진 한계는 그렇지 않으며 — 코드가 의도의 기록을 앞지를 때 프로젝트가 잃는 것이 바로 이것들입니다.
 
 직접적인 계기는 실무에서 나왔습니다. Mossland의 프로젝트인 [Passport](https://passport.moss.land)는 통상적인 코드 에디터 없이 거의 전부를 AI 코딩 에이전트로 만들었습니다. 그렇게 일해 보면 공백이 손에 잡힙니다. 소유자의 일은 코드를 쓰는 데서 주장, 불변조건, 증거, 잔여 위험을 관리하는 쪽으로 옮겨 갑니다. 그 관리에는 오래가고 들여다볼 수 있는 형식이 필요한데, 이 프로필이 바로 그 형식입니다.
 
@@ -318,22 +318,27 @@ active 경로의 as-built system 복원, 동작 분류, active claim/invariant/r
 
 파일만 만들었다고 채택한 것이 아닙니다.
 
-**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 먼저: (1) 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고). (2) 대상 저장소의 프로필을 그것이 무엇이고 무엇을 약속하는지로 **분류**하되([§4.0](docs/ADOPTION.md)), active 분류이면서 specialized 트리거가 하나도 없을 때만 `[core]`를 선언하고 위의 참고 전용 자격 전체가 증거로 확립될 때만 `archived`를 배타적인 대안으로 선택합니다. (3) 그다음 [docs/ADOPTION.md §4](docs/ADOPTION.md)의 active 또는 archived brownfield 경로 중 해당하는 절차를 따라, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언하고, 결과를 브랜치에 올려 merge 없이 human owner에게 넘깁니다. [§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
+**당신이 저장소에 “이 프로필을 적용하라”는 지시를 받은 AI 에이전트라면** — 이 링크 하나뿐인 한마디 지시라도 — 템플릿 복사부터 시작하지 마십시오. 대신:
+
+1. 이 프로필을 최신 release 커밋으로 **고정(pin)**합니다(유동적인 `main`은 유효한 pin이 아닙니다 — [버전 관리](#버전-관리) 참고).
+2. 대상 저장소를 그것이 무엇이고 무엇을 약속하는지로 **분류**합니다([§4.0](docs/ADOPTION.md)): active 분류이면서 specialized 트리거가 하나도 없을 때만 `[core]`를 선언하고, 위의 참고 전용 자격 전체가 증거로 확립될 때만 `archived`를 배타적인 대안으로 선택합니다.
+3. [docs/ADOPTION.md §4](docs/ADOPTION.md)의 active 또는 archived brownfield 경로 중 해당하는 절차를 **따르고**, 분류한 집합을 `adoption.yaml`의 `profiles:` 필드에 선언합니다.
+4. *(선택)* hand-off 전에, 고정한 체크아웃에서 §3.6.1 pre-flight self-check를 실행합니다([docs/ADOPTION.md](docs/ADOPTION.md)) — 편의 기능이며 기록상의 gate가 아닙니다.
+5. 결과를 브랜치에 올려 merge 없이 human owner에게 **넘깁니다**.
+
+[§0 시작 프롬프트](docs/ADOPTION.md)가 이 지시의 더 자세한 형태입니다 — 쓸 수 있으면 쓰되, 위 단계는 받은 것이 이 링크뿐일 때도 그대로 유효합니다.
 
 실전 채택 절차는 [docs/ADOPTION.md](docs/ADOPTION.md)에서 안내합니다. 병렬 파일을 새로 만드는 대신 기존 저장소 관례를 프로필 산출물에 대응시키는 방법은 [docs/MAPPINGS.md](docs/MAPPINGS.md)에서 다룹니다. 채택을 AI 에이전트에게 맡긴다면 “프로필을 적용하라”는 한마디 대신 [docs/ADOPTION.md §0](docs/ADOPTION.md)의 시작 프롬프트를 건네십시오. 채택 결과를 검토하는 human owner는 [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)에서 시작하십시오. 낯선 용어는 [docs/GLOSSARY.md](docs/GLOSSARY.md)에 정리되어 있습니다.
 
 ### 로컬에서 채택 점검하기 (alpha)
 
-소스 체크아웃에서 실행하는 초기 명령이, 현재 체크아웃을 대상으로 프로필의 adopter 검사를 읽기 전용·오프라인으로 수행합니다.
+고정한 커밋의 이 프로필 체크아웃에서, 읽기 전용·오프라인 명령이 채택 저장소를 점검합니다.
 
 ```bash
-# adoption.yaml이 선언한 커밋으로 고정된 이 프로필 체크아웃에서
 python3 scripts/aap.py check --project-root /path/to/your/repo
 ```
 
-`aap check`는 adoption 선언(`<project-root>/.agentic-assurance/adoption.yaml`)과 고정된 프로필의 schemas를 대신 찾아 주므로 — 저수준 경로를 손으로 넘길 필요가 없습니다 — `ADOPTER_SNAPSHOT` 결과를 명확한 종료 코드로 보고합니다: `0` 선언된 정책 검사 통과, `1` 엔진이 findings 보고, `2` 사용/설정 문제(예: adoption 선언을 찾지 못함), `3` 예기치 못한 오류. `PASS`는 *선언된* 검사가 통과했다는 뜻일 뿐, 가능한 모든 검사가 실행됐다는 뜻은 아닙니다. `adoption.yaml`이 선언한 버전과 같은 커밋으로 고정된 체크아웃에서 실행하십시오. pin이 어긋나면 그 자체가 하나의 finding입니다.
-
-이것은 alpha이자 편의 기능이며, 기록상의 gate가 아닙니다. 명령 이름 `aap`는 잠정적이고, 배포 패키지는 없으며, snapshot 점검은 drift와 `base`/`head` transition 비교, 안정적인 기계 판독 출력, `init`/`review`/`migrate` 명령을 의도적으로 제외합니다. 강제되는 gate는 여전히 재사용 workflow이며, 그것은 동일한 validator를 그대로 감쌉니다.
+종료 코드 `0`(통과) / `1`(findings) / `2`(설정) / `3`(내부)를 반환합니다. 종료 코드·에이전트 호출 형태·전체 범위는 [docs/ADOPTION.md §3.6.1](docs/ADOPTION.md)을 참고하십시오. alpha 편의 기능이며 기록상의 gate가 아닙니다 — 강제되는 gate는 여전히 재사용 workflow입니다.
 
 ---
 
@@ -482,4 +487,4 @@ Pull Request에는 다음을 밝힙니다.
 | [LICENSE-docs](LICENSE-docs) | CC-BY-4.0 | `PROFILE.md`, `README.md`, `README.ko.md`, `docs/`, `SECURITY.md`를 비롯한 모든 산문 |
 | [templates/LICENSE](templates/LICENSE) | CC0-1.0 | `templates/` 아래 전부 |
 
-코드는 Apache-2.0입니다. 덕분에 schema, validator, workflow 자동화를 특허 조항을 갖춘 표준 코드 라이선스로 재사용할 수 있습니다. 산문은 CC-BY-4.0입니다. 프로필 본문과 문서를 출처만 밝히면 자유롭게 공유하고 고쳐 쓸 수 있습니다. 템플릿은 CC0-1.0으로 퍼블릭 도메인에 헌정했습니다. 채택 저장소로 그대로 복사해도 출처 표기 의무가 생기지 않습니다.
+코드는 Apache-2.0입니다 — schema·validator·workflow 자동화를 특허 조항을 갖춘 표준 라이선스로 재사용하기 위함입니다. 산문은 CC-BY-4.0으로, 출처만 밝히면 공유·수정할 수 있습니다. 템플릿은 CC0-1.0으로, 채택 저장소에 복사해도 출처 표기 의무가 없습니다.

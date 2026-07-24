@@ -1,6 +1,10 @@
 # Agent instructions
 
-> **Placement:** Copy this file to the root of an adopting repository as `AGENTS.md`, or merge its sections into an existing `AGENTS.md`. Replace every `REPLACE_WITH_` placeholder in applicable project-specific sections. Under the exclusive `archived` profile—retained solely for historical reference, not supported or intended for current use, and with no active operation, functional maintenance, or feature development—delete or explicitly mark inapplicable project-specific lines; do not alter the verbatim OpenDevs block. The sole permitted adaptation to that block is substituting the workflow's custom `adoption-file` path for `.agentic-assurance/adoption.yaml`, identically in both root files.
+> **Placement:**
+> - Copy this file to the root of an adopting repository as `AGENTS.md`, or merge its sections into an existing `AGENTS.md`.
+> - Replace every `REPLACE_WITH_` placeholder in applicable project-specific sections.
+> - Under the exclusive `archived` profile — retained solely for historical reference, not supported or intended for current use, and with no active operation, functional maintenance, or feature development — delete or explicitly mark inapplicable project-specific lines; do not alter the verbatim OpenDevs block.
+> - The sole permitted adaptation to that block is substituting the workflow's custom `adoption-file` path for `.agentic-assurance/adoption.yaml`, identically in both root files.
 >
 > **Normative source:** The "OpenDevs Agentic Assurance" section below is copied verbatim from `AGENTIC_ASSURANCE.md` §11 ("Root `AGENTS.md` integration"), which remains the normative source. If the two copies ever differ, §11 governs.
 

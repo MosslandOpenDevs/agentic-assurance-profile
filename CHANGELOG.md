@@ -4,7 +4,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+- Docs: prose diet + agent-actionability pass. Tightened the README (broke
+  run-on sentences, sharpened the opening hook) and made the AI-agent adoption
+  path an executable step list. Wired the `aap check` pre-flight into the agent
+  flow: a new canonical [`docs/ADOPTION.md` §3.6.1](docs/ADOPTION.md), with
+  short pointers from the README, the ADOPTION §0 kick-off prompt and §4.3, and
+  `templates/AGENTIC_ASSURANCE.md` §12 (generic, no hardcoded alpha command);
+  `templates/AGENTS.md`'s placement note is reformatted as a list. `README.ko.md`
+  mirrors the README changes. Documentation/templates only — no adopter
+  obligation, schema, validator, or workflow change.
 
 ## v0.5.0 — 2026-07-24
 
