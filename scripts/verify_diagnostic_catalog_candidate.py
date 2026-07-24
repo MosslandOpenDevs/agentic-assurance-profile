@@ -48,6 +48,8 @@ MAX_SOURCE_BYTES = 16 * 1024 * 1024
 MAX_WORKFLOW_LINES = 20_000
 MAX_LINE_BYTES = 256 * 1024
 MAX_JSON_NUMBER_CHARS = 128
+MAX_GIT_STDOUT_BYTES = 64 * 1024 * 1024
+MAX_GIT_STDERR_BYTES = 1024 * 1024
 GIT_TIMEOUT_SECONDS = 20
 
 SHA1_RE = re.compile(r"[0-9a-f]{40}\Z")
@@ -94,8 +96,16 @@ class VerificationError(Exception):
     """A controlled, fail-closed candidate verification error."""
 
 
+class VerificationUnavailable(VerificationError):
+    """Candidate verification could not acquire its required local inputs."""
+
+
 def fail(message: str) -> None:
     raise VerificationError(message)
+
+
+def unavailable(message: str) -> None:
+    raise VerificationUnavailable(message)
 
 
 def require(condition: bool, message: str) -> None:
@@ -137,6 +147,12 @@ def require_sha1(value: Any, field: str) -> str:
     value = require_string(value, field)
     if SHA1_RE.fullmatch(value) is None:
         fail(f"{field} must be a full lowercase 40-hex SHA-1")
+    return value
+
+
+def require_git_sha1(value: str, field: str) -> str:
+    if SHA1_RE.fullmatch(value) is None:
+        unavailable(f"{field} is not a full lowercase 40-hex SHA-1")
     return value
 
 
@@ -264,26 +280,29 @@ class GitObjects:
         try:
             self.repo_root = repo_root.resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve --repo-root: {exc}")
+            unavailable(f"cannot resolve --repo-root: {exc}")
         require(self.repo_root.is_dir(), "--repo-root must be a directory")
         selected = shutil.which("git")
-        require(selected is not None, "cannot resolve git from PATH")
+        if selected is None:
+            unavailable("cannot resolve git from PATH")
         try:
             self.git = Path(str(selected)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve git executable: {exc}")
-        require(self.git.is_file(), "selected git executable is not a file")
+            unavailable(f"cannot resolve git executable: {exc}")
+        if not self.git.is_file():
+            unavailable("selected git executable is not a file")
         top = self._run("rev-parse", "--show-toplevel").stdout.rstrip(b"\r\n")
         try:
             resolved_top = Path(os.fsdecode(top)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve Git top-level: {exc}")
+            unavailable(f"cannot resolve Git top-level: {exc}")
         require(
             resolved_top == self.repo_root,
             "--repo-root must exactly name the repository top-level",
         )
         shallow = self._run("rev-parse", "--is-shallow-repository").stdout.strip()
-        require(shallow == b"false", "shallow repositories are unsupported")
+        if shallow != b"false":
+            unavailable("shallow repositories are unsupported")
 
     def _run(self, *args: str) -> subprocess.CompletedProcess[bytes]:
         environment = {
@@ -329,12 +348,16 @@ class GitObjects:
                 env=environment,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
-            fail(f"local Git object inspection failed: {exc}")
+            unavailable(f"local Git object inspection failed: {exc}")
+        if len(completed.stdout) > MAX_GIT_STDOUT_BYTES:
+            unavailable("local Git command exceeded its stdout limit")
+        if len(completed.stderr) > MAX_GIT_STDERR_BYTES:
+            unavailable("local Git command exceeded its stderr limit")
         if completed.returncode != 0:
             diagnostic = completed.stderr.decode("utf-8", "replace").strip()
             if len(diagnostic) > 500:
                 diagnostic = diagnostic[:500] + "..."
-            fail(f"local Git command failed: {diagnostic or 'no diagnostic'}")
+            unavailable(f"local Git command failed: {diagnostic or 'no diagnostic'}")
         return completed
 
     def object_type(self, oid: str) -> str:
@@ -344,7 +367,7 @@ class GitObjects:
                 "ascii", "strict"
             ).strip()
         except UnicodeDecodeError:
-            fail("Git object type is not ASCII")
+            unavailable("Git object type is not ASCII")
 
     def object_size(self, oid: str, field: str) -> int:
         require_sha1(oid, f"{field}.object_id")
@@ -352,8 +375,9 @@ class GitObjects:
         try:
             value = int(raw.decode("ascii", "strict"))
         except (UnicodeDecodeError, ValueError):
-            fail(f"{field} object size is not a non-negative ASCII integer")
-        require(value >= 0, f"{field} object size is negative")
+            unavailable(f"{field} object size is not a non-negative ASCII integer")
+        if value < 0:
+            unavailable(f"{field} object size is negative")
         return value
 
     def require_commit(self, oid: str, field: str) -> None:
@@ -370,7 +394,8 @@ class GitObjects:
             f"{field} blob is too large",
         )
         data = self._run("cat-file", "blob", blob_oid).stdout
-        require(len(data) <= MAX_SOURCE_BYTES, f"{field} blob exceeded its preflight size")
+        if len(data) > MAX_SOURCE_BYTES:
+            unavailable(f"{field} blob exceeded its preflight size")
         return data
 
     def ref_oid(self, ref: str) -> str:
@@ -378,16 +403,16 @@ class GitObjects:
         try:
             value = raw.decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail(f"Git ref {ref!r} did not resolve to ASCII")
-        return require_sha1(value, f"Git ref {ref}")
+            unavailable(f"Git ref {ref!r} did not resolve to ASCII")
+        return require_git_sha1(value, f"Git ref {ref}")
 
     def peeled_commit(self, oid: str) -> str:
         raw = self._run("rev-parse", "--verify", f"{oid}^{{commit}}").stdout.strip()
         try:
             value = raw.decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail("peeled commit is not ASCII")
-        return require_sha1(value, "peeled commit")
+            unavailable("peeled commit is not ASCII")
+        return require_git_sha1(value, "peeled commit")
 
     def tag_bytes(self, oid: str) -> bytes:
         require(self.object_type(oid) == "tag", "bound release object is not a tag")
@@ -396,10 +421,8 @@ class GitObjects:
             "annotated tag object is too large",
         )
         data = self._run("cat-file", "tag", oid).stdout
-        require(
-            len(data) <= 1024 * 1024,
-            "annotated tag object exceeded its preflight size",
-        )
+        if len(data) > 1024 * 1024:
+            unavailable("annotated tag object exceeded its preflight size")
         return data
 
 
@@ -2360,13 +2383,22 @@ def validate_normalized_inventory(
         written = True
     else:
         data = read_regular_file(path, "normalized inventory")
+    validate_normalized_inventory_bytes(data, expected)
+    return data, written
+
+
+def validate_normalized_inventory_bytes(
+    data: bytes,
+    expected: dict[str, Any],
+) -> None:
+    """Validate committed inventory bytes without consulting the worktree."""
+
     actual = strict_json_bytes(data, "normalized inventory")
     require(actual == expected, "committed normalized inventory differs from exact derivation")
     require(
         data == review_json_bytes(expected),
         "normalized inventory does not use its deterministic review spelling",
     )
-    return data, written
 
 
 def validate_compatibility_changes(
@@ -2596,20 +2628,14 @@ def validate_review_artifact_hash_references(
     )
 
 
-def verify(
+def derive_candidate_verification(
     repo_root: Path,
-    catalog_path: Path,
-    mapping_path: Path,
-    compatibility_changes_path: Path,
-    inventory_path: Path,
-    *,
-    write_inventory_path: Path | None = None,
+    catalog_bytes: bytes,
+    mapping_bytes: bytes,
+    compatibility_bytes: bytes,
 ) -> dict[str, Any]:
-    catalog_bytes = read_regular_file(catalog_path, "catalog candidate")
-    mapping_bytes = read_regular_file(mapping_path, "mapping candidate")
-    compatibility_bytes = read_regular_file(
-        compatibility_changes_path, "compatibility-change candidate"
-    )
+    """Derive the candidate result without reading candidate worktree files."""
+
     catalog = strict_json_bytes(catalog_bytes, "catalog candidate")
     mapping = strict_json_bytes(mapping_bytes, "mapping candidate")
     compatibility_changes = strict_json_bytes(
@@ -2657,60 +2683,148 @@ def verify(
     expected_inventory = build_normalized_inventory(
         catalog, mapping, analysis, workflows
     )
-    inventory_bytes, inventory_written = validate_normalized_inventory(
-        inventory_path,
-        expected_inventory,
-        write_path=write_inventory_path,
+
+    return {
+        "catalog": catalog,
+        "mapping": mapping,
+        "catalog_bytes": catalog_bytes,
+        "mapping_bytes": mapping_bytes,
+        "compatibility_bytes": compatibility_bytes,
+        "expected_inventory": expected_inventory,
+        "report": {
+            "status": "PASS",
+            "scope": REVIEW_SCOPE,
+            "catalog_sha256": sha256_bytes(catalog_bytes),
+            "mapping_sha256": sha256_bytes(mapping_bytes),
+            "compatibility_changes_sha256": sha256_bytes(compatibility_bytes),
+            "source_commit_sha1": source_commit,
+            "catalog_counts": {
+                "public_checks": len(catalog_data["checks"]),
+                "findings": len(catalog_data["findings"]),
+                "reasons": len(catalog_data["reasons"]),
+            },
+            "inventory_counts": {
+                key: value
+                for key, value in semantic_counts.items()
+                if key != "group_ids"
+            },
+            "control_flow_counts": {
+                "report_emit_returns": len(analysis["report_emit_return_lines"]),
+                "report_results_reads": len(analysis["report_results_read_lines"]),
+            },
+            "workflow_counts": {
+                "workflows": len(workflows),
+                "jobs": sum(int(item["job_count"]) for item in workflows),
+                "steps": sum(int(item["step_count"]) for item in workflows),
+            },
+            "terminal_family_count": terminal_count,
+            "phase0_case_count": phase0_count,
+            "compatibility_change_count": compatibility_change_count,
+            "authority_reference_count": authority_reference_count,
+            "normalized_inventory_payload_sha256": expected_inventory[
+                "payload_sha256"
+            ],
+            "limitations": [
+                "does not accept the candidate or authorize runtime/parity use",
+                "does not verify GitHub state, reviewer identity, or human authority",
+                "does not authenticate the local Git executable or object database",
+            ],
+        },
+    }
+
+
+def finish_candidate_verification(
+    derived: dict[str, Any],
+    inventory_bytes: bytes,
+    *,
+    inventory_written: bool,
+    validate_review_bindings: bool,
+) -> dict[str, Any]:
+    """Validate exact inventory bytes and finish one candidate report."""
+
+    expected_inventory = require_mapping(
+        derived.get("expected_inventory"),
+        "derived expected inventory",
     )
-    if write_inventory_path is None:
+    validate_normalized_inventory_bytes(inventory_bytes, expected_inventory)
+    catalog = require_mapping(derived.get("catalog"), "derived catalog")
+    mapping = require_mapping(derived.get("mapping"), "derived mapping")
+    compatibility_bytes = derived.get("compatibility_bytes")
+    require(
+        isinstance(compatibility_bytes, bytes),
+        "derived compatibility bytes are unavailable",
+    )
+    if validate_review_bindings:
         validate_review_artifact_hash_references(
             catalog,
             mapping,
             inventory_hash=sha256_bytes(inventory_bytes),
             compatibility_hash=sha256_bytes(compatibility_bytes),
         )
+    report = dict(require_mapping(derived.get("report"), "derived report"))
+    report["normalized_inventory_sha256"] = sha256_bytes(inventory_bytes)
+    report["normalized_inventory_written"] = inventory_written
+    return report
 
-    return {
-        "status": "PASS",
-        "scope": REVIEW_SCOPE,
-        "catalog_sha256": sha256_bytes(catalog_bytes),
-        "mapping_sha256": sha256_bytes(mapping_bytes),
-        "compatibility_changes_sha256": sha256_bytes(compatibility_bytes),
-        "normalized_inventory_sha256": sha256_bytes(inventory_bytes),
-        "normalized_inventory_written": inventory_written,
-        "source_commit_sha1": source_commit,
-        "catalog_counts": {
-            "public_checks": len(catalog_data["checks"]),
-            "findings": len(catalog_data["findings"]),
-            "reasons": len(catalog_data["reasons"]),
-        },
-        "inventory_counts": {
-            key: value
-            for key, value in semantic_counts.items()
-            if key != "group_ids"
-        },
-        "control_flow_counts": {
-            "report_emit_returns": len(analysis["report_emit_return_lines"]),
-            "report_results_reads": len(analysis["report_results_read_lines"]),
-        },
-        "workflow_counts": {
-            "workflows": len(workflows),
-            "jobs": sum(int(item["job_count"]) for item in workflows),
-            "steps": sum(int(item["step_count"]) for item in workflows),
-        },
-        "terminal_family_count": terminal_count,
-        "phase0_case_count": phase0_count,
-        "compatibility_change_count": compatibility_change_count,
-        "authority_reference_count": authority_reference_count,
-        "normalized_inventory_payload_sha256": expected_inventory[
-            "payload_sha256"
-        ],
-        "limitations": [
-            "does not accept the candidate or authorize runtime/parity use",
-            "does not verify GitHub state, reviewer identity, or human authority",
-            "does not authenticate the local Git executable or object database",
-        ],
-    }
+
+def verify_candidate_bytes(
+    repo_root: Path,
+    catalog_bytes: bytes,
+    mapping_bytes: bytes,
+    compatibility_bytes: bytes,
+    inventory_bytes: bytes,
+) -> dict[str, Any]:
+    """Verify exact candidate bytes without consulting candidate worktree paths."""
+
+    derived = derive_candidate_verification(
+        repo_root,
+        catalog_bytes,
+        mapping_bytes,
+        compatibility_bytes,
+    )
+    return finish_candidate_verification(
+        derived,
+        inventory_bytes,
+        inventory_written=False,
+        validate_review_bindings=True,
+    )
+
+
+def verify(
+    repo_root: Path,
+    catalog_path: Path,
+    mapping_path: Path,
+    compatibility_changes_path: Path,
+    inventory_path: Path,
+    *,
+    write_inventory_path: Path | None = None,
+) -> dict[str, Any]:
+    catalog_bytes = read_regular_file(catalog_path, "catalog candidate")
+    mapping_bytes = read_regular_file(mapping_path, "mapping candidate")
+    compatibility_bytes = read_regular_file(
+        compatibility_changes_path, "compatibility-change candidate"
+    )
+    derived = derive_candidate_verification(
+        repo_root,
+        catalog_bytes,
+        mapping_bytes,
+        compatibility_bytes,
+    )
+    expected_inventory = require_mapping(
+        derived.get("expected_inventory"),
+        "derived expected inventory",
+    )
+    inventory_bytes, inventory_written = validate_normalized_inventory(
+        inventory_path,
+        expected_inventory,
+        write_path=write_inventory_path,
+    )
+    return finish_candidate_verification(
+        derived,
+        inventory_bytes,
+        inventory_written=inventory_written,
+        validate_review_bindings=not inventory_written,
+    )
 
 
 def parser() -> argparse.ArgumentParser:
