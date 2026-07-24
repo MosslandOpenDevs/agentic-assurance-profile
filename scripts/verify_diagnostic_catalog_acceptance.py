@@ -38,6 +38,7 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
 from verify_diagnostic_catalog_candidate import (  # noqa: E402
     REVIEW_SCOPE as CANDIDATE_REVIEW_SCOPE,
     VerificationError as CandidateVerificationError,
+    VerificationUnavailable as CandidateVerificationUnavailable,
     verify_candidate_bytes,
 )
 
@@ -52,7 +53,10 @@ MAX_BLOB_BYTES = 16 * 1024 * 1024
 MAX_TREE_BYTES = 64 * 1024 * 1024
 MAX_TREE_FILES = 10_000
 MAX_JSON_NUMBER_CHARS = 128
-MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024
+MAX_GIT_STDOUT_BYTES = 64 * 1024 * 1024
+MAX_GIT_STDERR_BYTES = 1024 * 1024
+MAX_DIAGNOSTIC_CHARS = 2_000
+MAX_TEXT_FIELD_CHARS = 500
 GIT_TIMEOUT_SECONDS = 20
 
 DECISION_DIRECTORY = "docs/evidence/v0.5/diagnostic-catalog/decisions"
@@ -85,7 +89,7 @@ DOCUMENT_KIND = "diagnostic_catalog_acceptance_decision"
 INTERNAL_FORMAT_VERSION = 1
 VERIFIER_CONTRACT_ID = "AAP-V05-DIAGNOSTIC-CATALOG-ACCEPTANCE-OFFLINE-V1"
 CONTRACT_README_SHA256 = (
-    "3d606dc474dd4cc1bb38b676e031c4c284d169ab3d3265929676338243bc0346"
+    "db9bd46edf3d182ea5b6d379d8605d83c14e618f210a0486550a665e608e2208"
 )
 INITIAL_RECORD_ID = "AAP-V05-DIAGNOSTICS-ACCEPTANCE-001"
 SUBJECT_DECISION_ID = "AAP-V05-DIAGNOSTICS-001"
@@ -132,7 +136,7 @@ EXPECTED_BASELINE_COMPONENTS = [
 EXPECTED_BOUND_EVIDENCE = ["NORMALIZED_SOURCE_INVENTORY"]
 
 VERIFIED_CHECKS = [
-    "decision-preexists-consumer-base",
+    "decision-preexists-selected-consumer-revision",
     "canonical-first-parent-decision-history-append-only",
     "acceptance-only-tree-diff",
     "verifier-contract-precedes-decision",
@@ -147,7 +151,8 @@ VERIFIED_CHECKS = [
 ]
 UNVERIFIED_EXTERNAL_PREDICATES = [
     "protected-canonical-main",
-    "github-candidate-pr-state",
+    "github-subject-candidate-pr-state",
+    "github-verifier-contract-pr-state",
     "github-acceptance-pr-state",
     "factual-human-decision-maker",
     "factual-review-classes",
@@ -158,6 +163,8 @@ UNVERIFIED_EXTERNAL_PREDICATES = [
     "acceptance-merge-provider-provenance",
 ]
 UNVERIFIED_PRECONDITIONS = [
+    "consumer-base-role-authority",
+    "consuming-change-provider-state",
     "verifier-executable-provenance",
     "candidate-verifier-executable-provenance",
     "git-executable-provenance",
@@ -175,16 +182,77 @@ UNVERIFIED_AUTHORITY_PREDICATES = [
 
 
 class VerificationError(Exception):
-    """A controlled, fail-closed verification error."""
+    """A definite mismatch in the selected offline binding."""
+
+
+class VerificationUnavailable(VerificationError):
+    """The selected binding could not be fully evaluated."""
+
+
+class SafeArgumentParser(argparse.ArgumentParser):
+    """Keep usage failures bounded and terminal-safe."""
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(
+            2,
+            f"{self.prog}: error: "
+            f"{safe_text(message, limit=MAX_DIAGNOSTIC_CHARS)}\n",
+        )
 
 
 def fail(message: str) -> None:
     raise VerificationError(message)
 
 
+def unavailable(message: str) -> None:
+    raise VerificationUnavailable(message)
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         fail(message)
+
+
+def require_available(condition: bool, message: str) -> None:
+    if not condition:
+        unavailable(message)
+
+
+def bounded_text(value: object, *, limit: int) -> str:
+    text = str(value)
+    if len(text) > limit:
+        return text[:limit] + "..."
+    return text
+
+
+def bounded_diagnostic(value: object) -> str:
+    return bounded_text(value, limit=MAX_DIAGNOSTIC_CHARS)
+
+
+def safe_text(value: object, *, limit: int = MAX_TEXT_FIELD_CHARS) -> str:
+    """Render one bounded, single-line, JSON-escaped text field."""
+
+    return json.dumps(
+        bounded_text(value, limit=limit),
+        ensure_ascii=True,
+    )
+
+
+def observe_local_file_sha256(path: Path) -> str | None:
+    """Return a non-authoritative local file observation when safely readable."""
+
+    try:
+        resolved = path.resolve(strict=True)
+        if not resolved.is_file():
+            return None
+        with resolved.open("rb") as stream:
+            data = stream.read(MAX_BLOB_BYTES + 1)
+    except OSError:
+        return None
+    if len(data) > MAX_BLOB_BYTES:
+        return None
+    return sha256_bytes(data)
 
 
 def require_exact_keys(value: dict[str, Any], expected: set[str], field: str) -> None:
@@ -237,6 +305,12 @@ def require_sha1(value: Any, field: str) -> str:
     value = require_string(value, field)
     if SHA1_RE.fullmatch(value) is None:
         fail(f"{field} must be a full lowercase 40-hex SHA-1")
+    return value
+
+
+def require_git_sha1(value: str, field: str) -> str:
+    if SHA1_RE.fullmatch(value) is None:
+        unavailable(f"{field} is not a full lowercase 40-hex SHA-1")
     return value
 
 
@@ -337,47 +411,59 @@ class GitObjects:
         try:
             self.repo_root = repo_root.resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve --repo-root: {exc}")
+            unavailable(f"cannot resolve --repo-root: {exc}")
         require(self.repo_root.is_dir(), "--repo-root must be a directory")
 
         selected = shutil.which("git")
-        require(selected is not None, "cannot resolve a Git executable from PATH")
+        require_available(
+            selected is not None,
+            "cannot resolve a Git executable from PATH",
+        )
         try:
             self.git_executable = Path(str(selected)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve the selected Git executable: {exc}")
-        require(
+            unavailable(f"cannot resolve the selected Git executable: {exc}")
+        require_available(
             self.git_executable.is_file()
             and os.access(self.git_executable, os.X_OK),
             "selected Git executable is not an executable file",
         )
 
         bare = self._run("rev-parse", "--is-bare-repository").stdout.strip()
-        require(bare in {b"true", b"false"}, "cannot determine bare state")
-        require(bare == b"false", "bare repositories are unsupported")
+        require_available(bare in {b"true", b"false"}, "cannot determine bare state")
+        require_available(bare == b"false", "bare repositories are unsupported")
         top_raw = self._run("rev-parse", "--show-toplevel").stdout.rstrip(b"\r\n")
         try:
             top = Path(os.fsdecode(top_raw)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve Git top-level: {exc}")
+            unavailable(f"cannot resolve Git top-level: {exc}")
         require(
             top == self.repo_root,
             "--repo-root must exactly name the repository top-level",
         )
 
         version = self._run("--version").stdout.strip()
-        require(0 < len(version) <= 200, "cannot determine a bounded Git version")
+        require_available(
+            0 < len(version) <= 200,
+            "cannot determine a bounded Git version",
+        )
         try:
             self.git_version = version.decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail("Git version output is not ASCII")
+            unavailable("Git version output is not ASCII")
 
         shallow = self._run(
             "rev-parse",
             "--is-shallow-repository",
         ).stdout.strip()
-        require(shallow in {b"true", b"false"}, "cannot determine shallow state")
-        require(shallow == b"false", "shallow repositories are unsupported")
+        require_available(
+            shallow in {b"true", b"false"},
+            "cannot determine shallow state",
+        )
+        require_available(
+            shallow == b"false",
+            "shallow repositories are unsupported",
+        )
 
     def _run(
         self,
@@ -430,16 +516,22 @@ class GitObjects:
                 env=environment,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
-            fail(f"local Git object inspection failed: {exc}")
+            unavailable(f"local Git object inspection failed: {exc}")
+        require_available(
+            len(completed.stdout) <= MAX_GIT_STDOUT_BYTES,
+            "local Git command exceeded its stdout limit",
+        )
+        require_available(
+            len(completed.stderr) <= MAX_GIT_STDERR_BYTES,
+            "local Git command exceeded its stderr limit",
+        )
         if completed.returncode not in allowed_returncodes:
             diagnostic = completed.stderr.decode("utf-8", "replace").strip()
             if len(diagnostic) > 500:
                 diagnostic = diagnostic[:500] + "..."
-            fail(f"local Git command failed: {diagnostic or 'no diagnostic'}")
-        require(
-            len(completed.stdout) <= MAX_GIT_OUTPUT_BYTES,
-            "local Git command exceeded its output limit",
-        )
+            unavailable(
+                f"local Git command failed: {diagnostic or 'no diagnostic'}"
+            )
         return completed
 
     def object_type(self, oid: str) -> str:
@@ -449,7 +541,7 @@ class GitObjects:
                 "ascii", "strict"
             ).strip()
         except UnicodeDecodeError:
-            fail("Git object type is not ASCII")
+            unavailable("Git object type is not ASCII")
 
     def require_commit(self, oid: str, field: str) -> None:
         require_sha1(oid, field)
@@ -461,17 +553,32 @@ class GitObjects:
         try:
             parts = raw.decode("ascii", "strict").strip().split()
         except UnicodeDecodeError:
-            fail("commit parent list is not ASCII")
-        require(parts and parts[0] == commit, "unexpected rev-list result")
+            unavailable("commit parent list is not ASCII")
+        require_available(
+            bool(parts) and parts[0] == commit,
+            "unexpected rev-list result",
+        )
         for parent in parts[1:]:
-            require_sha1(parent, "commit parent")
+            require_git_sha1(parent, "commit parent")
         return parts[1:]
 
     def first_parent_contains(self, ancestor: str, descendant: str) -> bool:
         self.require_commit(ancestor, "first-parent ancestor")
         self.require_commit(descendant, "first-parent descendant")
         output = self._run("rev-list", "--first-parent", descendant).stdout
-        return ancestor.encode("ascii") in output.splitlines()
+        try:
+            revisions = [
+                line.decode("ascii", "strict") for line in output.splitlines()
+            ]
+        except UnicodeDecodeError:
+            unavailable("first-parent revision list is not ASCII")
+        require_available(
+            bool(revisions),
+            "first-parent revision list is empty",
+        )
+        for revision in revisions:
+            require_git_sha1(revision, "first-parent revision")
+        return ancestor in revisions
 
     def first_parent_path_was_used(self, commit: str, path: str) -> bool:
         self.require_commit(commit, "path-history commit")
@@ -509,10 +616,14 @@ class GitObjects:
         if not introductions:
             return None
         try:
-            result = introductions[0].decode("ascii", "strict")
+            revisions = [
+                line.decode("ascii", "strict") for line in introductions
+            ]
         except UnicodeDecodeError:
-            fail("path-introduction commit is not ASCII")
-        return require_sha1(result, "path-introduction commit")
+            unavailable("path-introduction commit is not ASCII")
+        for revision in revisions:
+            require_git_sha1(revision, "path-introduction commit")
+        return revisions[0]
 
     def first_parent_decision_records_rewritten(self, commit: str) -> bool:
         self.require_commit(commit, "decision-history commit")
@@ -543,8 +654,8 @@ class GitObjects:
                 mode, object_type, oid = metadata.decode("ascii").split(" ")
                 path = raw_path.decode("utf-8")
             except (ValueError, UnicodeDecodeError) as exc:
-                fail(f"malformed git ls-tree record for {field}: {exc}")
-            require_sha1(oid, f"{field} object ID")
+                unavailable(f"malformed git ls-tree record for {field}: {exc}")
+            require_git_sha1(oid, f"{field} object ID")
             records.append((mode, object_type, oid, path))
         return records
 
@@ -567,7 +678,7 @@ class GitObjects:
         if not entries:
             return None
         if len(entries) != 1 or entries[0][3] != path:
-            fail(f"Git path lookup was not exact: {path}")
+            unavailable(f"Git path lookup was not exact: {path}")
         return entries[0]
 
     def read_blob_oid(self, oid: str, field: str) -> bytes:
@@ -577,13 +688,16 @@ class GitObjects:
         try:
             size = int(raw_size.decode("ascii", "strict").strip())
         except (ValueError, UnicodeDecodeError):
-            fail(f"cannot read the size of {field}")
-        require(
+            unavailable(f"cannot read the size of {field}")
+        require_available(
             0 <= size <= MAX_BLOB_BYTES,
             f"{field} exceeds the {MAX_BLOB_BYTES}-byte blob limit",
         )
         data = self._run("cat-file", "blob", oid).stdout
-        require(len(data) == size, f"{field} blob size changed while reading")
+        require_available(
+            len(data) == size,
+            f"{field} blob size changed while reading",
+        )
         return data
 
     def read_regular_path(self, commit: str, path: str, field: str) -> bytes:
@@ -619,7 +733,7 @@ class GitObjects:
             prefix = scope + "/"
         entries = self._parse_ls_tree(self._run(*arguments).stdout, field)
         require(entries, f"{field} contains no tracked files")
-        require(
+        require_available(
             len(entries) <= MAX_TREE_FILES,
             f"{field} exceeds the {MAX_TREE_FILES}-file limit",
         )
@@ -633,7 +747,7 @@ class GitObjects:
                 f"{field} contains unsupported Git mode/type at {full_path}",
             )
             if prefix:
-                require(
+                require_available(
                     full_path.startswith(prefix),
                     f"{field} returned a path outside its scope",
                 )
@@ -641,11 +755,14 @@ class GitObjects:
             else:
                 relative = full_path
             relative = require_repo_path(relative, f"{field} path")
-            require(relative not in seen, f"{field} has duplicate path {relative}")
+            require_available(
+                relative not in seen,
+                f"{field} has duplicate path {relative}",
+            )
             seen.add(relative)
             data = self.read_blob_oid(oid, f"{field}:{relative}")
             total_bytes += len(data)
-            require(
+            require_available(
                 total_bytes <= MAX_TREE_BYTES,
                 f"{field} exceeds the {MAX_TREE_BYTES}-byte tree limit",
             )
@@ -663,12 +780,15 @@ class GitObjects:
         self.require_commit(commit, "root-tree commit")
         body = self._run("cat-file", "-p", commit).stdout
         first_line = body.splitlines()[0] if body else b""
-        require(first_line.startswith(b"tree "), "commit has no root tree")
+        require_available(
+            first_line.startswith(b"tree "),
+            "commit has no root tree",
+        )
         try:
             oid = first_line[5:].decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail("commit root-tree ID is not ASCII")
-        return require_sha1(oid, "commit root-tree ID")
+            unavailable("commit root-tree ID is not ASCII")
+        return require_git_sha1(oid, "commit root-tree ID")
 
     def added_paths(self, parent: str, commit: str) -> list[tuple[str, str]]:
         output = self._run(
@@ -685,14 +805,14 @@ class GitObjects:
         parts = output.split(b"\0")
         if parts and parts[-1] == b"":
             parts.pop()
-        require(len(parts) % 2 == 0, "malformed diff-tree output")
+        require_available(len(parts) % 2 == 0, "malformed diff-tree output")
         result: list[tuple[str, str]] = []
         for index in range(0, len(parts), 2):
             try:
                 status = parts[index].decode("ascii", "strict")
                 path = parts[index + 1].decode("utf-8", "strict")
             except UnicodeDecodeError as exc:
-                fail(f"non-textual acceptance diff entry: {exc}")
+                unavailable(f"non-textual acceptance diff entry: {exc}")
             result.append(
                 (status, require_repo_path(path, "acceptance diff path"))
             )
@@ -1199,7 +1319,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
     git.require_commit(decision_commit, "--decision-commit")
     require(
         git.first_parent_contains(decision_commit, consumer_base),
-        "decision commit is not already on the consumer base first-parent chain",
+        "decision commit is not already on the selected consumer revision's "
+        "first-parent chain",
     )
     require(
         not git.first_parent_decision_records_rewritten(consumer_base),
@@ -1342,6 +1463,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             artifact_bytes["compatibility"],
             artifact_bytes["inventory"],
         )
+    except CandidateVerificationUnavailable as exc:
+        unavailable(f"subject candidate semantic verification unavailable: {exc}")
     except CandidateVerificationError as exc:
         fail(f"subject candidate semantic verification failed: {exc}")
     require(
@@ -1383,6 +1506,13 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         SUBJECT_DECISION_ID,
     )
 
+    bound_acceptance_verifier_sha256 = next(
+        binding["raw_sha256"]
+        for binding in validated["verifier_contract_artifacts"]
+        if binding["role"] == "ACCEPTANCE_VERIFIER"
+    )
+    running_verifier_sha256 = observe_local_file_sha256(Path(__file__))
+
     return {
         "document_kind": "diagnostic_catalog_acceptance_binding_verification",
         "internal_format_version": 1,
@@ -1413,6 +1543,15 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         "unverified_external_predicates": UNVERIFIED_EXTERNAL_PREDICATES,
         "local_observations": {
             "verifier_executable_path": str(Path(__file__).resolve()),
+            "bound_acceptance_verifier_raw_sha256": (
+                bound_acceptance_verifier_sha256
+            ),
+            "running_verifier_raw_sha256": running_verifier_sha256,
+            "running_verifier_matches_bound_contract": (
+                None
+                if running_verifier_sha256 is None
+                else running_verifier_sha256 == bound_acceptance_verifier_sha256
+            ),
             "candidate_verifier_executable_path": str(
                 SCRIPT_DIRECTORY / "verify_diagnostic_catalog_candidate.py"
             ),
@@ -1426,7 +1565,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = SafeArgumentParser(
+        prog="verify_diagnostic_catalog_acceptance.py",
         description=(
             "Verify only the offline Git-object binding of one internal "
             "diagnostic-catalog acceptance decision."
@@ -1451,49 +1591,76 @@ def emit_success(result: dict[str, Any], output_format: str) -> None:
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return
     print("OFFLINE CATALOG BINDING VERIFIED; EFFECTIVE ACCEPTANCE NOT ESTABLISHED")
-    print(f"record_id: {result['record_id']}")
-    print(f"decision_commit: {result['decision_commit_sha1']}")
-    print(f"candidate_commit: {result['candidate_commit_sha1']}")
+    print(f"record_id: {safe_text(result['record_id'])}")
+    print(f"decision_commit: {safe_text(result['decision_commit_sha1'])}")
+    print(f"candidate_commit: {safe_text(result['candidate_commit_sha1'])}")
     print("implementation parity authorized: false")
     print("runtime consumption authorized: false")
     print("runtime ready: false")
 
 
-def emit_failure(record_id: str, error: str, output_format: str) -> None:
+def emit_failure(
+    record_id: str,
+    error: str,
+    failure_class: str,
+    output_format: str,
+) -> None:
+    safe_record_id = bounded_text(record_id, limit=MAX_TEXT_FIELD_CHARS)
+    safe_error = bounded_diagnostic(error)
     result = {
         "document_kind": "diagnostic_catalog_acceptance_binding_verification",
         "internal_format_version": 1,
         "public_contract": False,
-        "record_id": record_id,
-        "offline_binding": "REJECTED",
+        "record_id": safe_record_id,
+        "offline_binding": "NOT_VERIFIED",
+        "failure_class": failure_class,
         "effective_acceptance": "NOT_ESTABLISHED",
         "implementation_parity_authorized": False,
         "runtime_consumption_authorized": False,
         "runtime_ready": False,
-        "error": error,
+        "error": safe_error,
     }
     if output_format == "json":
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return
-    print("OFFLINE CATALOG BINDING REJECTED; EFFECTIVE ACCEPTANCE NOT ESTABLISHED")
-    print(f"record_id: {record_id}")
-    print(f"error: {error}")
+    if failure_class == "BINDING_MISMATCH":
+        headline = "OFFLINE CATALOG BINDING MISMATCH"
+    else:
+        headline = "OFFLINE CATALOG BINDING EVALUATION UNDETERMINED"
+    print(f"{headline}; EFFECTIVE ACCEPTANCE NOT ESTABLISHED")
+    print(f"failure_class: {safe_text(failure_class)}")
+    print(f"record_id: {safe_text(safe_record_id)}")
+    print(f"error: {safe_text(safe_error, limit=MAX_DIAGNOSTIC_CHARS)}")
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         result = verify(args)
+    except VerificationUnavailable as exc:
+        emit_failure(
+            args.record_id,
+            str(exc),
+            "ACQUISITION_UNAVAILABLE",
+            args.format,
+        )
+        return 3
     except VerificationError as exc:
-        emit_failure(args.record_id, str(exc), args.format)
+        emit_failure(
+            args.record_id,
+            str(exc),
+            "BINDING_MISMATCH",
+            args.format,
+        )
         return 1
     except Exception:
         emit_failure(
             args.record_id,
             "unexpected internal verification failure",
+            "INTERNAL_FAILURE",
             args.format,
         )
-        return 1
+        return 3
     emit_success(result, args.format)
     return 0
 

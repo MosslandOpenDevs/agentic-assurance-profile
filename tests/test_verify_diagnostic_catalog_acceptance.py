@@ -35,7 +35,7 @@ VERIFIER_CONTRACT_ID = (
     "AAP-V05-DIAGNOSTIC-CATALOG-ACCEPTANCE-OFFLINE-V1"
 )
 CONTRACT_README_SHA256 = (
-    "3d606dc474dd4cc1bb38b676e031c4c284d169ab3d3265929676338243bc0346"
+    "db9bd46edf3d182ea5b6d379d8605d83c14e618f210a0486550a665e608e2208"
 )
 RECORD_ID = "AAP-V05-DIAGNOSTICS-ACCEPTANCE-001"
 SUBJECT_DECISION_ID = "AAP-V05-DIAGNOSTICS-001"
@@ -65,6 +65,8 @@ class AcceptanceRepository:
         record_text_mutator: Optional[Callable[[str], str]] = None,
         extra_file: bool = False,
         merge_acceptance: bool = True,
+        merge_contract: bool = True,
+        contract_verifier_suffix: bytes = b"",
     ) -> None:
         self._temporary = tempfile.TemporaryDirectory(
             prefix="diagnostic-acceptance-verifier-test-"
@@ -74,6 +76,8 @@ class AcceptanceRepository:
         self.record_text_mutator = record_text_mutator
         self.extra_file = extra_file
         self.merge_acceptance = merge_acceptance
+        self.merge_contract = merge_contract
+        self.contract_verifier_suffix = contract_verifier_suffix
         self._build()
 
     def __enter__(self) -> "AcceptanceRepository":
@@ -160,7 +164,9 @@ class AcceptanceRepository:
         ]
         result: list[dict[str, str]] = []
         for role, path, source in definitions:
-            raw_sha256 = hashlib.sha256(source.read_bytes()).hexdigest()
+            raw_sha256 = hashlib.sha256(
+                self._contract_artifact_bytes(role, source)
+            ).hexdigest()
             if role == "CONTRACT":
                 raw_sha256 = CONTRACT_README_SHA256
             result.append(
@@ -171,6 +177,12 @@ class AcceptanceRepository:
                 }
             )
         return result
+
+    def _contract_artifact_bytes(self, role: str, source: Path) -> bytes:
+        data = source.read_bytes()
+        if role == "ACCEPTANCE_VERIFIER":
+            data += self.contract_verifier_suffix
+        return data
 
     def _record(
         self,
@@ -331,18 +343,25 @@ class AcceptanceRepository:
         self.git("checkout", "-b", "verifier-contract")
         for artifact in self._contract_artifacts():
             source = REPO_ROOT / artifact["path"]
-            self.write_bytes(artifact["path"], source.read_bytes())
+            self.write_bytes(
+                artifact["path"],
+                self._contract_artifact_bytes(artifact["role"], source),
+            )
         self.commit_all("add catalog acceptance verifier contract")
         self.git("checkout", "main")
-        self.git(
-            "-c",
-            "commit.gpgsign=false",
-            "merge",
-            "--no-ff",
-            "verifier-contract",
-            "-m",
-            "merge catalog acceptance verifier contract",
-        )
+        if self.merge_contract:
+            self.git(
+                "-c",
+                "commit.gpgsign=false",
+                "merge",
+                "--no-ff",
+                "verifier-contract",
+                "-m",
+                "merge catalog acceptance verifier contract",
+            )
+        else:
+            self.git("merge", "--squash", "verifier-contract")
+            self.commit_all("squash catalog acceptance verifier contract")
         self.verifier_contract_merge = self.rev_parse()
         self.acceptance_base = self.rev_parse()
         self.record = self._record(
@@ -458,6 +477,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
         decision_commit: Optional[str] = None,
         record_id: str = RECORD_ID,
         decision_path: str = DECISION_PATH,
+        output_format: str = "json",
         extra_env: Optional[dict[str, str]] = None,
     ) -> subprocess.CompletedProcess[str]:
         environment = {
@@ -484,7 +504,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
                 "--decision-path",
                 decision_path,
                 "--format",
-                "json",
+                output_format,
             ],
             cwd=REPO_ROOT,
             stdin=subprocess.DEVNULL,
@@ -513,7 +533,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
         self.assertNotIn("Traceback", completed.stdout + completed.stderr)
         return payload
 
-    def assert_rejected(
+    def assert_mismatch(
         self,
         completed: subprocess.CompletedProcess[str],
     ) -> dict:
@@ -523,13 +543,54 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             1,
             f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}",
         )
-        self.assertEqual(payload.get("offline_binding"), "REJECTED")
+        self.assertEqual(payload.get("offline_binding"), "NOT_VERIFIED")
+        self.assertEqual(payload.get("failure_class"), "BINDING_MISMATCH")
         self.assertEqual(payload.get("effective_acceptance"), "NOT_ESTABLISHED")
         self.assertIs(payload.get("implementation_parity_authorized"), False)
         self.assertIs(payload.get("runtime_consumption_authorized"), False)
         self.assertIs(payload.get("runtime_ready"), False)
         self.assertTrue(payload.get("error"))
         return payload
+
+    def assert_undetermined(
+        self,
+        completed: subprocess.CompletedProcess[str],
+        *,
+        failure_class: str = "ACQUISITION_UNAVAILABLE",
+    ) -> dict:
+        payload = self.parse_payload(completed)
+        self.assertEqual(
+            completed.returncode,
+            3,
+            f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}",
+        )
+        self.assertEqual(payload.get("offline_binding"), "NOT_VERIFIED")
+        self.assertEqual(payload.get("failure_class"), failure_class)
+        self.assertEqual(payload.get("effective_acceptance"), "NOT_ESTABLISHED")
+        self.assertIs(payload.get("implementation_parity_authorized"), False)
+        self.assertIs(payload.get("runtime_consumption_authorized"), False)
+        self.assertIs(payload.get("runtime_ready"), False)
+        self.assertTrue(payload.get("error"))
+        return payload
+
+    def assert_control_safe_text_failure(
+        self,
+        completed: subprocess.CompletedProcess[str],
+        *,
+        return_code: int,
+    ) -> list[str]:
+        self.assertEqual(completed.returncode, return_code, completed.stderr)
+        self.assertEqual(completed.stderr, "")
+        self.assertNotIn("\r", completed.stdout)
+        self.assertNotIn("\x1b", completed.stdout)
+        lines = completed.stdout.splitlines()
+        self.assertEqual(len(lines), 4, completed.stdout)
+        for line in lines:
+            self.assertFalse(
+                any(ord(character) < 0x20 or ord(character) == 0x7F for character in line),
+                repr(line),
+            )
+        return lines
 
     def test_valid_binding_is_offline_only_and_never_authorizes_runtime(self) -> None:
         with AcceptanceRepository() as repository:
@@ -550,6 +611,18 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             payload["unverified_external_predicates"],
         )
         self.assertIn(
+            "github-subject-candidate-pr-state",
+            payload["unverified_external_predicates"],
+        )
+        self.assertIn(
+            "github-verifier-contract-pr-state",
+            payload["unverified_external_predicates"],
+        )
+        self.assertNotIn(
+            "github-candidate-pr-state",
+            payload["unverified_external_predicates"],
+        )
+        self.assertIn(
             "branch-ruleset-codeowners-and-bypass-controls-at-event",
             payload["unverified_external_predicates"],
         )
@@ -561,11 +634,41 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             payload["verifier_contract_commit_sha1"],
             repository.verifier_contract_merge,
         )
+        self.assertIn(
+            "decision-preexists-selected-consumer-revision",
+            payload["verified"],
+        )
+        self.assertNotIn("decision-preexists-consumer-base", payload["verified"])
+        self.assertIn(
+            "consumer-base-role-authority",
+            payload["unverified_preconditions"],
+        )
+        self.assertIn(
+            "consuming-change-provider-state",
+            payload["unverified_preconditions"],
+        )
+        running_sha256 = hashlib.sha256(VERIFIER.read_bytes()).hexdigest()
+        self.assertEqual(
+            payload["local_observations"]["running_verifier_raw_sha256"],
+            running_sha256,
+        )
+        self.assertEqual(
+            payload["local_observations"][
+                "bound_acceptance_verifier_raw_sha256"
+            ],
+            running_sha256,
+        )
+        self.assertIs(
+            payload["local_observations"][
+                "running_verifier_matches_bound_contract"
+            ],
+            True,
+        )
 
     def test_unmerged_head_and_non_first_parent_consumer_are_rejected(self) -> None:
         with AcceptanceRepository(merge_acceptance=False) as repository:
-            head_only = self.assert_rejected(self.run_verifier(repository))
-            unrelated = self.assert_rejected(
+            head_only = self.assert_mismatch(self.run_verifier(repository))
+            unrelated = self.assert_mismatch(
                 self.run_verifier(
                     repository,
                     consumer_base=repository.acceptance_base,
@@ -574,9 +677,33 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
         self.assertIn("two-parent merge", head_only["error"])
         self.assertIn("first-parent chain", unrelated["error"])
 
+    def test_running_verifier_drift_is_observed_but_never_authorizes(self) -> None:
+        with AcceptanceRepository(
+            contract_verifier_suffix=b"\n# contract-only drift fixture\n"
+        ) as repository:
+            completed = self.run_verifier(repository)
+        payload = self.parse_payload(completed)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(payload["offline_binding"], "VERIFIED")
+        self.assertIs(
+            payload["local_observations"][
+                "running_verifier_matches_bound_contract"
+            ],
+            False,
+        )
+        self.assertNotEqual(
+            payload["local_observations"]["running_verifier_raw_sha256"],
+            payload["local_observations"][
+                "bound_acceptance_verifier_raw_sha256"
+            ],
+        )
+        self.assertIs(payload["implementation_parity_authorized"], False)
+        self.assertIs(payload["runtime_consumption_authorized"], False)
+        self.assertIs(payload["runtime_ready"], False)
+
     def test_acceptance_merge_with_extra_file_is_rejected(self) -> None:
         with AcceptanceRepository(extra_file=True) as repository:
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("exactly the one decision record", payload["error"])
 
     def test_record_cannot_predeclare_review_class_or_runtime_authority(self) -> None:
@@ -586,13 +713,13 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             )
 
         with AcceptanceRepository(record_mutator=predeclare) as repository:
-            predeclared = self.assert_rejected(self.run_verifier(repository))
+            predeclared = self.assert_mismatch(self.run_verifier(repository))
 
         def authorize(record: dict) -> None:
             record["scope"]["runtime_consumption_authorized"] = True
 
         with AcceptanceRepository(record_mutator=authorize) as repository:
-            runtime = self.assert_rejected(self.run_verifier(repository))
+            runtime = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("predeclaration", predeclared["error"])
         self.assertIn("runtime consumption", runtime["error"])
 
@@ -601,13 +728,13 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             record["internal_format_version"] = True
 
         with AcceptanceRepository(record_mutator=format_boolean) as repository:
-            document_format = self.assert_rejected(self.run_verifier(repository))
+            document_format = self.assert_mismatch(self.run_verifier(repository))
 
         def revision_boolean(record: dict) -> None:
             record["subject"]["catalog"]["catalog_revision"] = True
 
         with AcceptanceRepository(record_mutator=revision_boolean) as repository:
-            catalog_revision = self.assert_rejected(self.run_verifier(repository))
+            catalog_revision = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("internal_format_version", document_format["error"])
         self.assertIn("catalog.catalog_revision mismatch", catalog_revision["error"])
 
@@ -616,7 +743,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             record["subject"]["catalog"]["raw_sha256"] = "0" * 64
 
         with AcceptanceRepository(record_mutator=hash_tamper) as repository:
-            candidate = self.assert_rejected(self.run_verifier(repository))
+            candidate = self.assert_mismatch(self.run_verifier(repository))
 
         def authority_tamper(record: dict) -> None:
             record["authority_basis"]["governance"]["commit_sha1"] = (
@@ -624,7 +751,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             )
 
         with AcceptanceRepository(record_mutator=authority_tamper) as repository:
-            authority = self.assert_rejected(self.run_verifier(repository))
+            authority = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("subject.catalog.raw_sha256", candidate["error"])
         self.assertIn("first parent", authority["error"])
 
@@ -635,15 +762,23 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             ] = "c51b8c1cc7cb5fd343a4acf65e0cccc38356a4fe"
 
         with AcceptanceRepository(record_mutator=pre_contract) as repository:
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("first canonical first-parent introduction", payload["error"])
+
+    def test_squashed_verifier_contract_cannot_authorize_a_decision(self) -> None:
+        with AcceptanceRepository(merge_contract=False) as repository:
+            payload = self.assert_mismatch(self.run_verifier(repository))
+        self.assertIn(
+            "verifier contract canonical merge must be a two-parent merge",
+            payload["error"],
+        )
 
     def test_adr_order_and_hash_are_closed(self) -> None:
         def reverse(record: dict) -> None:
             record["authority_basis"]["accepted_adrs"].reverse()
 
         with AcceptanceRepository(record_mutator=reverse) as repository:
-            order = self.assert_rejected(self.run_verifier(repository))
+            order = self.assert_mismatch(self.run_verifier(repository))
 
         def hash_tamper(record: dict) -> None:
             record["authority_basis"]["accepted_adrs"][1][
@@ -651,7 +786,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             ] = "1" * 64
 
         with AcceptanceRepository(record_mutator=hash_tamper) as repository:
-            raw_hash = self.assert_rejected(self.run_verifier(repository))
+            raw_hash = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("adr_id mismatch", order["error"])
         self.assertIn("raw_sha256 mismatch", raw_hash["error"])
 
@@ -660,38 +795,38 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             record["authority_basis"]["governance"]["locator"] = "Nearby text"
 
         with AcceptanceRepository(record_mutator=governance_locator) as repository:
-            governance = self.assert_rejected(self.run_verifier(repository))
+            governance = self.assert_mismatch(self.run_verifier(repository))
 
         def adr_locator(record: dict) -> None:
             record["authority_basis"]["accepted_adrs"][0]["locator"] = "Status"
 
         with AcceptanceRepository(record_mutator=adr_locator) as repository:
-            adr = self.assert_rejected(self.run_verifier(repository))
+            adr = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("governance.locator mismatch", governance["error"])
         self.assertIn("accepted_adrs[0].locator mismatch", adr["error"])
 
     def test_modified_then_restored_record_is_rejected(self) -> None:
         with AcceptanceRepository() as repository:
             repository.modify_then_restore_record()
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("not append-only", payload["error"])
 
     def test_merge_modified_then_restored_record_is_rejected(self) -> None:
         with AcceptanceRepository() as repository:
             repository.merge_modify_then_restore_record()
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("not append-only", payload["error"])
 
     def test_competing_subject_record_is_rejected(self) -> None:
         with AcceptanceRepository() as repository:
             repository.add_duplicate_record()
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("competing subject", payload["error"])
 
     def test_structured_successor_invalidates_selected_record(self) -> None:
         with AcceptanceRepository() as repository:
             repository.add_successor_record()
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("selected decision is superseded", payload["error"])
 
     def test_duplicate_json_key_is_rejected(self) -> None:
@@ -706,8 +841,129 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             )
 
         with AcceptanceRepository(record_text_mutator=duplicate) as repository:
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_mismatch(self.run_verifier(repository))
         self.assertIn("duplicate JSON key", payload["error"])
+
+    def test_text_failure_escapes_control_bearing_record_id(self) -> None:
+        malicious = "BAD\r\nFORGED\x1b[31m"
+        with AcceptanceRepository() as repository:
+            completed = self.run_verifier(
+                repository,
+                record_id=malicious,
+                output_format="text",
+            )
+        lines = self.assert_control_safe_text_failure(
+            completed,
+            return_code=1,
+        )
+        self.assertIn(r"BAD\r\nFORGED\u001b[31m", lines[2])
+        self.assertNotIn("\nFORGED", completed.stdout)
+
+    def test_text_failure_escapes_control_bearing_duplicate_key(self) -> None:
+        def duplicate_control_key(text: str) -> str:
+            return text.replace(
+                "{\n",
+                '{\n  "bad\\n\\u001bkey": 1,\n  "bad\\n\\u001bkey": 2,\n',
+                1,
+            )
+
+        with AcceptanceRepository(
+            record_text_mutator=duplicate_control_key
+        ) as repository:
+            completed = self.run_verifier(
+                repository,
+                output_format="text",
+            )
+        lines = self.assert_control_safe_text_failure(
+            completed,
+            return_code=1,
+        )
+        self.assertIn(r"bad\n\u001bkey", lines[3])
+
+    def test_text_failure_escapes_control_bearing_git_stderr(self) -> None:
+        with AcceptanceRepository() as repository, tempfile.TemporaryDirectory(
+            prefix="diagnostic-acceptance-fake-git-"
+        ) as temporary:
+            fake_git = Path(temporary) / "git"
+            fake_git.write_text(
+                "#!/bin/sh\n"
+                "printf 'git failed\\n\\033[31mFORGED\\033[0m\\n' >&2\n"
+                "exit 7\n",
+                encoding="ascii",
+            )
+            fake_git.chmod(0o755)
+            completed = self.run_verifier(
+                repository,
+                output_format="text",
+                extra_env={
+                    "PATH": f"{temporary}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+        lines = self.assert_control_safe_text_failure(
+            completed,
+            return_code=3,
+        )
+        self.assertIn(r"git failed\n\u001b[31mFORGED\u001b[0m", lines[3])
+
+    def test_usage_error_escapes_control_bearing_unknown_argument(self) -> None:
+        malicious = "--forged\r\n\x1b[31mFORGED"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(VERIFIER),
+                "--repo-root",
+                str(REPO_ROOT),
+                "--expected-repository",
+                EXPECTED_REPOSITORY,
+                "--consumer-base",
+                BASE_COMMIT,
+                "--decision-commit",
+                BASE_COMMIT,
+                "--record-id",
+                RECORD_ID,
+                "--decision-path",
+                DECISION_PATH,
+                malicious,
+            ],
+            cwd=REPO_ROOT,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 2)
+        self.assertEqual(completed.stdout, "")
+        self.assertNotIn("\r", completed.stderr)
+        self.assertNotIn("\x1b", completed.stderr)
+        self.assertIn(r"--forged\r\n\u001b[31mFORGED", completed.stderr)
+        for line in completed.stderr.splitlines():
+            self.assertFalse(
+                any(
+                    ord(character) < 0x20 or ord(character) == 0x7F
+                    for character in line
+                ),
+                repr(line),
+            )
+
+    def test_malformed_git_plumbing_output_is_undetermined(self) -> None:
+        with AcceptanceRepository() as repository, tempfile.TemporaryDirectory(
+            prefix="diagnostic-acceptance-malformed-git-"
+        ) as temporary:
+            fake_git = Path(temporary) / "git"
+            fake_git.write_text(
+                "#!/bin/sh\nprintf 'not-a-bare-state\\n'\n",
+                encoding="ascii",
+            )
+            fake_git.chmod(0o755)
+            completed = self.run_verifier(
+                repository,
+                extra_env={
+                    "PATH": f"{temporary}{os.pathsep}{os.environ.get('PATH', '')}",
+                },
+            )
+        payload = self.assert_undetermined(completed)
+        self.assertIn("cannot determine bare state", payload["error"])
 
     def test_dirty_worktree_candidate_copies_are_ignored_and_unchanged(self) -> None:
         with AcceptanceRepository() as repository:
@@ -758,7 +1014,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
                     )
 
                 with AcceptanceRepository(record_mutator=inject) as repository:
-                    payload = self.assert_rejected(self.run_verifier(repository))
+                    payload = self.assert_mismatch(self.run_verifier(repository))
                 self.assertIn("ASCII control character", payload["error"])
 
     def test_pr_url_rejects_noncanonical_spelling(self) -> None:
@@ -777,7 +1033,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
                     record["repository_process"]["pr_url"] = value
 
                 with AcceptanceRepository(record_mutator=replace) as repository:
-                    payload = self.assert_rejected(self.run_verifier(repository))
+                    payload = self.assert_mismatch(self.run_verifier(repository))
                 self.assertIn("canonical", payload["error"])
 
     def test_git_environment_redirections_are_ignored(self) -> None:
@@ -801,11 +1057,59 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(payload["offline_binding"], "VERIFIED")
 
-    def test_shallow_repository_is_rejected(self) -> None:
+    def test_shallow_repository_is_undetermined(self) -> None:
         with AcceptanceRepository() as repository:
             repository.mark_shallow()
-            payload = self.assert_rejected(self.run_verifier(repository))
+            payload = self.assert_undetermined(self.run_verifier(repository))
         self.assertIn("shallow repositories are unsupported", payload["error"])
+
+    def test_missing_selected_revision_object_is_undetermined(self) -> None:
+        with AcceptanceRepository() as repository:
+            payload = self.assert_undetermined(
+                self.run_verifier(
+                    repository,
+                    consumer_base="0" * 40,
+                )
+            )
+        self.assertIn("local Git command failed", payload["error"])
+
+    def test_git_timeout_is_undetermined(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "diagnostic_acceptance_verifier_timeout_test",
+            VERIFIER,
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        stdout = io.StringIO()
+        argv = [
+            "--repo-root",
+            str(REPO_ROOT),
+            "--expected-repository",
+            EXPECTED_REPOSITORY,
+            "--consumer-base",
+            BASE_COMMIT,
+            "--decision-commit",
+            BASE_COMMIT,
+            "--record-id",
+            RECORD_ID,
+            "--decision-path",
+            DECISION_PATH,
+            "--format",
+            "json",
+        ]
+        with mock.patch.object(
+            module.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["git"], 20),
+        ), contextlib.redirect_stdout(stdout):
+            return_code = module.main(argv)
+        self.assertEqual(return_code, 3)
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["offline_binding"], "NOT_VERIFIED")
+        self.assertEqual(payload["failure_class"], "ACQUISITION_UNAVAILABLE")
+        self.assertIn("local Git object inspection failed", payload["error"])
 
     def test_unexpected_exception_is_redacted(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -840,7 +1144,7 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             side_effect=RuntimeError("secret internal detail"),
         ), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             return_code = module.main(argv)
-        self.assertEqual(return_code, 1)
+        self.assertEqual(return_code, 3)
         output = stdout.getvalue() + stderr.getvalue()
         self.assertNotIn("Traceback", output)
         self.assertNotIn("secret internal detail", output)
@@ -849,6 +1153,8 @@ class DiagnosticCatalogAcceptanceVerifierTests(unittest.TestCase):
             payload["error"],
             "unexpected internal verification failure",
         )
+        self.assertEqual(payload["offline_binding"], "NOT_VERIFIED")
+        self.assertEqual(payload["failure_class"], "INTERNAL_FAILURE")
         self.assertEqual(payload["effective_acceptance"], "NOT_ESTABLISHED")
 
 

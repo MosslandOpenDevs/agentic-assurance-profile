@@ -48,6 +48,8 @@ MAX_SOURCE_BYTES = 16 * 1024 * 1024
 MAX_WORKFLOW_LINES = 20_000
 MAX_LINE_BYTES = 256 * 1024
 MAX_JSON_NUMBER_CHARS = 128
+MAX_GIT_STDOUT_BYTES = 64 * 1024 * 1024
+MAX_GIT_STDERR_BYTES = 1024 * 1024
 GIT_TIMEOUT_SECONDS = 20
 
 SHA1_RE = re.compile(r"[0-9a-f]{40}\Z")
@@ -94,8 +96,16 @@ class VerificationError(Exception):
     """A controlled, fail-closed candidate verification error."""
 
 
+class VerificationUnavailable(VerificationError):
+    """Candidate verification could not acquire its required local inputs."""
+
+
 def fail(message: str) -> None:
     raise VerificationError(message)
+
+
+def unavailable(message: str) -> None:
+    raise VerificationUnavailable(message)
 
 
 def require(condition: bool, message: str) -> None:
@@ -137,6 +147,12 @@ def require_sha1(value: Any, field: str) -> str:
     value = require_string(value, field)
     if SHA1_RE.fullmatch(value) is None:
         fail(f"{field} must be a full lowercase 40-hex SHA-1")
+    return value
+
+
+def require_git_sha1(value: str, field: str) -> str:
+    if SHA1_RE.fullmatch(value) is None:
+        unavailable(f"{field} is not a full lowercase 40-hex SHA-1")
     return value
 
 
@@ -264,26 +280,29 @@ class GitObjects:
         try:
             self.repo_root = repo_root.resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve --repo-root: {exc}")
+            unavailable(f"cannot resolve --repo-root: {exc}")
         require(self.repo_root.is_dir(), "--repo-root must be a directory")
         selected = shutil.which("git")
-        require(selected is not None, "cannot resolve git from PATH")
+        if selected is None:
+            unavailable("cannot resolve git from PATH")
         try:
             self.git = Path(str(selected)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve git executable: {exc}")
-        require(self.git.is_file(), "selected git executable is not a file")
+            unavailable(f"cannot resolve git executable: {exc}")
+        if not self.git.is_file():
+            unavailable("selected git executable is not a file")
         top = self._run("rev-parse", "--show-toplevel").stdout.rstrip(b"\r\n")
         try:
             resolved_top = Path(os.fsdecode(top)).resolve(strict=True)
         except OSError as exc:
-            fail(f"cannot resolve Git top-level: {exc}")
+            unavailable(f"cannot resolve Git top-level: {exc}")
         require(
             resolved_top == self.repo_root,
             "--repo-root must exactly name the repository top-level",
         )
         shallow = self._run("rev-parse", "--is-shallow-repository").stdout.strip()
-        require(shallow == b"false", "shallow repositories are unsupported")
+        if shallow != b"false":
+            unavailable("shallow repositories are unsupported")
 
     def _run(self, *args: str) -> subprocess.CompletedProcess[bytes]:
         environment = {
@@ -329,12 +348,16 @@ class GitObjects:
                 env=environment,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
-            fail(f"local Git object inspection failed: {exc}")
+            unavailable(f"local Git object inspection failed: {exc}")
+        if len(completed.stdout) > MAX_GIT_STDOUT_BYTES:
+            unavailable("local Git command exceeded its stdout limit")
+        if len(completed.stderr) > MAX_GIT_STDERR_BYTES:
+            unavailable("local Git command exceeded its stderr limit")
         if completed.returncode != 0:
             diagnostic = completed.stderr.decode("utf-8", "replace").strip()
             if len(diagnostic) > 500:
                 diagnostic = diagnostic[:500] + "..."
-            fail(f"local Git command failed: {diagnostic or 'no diagnostic'}")
+            unavailable(f"local Git command failed: {diagnostic or 'no diagnostic'}")
         return completed
 
     def object_type(self, oid: str) -> str:
@@ -344,7 +367,7 @@ class GitObjects:
                 "ascii", "strict"
             ).strip()
         except UnicodeDecodeError:
-            fail("Git object type is not ASCII")
+            unavailable("Git object type is not ASCII")
 
     def object_size(self, oid: str, field: str) -> int:
         require_sha1(oid, f"{field}.object_id")
@@ -352,8 +375,9 @@ class GitObjects:
         try:
             value = int(raw.decode("ascii", "strict"))
         except (UnicodeDecodeError, ValueError):
-            fail(f"{field} object size is not a non-negative ASCII integer")
-        require(value >= 0, f"{field} object size is negative")
+            unavailable(f"{field} object size is not a non-negative ASCII integer")
+        if value < 0:
+            unavailable(f"{field} object size is negative")
         return value
 
     def require_commit(self, oid: str, field: str) -> None:
@@ -370,7 +394,8 @@ class GitObjects:
             f"{field} blob is too large",
         )
         data = self._run("cat-file", "blob", blob_oid).stdout
-        require(len(data) <= MAX_SOURCE_BYTES, f"{field} blob exceeded its preflight size")
+        if len(data) > MAX_SOURCE_BYTES:
+            unavailable(f"{field} blob exceeded its preflight size")
         return data
 
     def ref_oid(self, ref: str) -> str:
@@ -378,16 +403,16 @@ class GitObjects:
         try:
             value = raw.decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail(f"Git ref {ref!r} did not resolve to ASCII")
-        return require_sha1(value, f"Git ref {ref}")
+            unavailable(f"Git ref {ref!r} did not resolve to ASCII")
+        return require_git_sha1(value, f"Git ref {ref}")
 
     def peeled_commit(self, oid: str) -> str:
         raw = self._run("rev-parse", "--verify", f"{oid}^{{commit}}").stdout.strip()
         try:
             value = raw.decode("ascii", "strict")
         except UnicodeDecodeError:
-            fail("peeled commit is not ASCII")
-        return require_sha1(value, "peeled commit")
+            unavailable("peeled commit is not ASCII")
+        return require_git_sha1(value, "peeled commit")
 
     def tag_bytes(self, oid: str) -> bytes:
         require(self.object_type(oid) == "tag", "bound release object is not a tag")
@@ -396,10 +421,8 @@ class GitObjects:
             "annotated tag object is too large",
         )
         data = self._run("cat-file", "tag", oid).stdout
-        require(
-            len(data) <= 1024 * 1024,
-            "annotated tag object exceeded its preflight size",
-        )
+        if len(data) > 1024 * 1024:
+            unavailable("annotated tag object exceeded its preflight size")
         return data
 
 

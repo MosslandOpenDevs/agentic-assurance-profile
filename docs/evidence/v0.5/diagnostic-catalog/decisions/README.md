@@ -22,7 +22,9 @@ The sequence is deliberately verifier-first:
 
 1. A contract/verifier change defines and tests this closed internal format. It
    adds no decision record and grants no acceptance.
-2. That change merges to canonical `main`.
+2. That change merges to canonical `main` as an ordinary merge commit with
+   exactly two parents. Squash or rebase cannot satisfy the later chronology
+   verifier.
 3. A later acceptance-only pull request, based on that merge, adds exactly one
    direct child JSON file to this directory. It changes no verifier, candidate
    artifact, allowlist, workflow, validator, schema, template, profile, or
@@ -269,8 +271,8 @@ acceptance not established.
 
 The internal verifier may establish only the local object-and-byte predicate:
 
-- explicit record ID, path, decision merge, and consumer base; never a branch,
-  tag, `HEAD`, directory scan, or implicit latest;
+- explicit record ID, path, decision merge, and caller-selected consumer
+  revision; never a branch, tag, `HEAD`, directory scan, or implicit latest;
 - one new direct JSON record introduced by an acceptance-only, ordinary
   two-parent merge whose first parent is the recorded final base;
 - one exact, ordinary verifier-contract merge already on that base, with the
@@ -281,8 +283,17 @@ The internal verifier may establish only the local object-and-byte predicate:
   scope, governance, and ADR bytes;
 - record-ID/path uniqueness in the selected canonical tree, first introduction
   on the acceptance base's first-parent history, append-only canonical
-  first-parent history, and absence of head-only authority; and
-- the decision merge already present on the consuming implementation base.
+  first-parent history; and
+- the decision merge already present on the selected consumer revision's
+  first-parent history.
+
+`--consumer-base` is an unauthenticated caller assertion in this offline tool.
+The verifier cannot distinguish an actual consuming pull request's provider
+base from its head or another later revision. Consequently, a local success
+does not prove that the decision predated the consuming change and does not
+establish absence of head-only authority. Those claims require a separately
+accepted trusted provider adapter that supplies and authenticates base/head
+roles.
 
 A successful local result means:
 
@@ -294,21 +305,42 @@ runtime_consumption_authorized = false
 runtime_ready = false
 ```
 
-Git subprocesses have a timeout and their captured output and parsed
-object/tree data receive post-read bounds. This verifier does not implement a
-streaming subprocess-output cap, however. An adversarially large local object
-database is outside this internal review tool's supported boundary; the tool
-must not be promoted to an authoritative CI gate or public verifier without
-separately reviewed resource hardening.
+Failures preserve the distinction between a completed negative evaluation and
+an incomplete evaluation:
 
-It does not establish protected-canonical-main state, GitHub candidate or
-acceptance PR state, the factual human decision maker or review classes,
-maintainer eligibility or substantive authorship, credential/session custody,
-branch/ruleset/CODEOWNERS/bypass controls at the event, GitHub CI conclusions,
-semantic authority-reference validity, or published release/PR/workflow state.
-Local repository origin, caller-supplied repository authority, and verifier/Git
-executable provenance are likewise unverified preconditions. Missing or
-ambiguous external facts never fall back to an in-repository assertion.
+```text
+exit 1: offline_binding = NOT_VERIFIED
+        failure_class = BINDING_MISMATCH
+exit 3: offline_binding = NOT_VERIFIED
+        failure_class = ACQUISITION_UNAVAILABLE | INTERNAL_FAILURE
+exit 2: command-line usage error
+```
+
+Default text diagnostics render caller, Git, path, and JSON-derived values as
+bounded JSON-escaped single-line fields. Git subprocesses have a timeout;
+captured stdout, captured stderr, and parsed object/tree data receive post-read
+bounds. This verifier does not implement a streaming subprocess-output cap,
+however. An adversarially large local object database is outside this internal
+review tool's supported boundary; the tool must not be promoted to an
+authoritative CI gate or public verifier without separately reviewed resource
+hardening.
+
+It does not establish protected-canonical-main state; GitHub subject-candidate,
+verifier-contract, or acceptance PR state; the factual human decision maker or
+review classes; maintainer eligibility or substantive authorship;
+credential/session custody; branch/ruleset/CODEOWNERS/bypass controls at the
+event; GitHub CI conclusions; semantic authority-reference validity; or
+published release/PR/workflow state. Local repository origin, caller-supplied
+repository authority, consumer-base role authority, consuming-change provider
+state, and verifier/Git executable provenance are likewise unverified
+preconditions. Missing or ambiguous external facts never fall back to an
+in-repository assertion.
+
+The success report also compares the currently observed acceptance-verifier
+file bytes with the hash bound by the selected verifier contract. This
+`running_verifier_matches_bound_contract` value is a non-authoritative drift
+observation only: it never changes the offline result or grants authority, and
+a modified executable could lie about its own observation.
 
 Exit zero therefore cannot grant acceptance. The repository's separately
 governed owner decision supplies the organizational authority; the offline

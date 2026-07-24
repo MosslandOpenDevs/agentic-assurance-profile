@@ -7,14 +7,17 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 - Added an [internal, review-only contract](docs/evidence/v0.5/diagnostic-catalog/decisions/README.md)
   and offline verifier for a future diagnostic-catalog acceptance decision.
   The verifier selects an exact
-  prior verifier-contract merge, decision record, candidate merge, and consumer
-  base from local Git objects; rejects canonical first-parent mutation,
-  superseded or head-only authority, and widened bindings; and re-runs the
-  closed diagnostic-candidate semantics from exact candidate blobs. A
-  successful run establishes only
-  `offline_binding: VERIFIED`; it does not establish effective acceptance, add
-  an acceptance record, authorize parity or runtime use, or change the
-  validator, adopter workflow, public JSON, schema, template, or profile.
+  prior verifier-contract merge, decision record, candidate merge, and
+  caller-selected consumer revision from local Git objects; rejects canonical
+  first-parent mutation, superseded records, and widened bindings; and re-runs
+  the closed diagnostic-candidate semantics from exact candidate blobs. It
+  distinguishes binding mismatch from unavailable/internal evaluation,
+  single-line escapes bounded text diagnostics, and reports non-authoritative
+  running-verifier drift. A successful run establishes only `offline_binding:
+  VERIFIED`; caller-supplied base/head roles remain unverified, and the tool
+  does not establish effective acceptance, add an acceptance record, authorize
+  parity or runtime use, or change the validator, adopter workflow, public
+  JSON, schema, template, or profile.
 
 - Added [ADR 0005](docs/adr/v0.5/0005-human-review-authority.md), which keeps
   `REVIEW_RECORDED` limited to mechanically established structural review
