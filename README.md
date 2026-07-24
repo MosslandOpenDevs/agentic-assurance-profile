@@ -100,7 +100,7 @@ This profile is intentionally a thin coordination layer rather than a replacemen
 |---|---|
 | `AGENTS.md` | Persistent instructions and reading order for coding agents |
 | Agent Skills / `SKILL.md` | Reusable task-specific procedures |
-| OpenSpec, Spec Kit, ADR, RFC, or equivalent | Change specification and decision workflow |
+| OpenSpec, Spec Kit, Kiro, ADR, RFC, or equivalent | Change specification and decision workflow |
 | Tests, schemas, constraints, scanners, code-review tools, CI | Enforcement and verification mechanisms |
 | Agent change records and session logs | Provenance of what an agent read, ran, and changed |
 | SLSA, in-toto, or equivalent attestations | Build and artifact provenance for a release |
@@ -321,6 +321,19 @@ Creating the files alone is not adoption.
 **If you are an AI agent told to "apply this profile" to a repository** — even from a bare prompt with nothing but this link — do not begin by copying templates. First: (1) **pin** this profile at its latest release commit (a floating `main` is not a valid pin — see [Versioning](#versioning)); (2) **classify** the target repository's profile from what it is and promises ([§4.0](docs/ADOPTION.md)), declaring `[core]` only for an active classification with no specialized trigger and selecting `archived` only as an exclusive alternative when evidence establishes the full reference-only eligibility above; (3) then follow the applicable active or archived brownfield path in [docs/ADOPTION.md §4](docs/ADOPTION.md), declare the classified set in `adoption.yaml`'s `profiles:` field, and hand the result to the human owner on a branch — without merging. The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction; use it when you can, but the steps above hold even when all you were given is this link.
 
 See [docs/ADOPTION.md](docs/ADOPTION.md) for the practical adoption guide, and [docs/MAPPINGS.md](docs/MAPPINGS.md) for mapping existing repository conventions onto profile artifacts instead of creating parallel files. Tasking an AI agent with adoption? Give it the kick-off prompt in [docs/ADOPTION.md §0](docs/ADOPTION.md) instead of a bare "apply the profile". Owners reviewing an adoption start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are defined in [docs/GLOSSARY.md](docs/GLOSSARY.md).
+
+### Checking an adoption locally (alpha)
+
+An early, source-checkout command runs the profile's adopter checks against your current checkout, read-only and offline:
+
+```bash
+# from a checkout of this profile at the commit you pinned
+python3 scripts/aap.py check --project-root /path/to/your/repo
+```
+
+`aap check` resolves the adoption declaration (`<project-root>/.agentic-assurance/adoption.yaml`) and the pinned profile's schemas for you — so you no longer pass those low-level paths by hand — then reports an `ADOPTER_SNAPSHOT` result with an explicit exit code: `0` the declared policy checks passed, `1` the engine reported findings, `2` a usage or setup problem (for example, no adoption declaration was found), `3` an unexpected error. `PASS` means only that the *declared* checks passed, not that every possible check ran. Run it from a checkout pinned to the same version your `adoption.yaml` declares; a mismatched pin is itself a finding.
+
+This is an alpha and a convenience, not the gate of record. The command name `aap` is provisional, no package is published, and the snapshot check deliberately excludes drift and `base`/`head` transition comparison, a stable machine-readable output, and the `init`/`review`/`migrate` commands. The reusable workflow remains the enforced gate, and it wraps the same validator unchanged.
 
 ---
 

@@ -4,6 +4,19 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added `aap check`, a thin, read-only alpha CLI facade over the existing v0.4
+  validator ([scripts/aap.py](scripts/aap.py)). It resolves the adoption
+  declaration, project root, and pinned schemas, then forwards an
+  otherwise-unchanged `ADOPTER_SNAPSHOT` evaluation to
+  [scripts/validate.py](scripts/validate.py) and maps the result onto an
+  explicit `0`/`1`/`2`/`3` exit-code contract (PASS / findings / usage /
+  internal). It is read-only and offline, targets only the current worktree
+  snapshot, and deliberately excludes drift and `base`/`head` transition, a
+  public JSON contract and stable finding codes, and the
+  `init`/`review`/`migrate` commands. The command name `aap` is provisional
+  and no package is published; the validator, adopter workflow, schemas,
+  templates, and profile obligations are unchanged.
+
 - Added an [internal, review-only contract](docs/evidence/v0.5/diagnostic-catalog/decisions/README.md)
   and offline verifier for a future diagnostic-catalog acceptance decision.
   The verifier selects an exact
