@@ -4,6 +4,30 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.5.0 — 2026-07-24
+
+A backward-compatible minor that ships the v0.5 Foundation: it adds the optional
+`aap check` CLI over the existing v0.4 validator and records the v0.5 governance
+decisions (the canonical-engine Gate G1 outcome, `DEFER`). It changes no adopter
+obligation — `PROFILE.md`, the schemas, the templates, `scripts/validate.py`,
+and the reusable adopter workflow are unchanged — so every `v0.4.0` adoption
+remains conforming.
+
+**Semver classification (`PROFILE.md` §16):** minor — adds new
+backward-compatible capability (the `aap check` command) and non-normative
+records; no obligation is added, tightened, weakened, or removed.
+
+**Review class (`GOVERNANCE.md` §2):** `SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED`
+— no second active maintainer yet, and no external technical review is
+incorporated into this release.
+
+**Adopter impact / upgrade actions:** none. `aap check` is an optional,
+read-only convenience over the same validator the reusable workflow already
+runs; a `v0.4.0` adoption needs no change. Adopters who want the local command
+re-pin to `v0.5.0` at their convenience.
+
 - Recorded the [Gate G1 outcome](docs/evidence/v0.5/g1-canonical-engine.md) as
   **`DEFER`** ([#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56#issuecomment-5069013026)):
   on the current evidence — one internal `aap check` trial, no external pilot, no
