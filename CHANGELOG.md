@@ -4,6 +4,16 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Added a [Gate G1 decision record](docs/evidence/v0.5/g1-canonical-engine.md)
+  (draft, verdict pending) marshalling the canonical-engine go/no-go evidence
+  against the V0.5-DESIGN §G1 conditions. On the current evidence — one internal
+  `aap check` trial, no external pilot, no reviewed parity oracle, no spike — the
+  design's own default applies and the recommended outcome is `DEFER`: ship the
+  Foundation as v0.5.0 and revisit the engine in a later minor. Non-normative;
+  the outcome is recorded by the maintainer in
+  [#56](https://github.com/MosslandOpenDevs/agentic-assurance-profile/issues/56).
+  No validator, workflow, schema, template, or profile obligation changes.
+
 - Added `aap check`, a thin, read-only alpha CLI facade over the existing v0.4
   validator ([scripts/aap.py](scripts/aap.py)). It resolves the adoption
   declaration, project root, and pinned schemas, then forwards an
