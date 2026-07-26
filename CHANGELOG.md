@@ -56,10 +56,16 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   Only the required set is bound, so a declared-but-optional operand is never
   carried by any instance and the frozen predicate stays unevaluable.
 
-  Projection dispositions are drawn from a closed vocabulary, and the sizes of
-  both guard subject sets are pinned. A suppressing label removes a projection
-  from every guard, so relabelling could otherwise turn a real reachability
-  failure into a pass, visible only as a smaller reported count.
+  Projection dispositions are drawn from a closed vocabulary, and both guard
+  subject sets are pinned by digest over their derived identities rather than
+  by size. A suppressing label removes a projection from the
+  finding/completion-producer set, so relabelling could otherwise turn a real
+  reachability failure into a pass. A size pin closes only shrinkage: it is
+  blind to relabelling compensated by padding, and blind to relocating a source
+  line from one group row to another, which moves a finding out of the level
+  the gate-effect guard reads while every count stays identical. The digest
+  binds each subject's finding or check, the row that claims it, the callsite
+  it resolves at, and the source lines that row carries.
 
   Adds 25 regression tests (512 total, was 487), each asserting that a guard
   fires for a specific reason rather than that the suite stays green.

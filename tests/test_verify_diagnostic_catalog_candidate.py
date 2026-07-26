@@ -1061,7 +1061,49 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             )
         self.assertEqual(completed.returncode, 1, completed.stdout)
         self.assertIn(
-            "producer bindings for guard review",
+            "does not match the recorded digest",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_relocating_a_source_line_between_rows_fails_closed(self) -> None:
+        """The subject digest binds which row claims which source line.
+
+        `guard_gate_effect_recovery` reads emitted levels from the claiming
+        row.  Moving line 1626 out of D-1626 hides its warn level, so a
+        BLOCK-only F0030 stops being reported — and every count stays
+        identical, which is why a size pin cannot catch it.
+        """
+
+        def escalate(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0030":
+                    entry["context_effect_rules"] = [
+                        {
+                            "when": "the registered condition is established",
+                            "gate_effect": "BLOCK",
+                        }
+                    ]
+
+        def relocate(mapping: dict) -> None:
+            rows = {
+                row["group_id"]: row
+                for row in mapping["semantic_mapping"]["group_rows"]
+            }
+            lines = rows["D-1626"]["source_selectors"]["direct_emitter_lines"]
+            rows["D-1626"]["source_selectors"]["direct_emitter_lines"] = []
+            rows["D-3345"]["source_selectors"].setdefault(
+                "direct_emitter_lines", []
+            ).extend(lines)
+
+        with CandidatePair(
+            catalog_mutator=escalate, mapping_mutator=relocate
+        ) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "does not match the recorded digest",
             json.loads(completed.stdout)["error"],
         )
 

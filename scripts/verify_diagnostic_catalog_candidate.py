@@ -37,8 +37,9 @@ SUPPRESSED_PROJECTION_DISPOSITIONS = frozenset(
     {"SUPPRESSED_DUPLICATE", "SUPPRESSED_INTERNAL_FALLBACK"}
 )
 # The closed projection-disposition vocabulary.  A suppressing label removes a
-# projection from every guard's subject set, so an unregistered value must not
-# be accepted and the resulting set sizes are pinned below.
+# projection from the finding/completion-producer subject set (the selector
+# walk is disposition-blind by design), so an unregistered value must not be
+# accepted and the resulting subject sets are digest-pinned below.
 PROJECTION_DISPOSITIONS = frozenset(
     {
         "PROJECT_FINDING",
@@ -47,11 +48,19 @@ PROJECTION_DISPOSITIONS = frozenset(
         "SUPPRESSED_INTERNAL_FALLBACK",
     }
 )
-# Sizes of the guards' subject sets.  Without these, relabelling a projection
-# as suppressed shrinks what the guards examine and is reported only as a
-# smaller number -- which is exactly how a candidate could silence them.
-EXPECTED_FINDING_PRODUCER_BINDINGS = 383
-EXPECTED_CALLSITE_SELECTORS = 234
+# Digests over the guards' subject sets, not their sizes.  A count closes only
+# shrinkage; it is blind to relabelling that is compensated by padding, and
+# blind to relocating a source line from one group row to another -- which
+# silently moves a finding out of the level the gate-effect guard reads while
+# every count stays identical.  The digest binds each subject's identity: its
+# finding or check, the row that claims it, the callsite it resolves at, and
+# the exact source lines that row carries.
+EXPECTED_FINDING_PRODUCER_BINDINGS_DIGEST = (
+    "f8ffb4bd2ba8073264018d14deb4f430258b5758c9aec7b3f98ca07050008af2"
+)
+EXPECTED_CALLSITE_SELECTOR_DIGEST = (
+    "631e9e50c28197b30e21ef2954f9d9d719e1f7dd7d0e6c945ea922325c10f56d"
+)
 
 # The bound validator's three top-level entrypoints and the evaluation kind each
 # one runs as.  A producer reachable only from `run_adopter` cannot be reported
@@ -3054,7 +3063,7 @@ def guard_gate_effect_recovery(
 
 def guard_callsite_selector_accuracy(
     mapping: dict[str, Any], reach: dict[str, Any]
-) -> tuple[set[str], int]:
+) -> tuple[set[str], list[tuple[str, str]]]:
     """Every callsite selector must describe the bound source it names.
 
     The line locator is authoritative, but a selector that names a function the
@@ -3132,7 +3141,7 @@ def guard_callsite_selector_accuracy(
                     inside_it = enclosing.get(via_line) == via_simple
                     if not (calls_it or inside_it):
                         defects.add(f"{group_id}:{selector}|via")
-    return defects, len(selectors)
+    return defects, selectors
 
 
 def validate_semantic_guards(
@@ -3155,18 +3164,46 @@ def validate_semantic_guards(
     for row in mapping["semantic_mapping"]["group_rows"]:
         iter_finding_targets(row.get("target") or {}, row, pairs)
 
-    require(
-        len(pairs) == EXPECTED_FINDING_PRODUCER_BINDINGS,
-        f"expected {EXPECTED_FINDING_PRODUCER_BINDINGS} finding/completion "
-        f"producer bindings for guard review, found {len(pairs)}. A shrunken "
-        "subject set means a guard is examining less than it did.",
+    # The digest pins subject-set MEMBERSHIP, deliberately not selector or
+    # condition text.  Content defects are what the guards themselves report;
+    # pinning content here would fire first and mask their messages.
+    binding_digest = sha256_bytes(
+        canonical_json_bytes(
+            sorted(
+                [
+                    code,
+                    str(row.get("group_id")),
+                    ",".join(str(line) for line in sorted(row_source_lines(row))),
+                ]
+                for code, row, _callsite in pairs
+            )
+        )
     )
-    selector_defects, selector_count = guard_callsite_selector_accuracy(mapping, reach)
     require(
-        selector_count == EXPECTED_CALLSITE_SELECTORS,
-        f"expected {EXPECTED_CALLSITE_SELECTORS} callsite selectors for guard "
-        f"review, found {selector_count}",
+        binding_digest == EXPECTED_FINDING_PRODUCER_BINDINGS_DIGEST,
+        "finding/completion producer subject set for guard review does not "
+        f"match the recorded digest (found {binding_digest}, "
+        f"{len(pairs)} bindings). Any change to which findings are reviewed, "
+        "which row claims them, or which source lines that row carries alters "
+        "what the guards examine.",
     )
+    selector_defects, selector_pairs = guard_callsite_selector_accuracy(mapping, reach)
+    # Per-group selector counts, again membership rather than content: this
+    # pins against a selector being deleted or added, while leaving what a
+    # selector says to the guard.
+    selector_census: dict[str, int] = defaultdict(int)
+    for group_id, _selector in selector_pairs:
+        selector_census[group_id] += 1
+    selector_digest = sha256_bytes(
+        canonical_json_bytes(sorted(selector_census.items()))
+    )
+    require(
+        selector_digest == EXPECTED_CALLSITE_SELECTOR_DIGEST,
+        "callsite selector subject set for guard review does not match the "
+        f"recorded digest (found {selector_digest}, "
+        f"{len(selector_pairs)} selectors)",
+    )
+    selector_count = len(selector_pairs)
     observed = {
         "evaluation_kind_reachability": guard_evaluation_kind_reachability(
             catalog_data, pairs, reach
