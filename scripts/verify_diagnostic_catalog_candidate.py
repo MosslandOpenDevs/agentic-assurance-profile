@@ -56,7 +56,7 @@ PROJECTION_DISPOSITIONS = frozenset(
 # finding or check, the row that claims it, the callsite it resolves at, and
 # the exact source lines that row carries.
 EXPECTED_FINDING_PRODUCER_BINDINGS_DIGEST = (
-    "f8ffb4bd2ba8073264018d14deb4f430258b5758c9aec7b3f98ca07050008af2"
+    "021fc4ea869a45b0e5b00955d9a822e9d15fbf322f98bbdac4fe8f9d145a6fe7"
 )
 EXPECTED_CALLSITE_SELECTOR_DIGEST = (
     "631e9e50c28197b30e21ef2954f9d9d719e1f7dd7d0e6c945ea922325c10f56d"
@@ -3166,16 +3166,21 @@ def validate_semantic_guards(
 
     # The digest pins subject-set MEMBERSHIP, deliberately not selector or
     # condition text.  Content defects are what the guards themselves report;
-    # pinning content here would fire first and mask their messages.
+    # pinning text here would fire first and mask their messages.  The callsite
+    # IS included: it is a resolved integer line, not text, and it is the line
+    # guard_evaluation_kind_reachability actually prefers -- 154 of the pairs
+    # carry one, and for those the row's lines are never read, so omitting it
+    # left a selector rewrite able to move what the guard examines.
     binding_digest = sha256_bytes(
         canonical_json_bytes(
             sorted(
                 [
                     code,
                     str(row.get("group_id")),
+                    "" if callsite is None else str(callsite),
                     ",".join(str(line) for line in sorted(row_source_lines(row))),
                 ]
-                for code, row, _callsite in pairs
+                for code, row, callsite in pairs
             )
         )
     )

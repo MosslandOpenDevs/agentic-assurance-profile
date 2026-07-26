@@ -64,10 +64,14 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   blind to relabelling compensated by padding, and blind to relocating a source
   line from one group row to another, which moves a finding out of the level
   the gate-effect guard reads while every count stays identical. The digest
-  binds each subject's finding or check, the row that claims it, the callsite
-  it resolves at, and the source lines that row carries.
+  binds each subject's finding or check, the row that claims it, the resolved
+  callsite line, and the source lines that row carries — the callsite because
+  the reachability guard prefers it where one exists, so a selector rewrite
+  would otherwise move what the guard examines. It binds membership only, never
+  selector or condition text: those are what the guards themselves report, and
+  pinning them would fire first and mask their messages.
 
-  Adds 25 regression tests (512 total, was 487), each asserting that a guard
+  Adds 28 regression tests (515 total, was 487), each asserting that a guard
   fires for a specific reason rather than that the suite stays green.
 
 - Docs: restructured the README to about half its length (~490 → ~245 lines).

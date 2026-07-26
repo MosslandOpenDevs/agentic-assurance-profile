@@ -1107,6 +1107,93 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             json.loads(completed.stdout)["error"],
         )
 
+    def test_repointing_a_callsite_fails_closed(self) -> None:
+        """The digest binds the resolved callsite, not just the row's lines.
+
+        `guard_evaluation_kind_reachability` prefers the projection's callsite
+        where one exists, so a selector rewrite moves what the guard examines.
+        Re-homing F0009 to a CENTRAL_SELF_CHECK-only check is a real
+        reachability defect; repointing its callsite at a self-check-reachable
+        line used to hide it at rc=0.
+        """
+
+        selector = "load_yaml@2833 in check_template"
+
+        def rehome(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] != "F0009":
+                    continue
+                entry["owning_check_id"] = "profile.schema-conformance"
+                for group in entry["source_binding"]["producer_groups"]:
+                    group["callsite_selector"] = selector
+
+        def repoint(mapping: dict) -> None:
+            def walk(node: object) -> None:
+                if not isinstance(node, dict):
+                    return
+                if node.get("finding_code") == "F0009":
+                    node["owning_check_id"] = "profile.schema-conformance"
+                for projection in node.get("projections") or []:
+                    target = projection.get("target") or {}
+                    if target.get("finding_code") == "F0009":
+                        target["owning_check_id"] = "profile.schema-conformance"
+                        if projection.get("callsite_selector"):
+                            projection["callsite_selector"] = selector
+                    walk(target)
+                for variant in node.get("variants") or []:
+                    walk(variant.get("target") or {})
+                    for projection in variant.get("callsite_projections") or []:
+                        target = projection.get("target") or {}
+                        if target.get("finding_code") == "F0009":
+                            target["owning_check_id"] = "profile.schema-conformance"
+                            if projection.get("callsite_selector"):
+                                projection["callsite_selector"] = selector
+                        walk(target)
+
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                walk(row.get("target") or {})
+
+        with CandidatePair(catalog_mutator=rehome, mapping_mutator=repoint) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "does not match the recorded digest",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_deleting_a_callsite_selector_fails_closed(self) -> None:
+        """Pins the selector digest, which nothing else exercises.
+
+        A deleted selector silently falls the reachability guard back to the
+        row's shared-helper lines, which this module's own docstring calls
+        vacuous.
+        """
+
+        def drop(mapping: dict) -> None:
+            # U-VERSION-1754's selectors sit above REASON leaves.
+            # `collect_finding_source_bindings` pins only the selectors above
+            # FINDING leaves, so this one reaches the digest rather than being
+            # rejected earlier — which is exactly the population the digest is
+            # the check of record for.
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                if row["group_id"] != "U-VERSION-1754":
+                    continue
+                for projection in (row.get("target") or {}).get("projections") or []:
+                    if projection.get("callsite_selector"):
+                        del projection["callsite_selector"]
+                        return
+
+        with CandidatePair(mapping_mutator=drop) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "callsite selector subject set", json.loads(completed.stdout)["error"]
+        )
+
     def test_unregistered_projection_disposition_fails_closed(self) -> None:
         def tamper(mapping: dict) -> None:
             for row in mapping["semantic_mapping"]["group_rows"]:
