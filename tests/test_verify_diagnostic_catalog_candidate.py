@@ -568,7 +568,10 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         counts = json.loads(completed.stdout)["semantic_guard_counts"]
         self.assertEqual(counts["callsite_selectors_checked"], 234)
-        self.assertEqual(counts["finding_producer_bindings_checked"], 358)
+        # 358 finding bindings plus the 25 check-completion-evidence rows,
+        # which bind a check directly and are subject to the same reachability
+        # rule.
+        self.assertEqual(counts["finding_producer_bindings_checked"], 383)
         # Pinned deliberately: this count carries the honesty property of the
         # whole mechanism.  Leaving it unpinned would let a real new defect be
         # silenced by pasting its key into the table with nothing to notice.
@@ -802,6 +805,187 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             )
         self.assert_guard_failure(
             completed, "callsite_selector_accuracy", "via-nonexistent"
+        )
+
+    @staticmethod
+    def _set_first_selector(group_id: str, value: str):
+        """Replace the first callsite selector of one semantic group."""
+
+        def mutator(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                if row["group_id"] != group_id:
+                    continue
+                projections = (row.get("target") or {}).get("projections") or []
+                if projections:
+                    projections[0]["callsite_selector"] = value
+
+        return mutator
+
+    def test_module_scope_enclosing_claim_fails_closed(self) -> None:
+        """Reachable through ordinary input on a non-finding-bound selector.
+
+        `collect_finding_source_bindings` pins only the selectors above FINDING
+        leaves; U-1251's projections are not pinned, so the guard is the check
+        of record for them.
+        """
+
+        with CandidatePair(
+            mapping_mutator=self._set_first_selector(
+                "U-1251", "compile@98 in totally_fake_fn"
+            )
+        ) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "enclosing-module-scope"
+        )
+
+    def test_trailing_dot_cannot_silence_the_enclosing_claim(self) -> None:
+        """One character must not disable every enclosing branch."""
+
+        with CandidatePair(
+            mapping_mutator=self._set_first_selector(
+                "U-1251", "load_yaml@2833 in check_artifacts."
+            )
+        ) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "enclosing-unparseable"
+        )
+
+    def test_unknown_dotted_qualifier_fails_closed(self) -> None:
+        with CandidatePair(
+            mapping_mutator=self._set_first_selector(
+                "U-1251", "load_yaml@2833 in wrong_outer.check_artifacts"
+            )
+        ) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "enclosing-qualifier"
+        )
+
+    def test_renaming_a_completion_leaf_kind_cannot_drop_coverage(self) -> None:
+        """Leaf kinds carry no closed vocabulary, so the count is pinned.
+
+        Renaming the kind previously removed the row from both the leaf
+        validation and the new reachability coverage, silently.
+        """
+
+        def rename(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                target = row.get("target") or {}
+                if target.get("kind") == "CHECK_COMPLETION_EVIDENCE":
+                    target["kind"] = "CHECK_COMPLETION_EVIDENCE_RENAMED"
+                    return
+
+        with CandidatePair(mapping_mutator=rename) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "check-completion evidence leaves",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_real_dotted_nesting_is_not_a_defect(self) -> None:
+        """Pins the non-defect so the qualifier rule cannot over-fire."""
+
+        spec = importlib.util.spec_from_file_location(
+            "diagnostic_candidate_verifier_selector_branch_test",
+            VERIFIER,
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source = subprocess.run(
+            [
+                "git",
+                "show",
+                "00e2fe46d4eb01a4147f149851a48a3017cbb796:scripts/validate.py",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            check=True,
+        ).stdout
+        reach = module.analyze_semantic_reachability(source)
+
+        def probe(selector: str) -> set:
+            mapping = {
+                "semantic_mapping": {
+                    "group_rows": [
+                        {
+                            "group_id": "T",
+                            "target": {"projections": [{"callsite_selector": selector}]},
+                        }
+                    ]
+                }
+            }
+            defects, _ = module.guard_callsite_selector_accuracy(mapping, reach)
+            return defects
+
+        # A real nested definition must not be flagged; the qualifier rule has
+        # to accept the nesting chain it was written for.
+        self.assertEqual(
+            probe("read_project_text_file@3669 in check_required_files.require"), set()
+        )
+        # And the innermost-segment comparison still holds on its own.
+        self.assertEqual(probe("read_project_text_file@3669 in require"), set())
+
+    def test_missing_context_effect_rules_cannot_bypass_the_guard(self) -> None:
+        """An absent rule list would match no effect set and silence the guard."""
+
+        def drop(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0030":
+                    del entry["context_effect_rules"]
+
+        with CandidatePair(catalog_mutator=drop) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "context_effect_rules", json.loads(completed.stdout)["error"]
+        )
+
+    def test_empty_context_effect_rules_cannot_bypass_the_guard(self) -> None:
+        def empty(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0035":
+                    entry["context_effect_rules"] = []
+
+        with CandidatePair(catalog_mutator=empty) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "declares no context_effect_rules",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_unregistered_gate_effect_fails_closed(self) -> None:
+        def tamper(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0030":
+                    entry["context_effect_rules"] = [
+                        {"when": "always", "gate_effect": "ADVISORY"}
+                    ]
+
+        with CandidatePair(catalog_mutator=tamper) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "unregistered gate effect", json.loads(completed.stdout)["error"]
         )
 
     def test_bogus_selector_line_fails_closed(self) -> None:

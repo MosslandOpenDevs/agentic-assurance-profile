@@ -46,6 +46,13 @@ ENTRYPOINT_EVALUATION_KINDS = {
     "run_self_check": "CENTRAL_SELF_CHECK",
 }
 
+# The closed gate-effect vocabulary a finding's context rules may select.
+GATE_EFFECTS = frozenset({"BLOCK", "WARN"})
+
+# Marker for a reachability subject that binds a check directly rather than
+# through a finding code.  `%` keeps it out of the F#### namespace.
+_CHECK_OWNED = "check%%%s"
+
 # Semantic defects the r1 review established against the bound v0.4 blob, kept
 # here so the guards can fail closed on anything NEW while the recorded ones
 # remain visible and countable.  This is an explicit debt record, not a
@@ -136,6 +143,11 @@ EXPECTED_REPORT_RESULTS_READS = 8
 EXPECTED_PRELIMINARY_UPSTREAM_PRODUCERS = 77
 EXPECTED_SUPPLEMENTAL_UPSTREAM_PRODUCERS = 7
 EXPECTED_TOTAL_UPSTREAM_PRODUCERS = 84
+# Leaf kinds carry no closed vocabulary, so an unrecognised `kind` value simply
+# falls through the leaf loop.  Pinning the completion-evidence count here means
+# renaming one cannot silently drop it from validation or from reachability
+# review.  Pinning it in the mapping would leave it under the same edit.
+EXPECTED_CHECK_COMPLETION_EVIDENCE_LEAVES = 25
 
 PRELIMINARY_RETURN_FUNCTIONS = {
     "load_yaml_with_loader",
@@ -1293,6 +1305,31 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
                 ),
                 f"finding {code} fact property {fact_key}",
             )
+        # A finding that declares no gate effect, or an unregistered one, would
+        # silently exempt itself from gate-effect review: the guard compares
+        # the recovered effect set, and an absent or empty list matches
+        # nothing.  The effect vocabulary is closed.
+        rules = require_list(
+            finding.get("context_effect_rules"),
+            f"finding {code} context_effect_rules",
+        )
+        require(
+            bool(rules),
+            f"finding {code} declares no context_effect_rules",
+        )
+        for rule_index, raw_rule in enumerate(rules):
+            rule = require_mapping(
+                raw_rule, f"finding {code} context_effect_rules[{rule_index}]"
+            )
+            require_string(
+                rule.get("when"),
+                f"finding {code} context_effect_rules[{rule_index}].when",
+            )
+            require(
+                rule.get("gate_effect") in GATE_EFFECTS,
+                f"finding {code} context_effect_rules[{rule_index}] declares "
+                f"unregistered gate effect {rule.get('gate_effect')!r}",
+            )
         findings[code] = finding
 
     reasons_root = require_mapping(catalog.get("reasons"), "catalog.reasons")
@@ -1678,6 +1715,7 @@ def validate_semantic_mapping(
     upstream_group_lines: list[int] = []
     finding_leaf_count = 0
     fact_bound_leaf_count = 0
+    completion_leaf_count = 0
     derived_finding_bindings: dict[str, Counter[FindingSourceKey]] = defaultdict(
         Counter
     )
@@ -1732,10 +1770,16 @@ def validate_semantic_mapping(
                 else:
                     require(owner_kind in {"RUN", "PROVIDER"}, f"semantic group {group_id} has invalid reason owner kind {owner_kind}")
             elif kind == "CHECK_COMPLETION_EVIDENCE":
+                completion_leaf_count += 1
                 check_id = require_string(leaf.get("check_id"), f"semantic group {group_id} completion check")
                 require(check_id in catalog_data["checks"], f"semantic group {group_id} has unknown completion check {check_id}")
                 require(leaf.get("legacy_ok_text_is_completion") is False, f"semantic group {group_id} treats legacy prose as completion")
     require(len(group_ids) == len(set(group_ids)), "semantic group IDs are not unique")
+    require(
+        completion_leaf_count == EXPECTED_CHECK_COMPLETION_EVIDENCE_LEAVES,
+        f"expected {EXPECTED_CHECK_COMPLETION_EVIDENCE_LEAVES} check-completion "
+        f"evidence leaves, found {completion_leaf_count}",
+    )
 
     emitter_lines = {int(item["line"]) for item in analysis["direct_emitters"]}
     require(set(direct_coverage) == emitter_lines, "direct emitter source locator set is incomplete or has extras")
@@ -2684,6 +2728,13 @@ def analyze_semantic_reachability(source: bytes) -> dict[str, Any]:
 
     These facts support the semantic guards below.  They are read from the same
     bound blob the rest of the verifier uses; nothing is imported or executed.
+
+    The call graph is keyed on bare function names, so two same-named
+    definitions in different scopes merge into one node carrying the union of
+    their reachability.  The bound blob has one such pair (``entry_label``); no
+    citable line falls in either scope, and the blob is hash-pinned, so the
+    flattening cannot affect a verdict here.  ``analyze_validator`` keys on
+    (name, start, end) where it needs the distinction.
     """
 
     try:
@@ -2797,6 +2848,13 @@ def iter_finding_targets(
     if node.get("kind") == "FINDING" and node.get("finding_code"):
         out.append((str(node["finding_code"]), row, selector_line(selector)))
         return
+    if node.get("kind") == "CHECK_COMPLETION_EVIDENCE" and node.get("check_id"):
+        # Completion evidence binds a check directly rather than through a
+        # finding.  Reachability still applies: a check whose completion
+        # evidence is produced only in a kind it may not run in can never
+        # complete, which is the same false-green shape.
+        out.append((_CHECK_OWNED % node["check_id"], row, selector_line(selector)))
+        return
     for projection in node.get("projections") or []:
         if projection.get("disposition") in SUPPRESSED_PROJECTION_DISPOSITIONS:
             continue
@@ -2865,10 +2923,13 @@ def guard_evaluation_kind_reachability(
     defects: set[str] = set()
     enclosing = reach["enclosing"]
     for code, row, callsite in pairs:
-        finding = catalog_data["findings"].get(code)
-        if not finding:
-            continue
-        check = catalog_data["checks"].get(finding.get("owning_check_id")) or {}
+        if code.startswith("check%"):
+            check = catalog_data["checks"].get(code.split("%", 1)[1]) or {}
+        else:
+            finding = catalog_data["findings"].get(code)
+            if not finding:
+                continue
+            check = catalog_data["checks"].get(finding.get("owning_check_id")) or {}
         # validate_catalog requires a non-empty closed set, so an absent or
         # empty value can no longer silently disable this guard.
         allowed = set(check.get("allowed_evaluation_kinds") or [])
@@ -2889,7 +2950,11 @@ def guard_evaluation_kind_reachability(
                 # Reachable from no entrypoint at all: the mapping binds a
                 # producer the bound blob can never execute.  Stricter than a
                 # kind mismatch, so it is reported separately rather than
-                # skipped.
+                # skipped.  Defensive only: validate_semantic_mapping already
+                # forces the citable line set to equal the AST inventory, and
+                # every emitter and upstream-producer line in the bound blob
+                # lies in a reachable function, so no candidate the verifier
+                # accepts can provoke this.  It is not tested coverage.
                 defects.add(f"{code}:{row.get('group_id')}@{line}|unreachable")
             elif not kinds & allowed:
                 defects.add(f"{code}:{row.get('group_id')}@{line}")
@@ -2969,11 +3034,29 @@ def guard_callsite_selector_accuracy(
             defects.add(f"{group_id}:{selector}|primary")
             continue
         if enclosing_claim:
-            claim = enclosing_claim.split("(")[0].strip().split(".")[-1]
+            qualified = enclosing_claim.split("(")[0].strip()
+            claim = qualified.split(".")[-1]
             actual = enclosing.get(line)
-            if claim and actual and claim != actual:
+            # collect_finding_source_bindings pins selectors that sit above a
+            # FINDING leaf, so tampering there is rejected before this guard
+            # runs.  It does not pin the selectors above REASON and other leaf
+            # kinds, and those reach the branches below through ordinary input.
+            if claim == "" and qualified:
+                # A trailing dot leaves an empty innermost segment, which would
+                # otherwise skip every branch below and let a false claim pass.
+                defects.add(f"{group_id}:{selector}|enclosing-unparseable")
+            if claim and actual is None:
+                # The cited line is at module scope, so no enclosing function
+                # claim can hold.  Reported rather than skipped.
+                defects.add(f"{group_id}:{selector}|enclosing-module-scope")
+            elif claim and actual and claim != actual:
                 shape = "nonexistent" if claim not in funcdefs else "wrong"
                 defects.add(f"{group_id}:{selector}|enclosing-{shape}")
+            # A dotted claim such as "check_required_files.require" names the
+            # nesting chain; every qualifier must exist, not just the innermost.
+            for qualifier in qualified.split(".")[:-1]:
+                if qualifier and qualifier not in funcdefs:
+                    defects.add(f"{group_id}:{selector}|enclosing-qualifier")
         if via:
             via_name, _, via_raw = via.strip().rpartition("@")
             try:

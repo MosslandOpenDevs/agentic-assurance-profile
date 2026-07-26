@@ -21,10 +21,19 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   function, and `via` clause against the AST, rejecting any that names a
   function the bound blob does not define.
 
+  Reachability also covers the 25 check-completion-evidence rows, which bind a
+  check directly rather than through a finding: a check whose completion
+  evidence is produced only in a kind it may not run in can never complete.
+  That leaf count is pinned verifier-side, because leaf kinds carry no closed
+  vocabulary and renaming one would otherwise drop the row from both the leaf
+  validation and this coverage without changing any reported number.
+
   `validate_catalog` now also requires every public check to declare a
   non-empty `allowed_evaluation_kinds` drawn from the closed entrypoint
-  vocabulary, so a check can no longer exempt itself from reachability review
-  by omitting the field.
+  vocabulary, and every finding to declare non-empty `context_effect_rules`
+  whose `gate_effect` values come from the closed `{BLOCK, WARN}` set. Both
+  fields are read by a guard and were previously unvalidated, so deleting
+  either was a cheaper way to silence a guard than editing the debt table.
 
   The guards run against `KNOWN_R1_SEMANTIC_DEFECTS`, an explicit table of the
   29 defects the r1 review established. It fails closed in both directions: a
@@ -35,7 +44,7 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   Review-only tooling: not imported by the validator, the `aap` CLI, or either
   workflow, and it cannot accept a catalog or authorize runtime use. No adopter
   obligation, schema, template, validator, workflow, or candidate byte changes.
-  Adds 13 regression tests (500 total, was 487), each asserting that a guard
+  Adds 21 regression tests (508 total, was 487), each asserting that a guard
   fires for a specific reason rather than that the suite stays green.
 
 - Docs: restructured the README to about half its length (~490 → ~245 lines).
