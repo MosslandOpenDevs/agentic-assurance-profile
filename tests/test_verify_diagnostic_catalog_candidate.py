@@ -979,11 +979,14 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
         """
 
         def drop_fact(catalog: dict) -> None:
+            # Demote from `required` only, leaving the property declared. This
+            # is the weaker tamper: an optional operand is never bound by
+            # validate_fact_bindings, so testing membership in `properties`
+            # would pass here while the predicate stays unevaluable.
             for entry in catalog["findings"]["allocated_entries"]:
                 if entry["code"] != "F0002":
                     continue
                 schema = entry["fact_schema"]
-                schema["properties"].pop("head_stage", None)
                 schema["required"] = [
                     key for key in schema["required"] if key != "head_stage"
                 ]
@@ -1008,7 +1011,75 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             )
         self.assertEqual(completed.returncode, 1, completed.stdout)
         self.assertIn(
-            "not a declared fact", json.loads(completed.stdout)["error"]
+            "not a required fact", json.loads(completed.stdout)["error"]
+        )
+
+    def test_suppressing_projections_cannot_shrink_a_guard_subject_set(self) -> None:
+        """Relabelling a projection must not quietly remove it from review.
+
+        `disposition` decides whether a projection reaches the guards at all.
+        Flipping the ones targeting a check to SUPPRESSED_DUPLICATE used to
+        turn a real reachability failure into a PASS, reported only as a
+        smaller binding count.
+        """
+
+        def narrow(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "adoption.document-parse":
+                    check["allowed_evaluation_kinds"] = ["CENTRAL_SELF_CHECK"]
+
+        def suppress(mapping: dict) -> None:
+            def walk(node: object) -> None:
+                if not isinstance(node, dict):
+                    return
+                for projection in node.get("projections") or []:
+                    target = projection.get("target") or {}
+                    if (
+                        target.get("owning_check_id") == "adoption.document-parse"
+                        and projection.get("disposition") == "PROJECT_FINDING"
+                    ):
+                        projection["disposition"] = "SUPPRESSED_DUPLICATE"
+                    walk(target)
+                for variant in node.get("variants") or []:
+                    walk(variant.get("target") or {})
+                    for projection in variant.get("callsite_projections") or []:
+                        target = projection.get("target") or {}
+                        if (
+                            target.get("owning_check_id")
+                            == "adoption.document-parse"
+                            and projection.get("disposition") == "PROJECT_FINDING"
+                        ):
+                            projection["disposition"] = "SUPPRESSED_DUPLICATE"
+                        walk(target)
+
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                walk(row.get("target") or {})
+
+        with CandidatePair(catalog_mutator=narrow, mapping_mutator=suppress) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "producer bindings for guard review",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_unregistered_projection_disposition_fails_closed(self) -> None:
+        def tamper(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                for projection in (row.get("target") or {}).get("projections") or []:
+                    if projection.get("disposition"):
+                        projection["disposition"] = "TOTALLY_MADE_UP"
+                        return
+
+        with CandidatePair(mapping_mutator=tamper) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "unregistered disposition", json.loads(completed.stdout)["error"]
         )
 
     def test_missing_context_effect_rules_cannot_bypass_the_guard(self) -> None:

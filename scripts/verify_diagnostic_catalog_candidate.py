@@ -36,6 +36,22 @@ REVIEW_SCOPE = "REVIEW_ONLY_NOT_RUNTIME_OR_ACCEPTANCE"
 SUPPRESSED_PROJECTION_DISPOSITIONS = frozenset(
     {"SUPPRESSED_DUPLICATE", "SUPPRESSED_INTERNAL_FALLBACK"}
 )
+# The closed projection-disposition vocabulary.  A suppressing label removes a
+# projection from every guard's subject set, so an unregistered value must not
+# be accepted and the resulting set sizes are pinned below.
+PROJECTION_DISPOSITIONS = frozenset(
+    {
+        "PROJECT_FINDING",
+        "PROJECT_TYPED_NON_COMPLETION",
+        "SUPPRESSED_DUPLICATE",
+        "SUPPRESSED_INTERNAL_FALLBACK",
+    }
+)
+# Sizes of the guards' subject sets.  Without these, relabelling a projection
+# as suppressed shrinks what the guards examine and is reported only as a
+# smaller number -- which is exactly how a candidate could silence them.
+EXPECTED_FINDING_PRODUCER_BINDINGS = 383
+EXPECTED_CALLSITE_SELECTORS = 234
 
 # The bound validator's three top-level entrypoints and the evaluation kind each
 # one runs as.  A producer reachable only from `run_adopter` cannot be reported
@@ -1321,10 +1337,15 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
                 operand = require_string(
                     value, f"finding {code} condition_predicate.{key}"
                 )
+                # Membership is tested against `required`, not `properties`.
+                # validate_fact_bindings binds exactly the required set, so a
+                # declared-but-optional operand is never bound, never carried by
+                # an instance, and never covered by on_missing_required_key --
+                # which is the very state this check exists to prevent.
                 require(
-                    operand in properties,
+                    operand in set(required_keys),
                     f"finding {code} condition_predicate.{key} names {operand!r}, "
-                    "which is not a declared fact",
+                    "which is not a required fact",
                 )
         # A finding that declares no gate effect, or an unregistered one, would
         # silently exempt itself from gate-effect review: the guard compares
@@ -1681,6 +1702,16 @@ def validate_fact_bindings(
 
 def validate_closed_dispatches(value: Any, field: str) -> None:
     if isinstance(value, dict):
+        if "callsite_selector" in value and "disposition" in value:
+            # A projection's disposition decides whether the guards see it at
+            # all, so the vocabulary is closed.  An unregistered value already
+            # fails safe (it is treated as not suppressed), but it must not
+            # pass review silently.
+            require(
+                value.get("disposition") in PROJECTION_DISPOSITIONS,
+                f"{field} projection has unregistered disposition "
+                f"{value.get('disposition')!r}",
+            )
         kind = value.get("kind")
         if isinstance(kind, str) and kind.startswith("CLOSED_"):
             require(value.get("closed") is True, f"{field} {kind} must be closed")
@@ -3124,7 +3155,18 @@ def validate_semantic_guards(
     for row in mapping["semantic_mapping"]["group_rows"]:
         iter_finding_targets(row.get("target") or {}, row, pairs)
 
+    require(
+        len(pairs) == EXPECTED_FINDING_PRODUCER_BINDINGS,
+        f"expected {EXPECTED_FINDING_PRODUCER_BINDINGS} finding/completion "
+        f"producer bindings for guard review, found {len(pairs)}. A shrunken "
+        "subject set means a guard is examining less than it did.",
+    )
     selector_defects, selector_count = guard_callsite_selector_accuracy(mapping, reach)
+    require(
+        selector_count == EXPECTED_CALLSITE_SELECTORS,
+        f"expected {EXPECTED_CALLSITE_SELECTORS} callsite selectors for guard "
+        f"review, found {selector_count}",
+    )
     observed = {
         "evaluation_kind_reachability": guard_evaluation_kind_reachability(
             catalog_data, pairs, reach

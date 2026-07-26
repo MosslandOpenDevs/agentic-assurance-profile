@@ -52,12 +52,16 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   does not exist and still pass. The contract is now required and the pre-typed
   branch removed.
 
-  A finding's `condition_predicate` operands must now name declared facts.
-  Dropping a fact from the catalog schema and the mapping bindings together
-  previously passed, leaving an immutable predicate requiring a value the
-  finding could no longer carry.
+  A finding's `condition_predicate` operands must now name **required** facts.
+  Only the required set is bound, so a declared-but-optional operand is never
+  carried by any instance and the frozen predicate stays unevaluable.
 
-  Adds 23 regression tests (510 total, was 487), each asserting that a guard
+  Projection dispositions are drawn from a closed vocabulary, and the sizes of
+  both guard subject sets are pinned. A suppressing label removes a projection
+  from every guard, so relabelling could otherwise turn a real reachability
+  failure into a pass, visible only as a smaller reported count.
+
+  Adds 25 regression tests (512 total, was 487), each asserting that a guard
   fires for a specific reason rather than that the suite stays green.
 
 - Docs: restructured the README to about half its length (~490 → ~245 lines).
