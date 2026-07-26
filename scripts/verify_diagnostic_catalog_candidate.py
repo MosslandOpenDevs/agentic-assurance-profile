@@ -1305,6 +1305,27 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
                 ),
                 f"finding {code} fact property {fact_key}",
             )
+        # A condition predicate names facts as its operands.  If an operand is
+        # not a declared fact, the finding can be constructed without the value
+        # its own immutable predicate requires, so the predicate can never be
+        # evaluated.  Checked generically rather than for the one r1 predicate,
+        # since revision 2 is expected to add more.
+        predicate = finding.get("condition_predicate")
+        if predicate is not None:
+            predicate = require_mapping(
+                predicate, f"finding {code} condition_predicate"
+            )
+            for key, value in predicate.items():
+                if not key.endswith("_fact"):
+                    continue
+                operand = require_string(
+                    value, f"finding {code} condition_predicate.{key}"
+                )
+                require(
+                    operand in properties,
+                    f"finding {code} condition_predicate.{key} names {operand!r}, "
+                    "which is not a declared fact",
+                )
         # A finding that declares no gate effect, or an unregistered one, would
         # silently exempt itself from gate-effect review: the guard compares
         # the recovered effect set, and an absent or empty list matches

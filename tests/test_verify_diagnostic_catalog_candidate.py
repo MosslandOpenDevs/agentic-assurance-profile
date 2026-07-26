@@ -970,6 +970,47 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
             "typed_reference_contract", json.loads(completed.stdout)["error"]
         )
 
+    def test_condition_predicate_operand_must_be_a_declared_fact(self) -> None:
+        """An operand that is not a declared fact makes the predicate unusable.
+
+        Dropping the fact from the catalog schema and from the row's bindings
+        consistently used to pass, leaving F0002's immutable predicate naming a
+        value the finding can no longer carry.
+        """
+
+        def drop_fact(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] != "F0002":
+                    continue
+                schema = entry["fact_schema"]
+                schema["properties"].pop("head_stage", None)
+                schema["required"] = [
+                    key for key in schema["required"] if key != "head_stage"
+                ]
+
+        def drop_binding(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                if row["group_id"] != "PHASE0-F0002":
+                    continue
+                bindings = row["target"]["fact_bindings"]
+                bindings["required_key_set"] = [
+                    key
+                    for key in bindings["required_key_set"]
+                    if key != "head_stage"
+                ]
+                bindings["bindings"].pop("head_stage", None)
+
+        with CandidatePair(
+            catalog_mutator=drop_fact, mapping_mutator=drop_binding
+        ) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "not a declared fact", json.loads(completed.stdout)["error"]
+        )
+
     def test_missing_context_effect_rules_cannot_bypass_the_guard(self) -> None:
         """An absent rule list would match no effect set and silence the guard."""
 
