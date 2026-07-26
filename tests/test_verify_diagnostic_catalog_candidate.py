@@ -548,5 +548,282 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
         self.assertIn("243 emitters in 41 functions", completed.stdout)
 
 
+    # ------------------------------------------------------------------
+    # Semantic guards.  Each case perturbs one input and asserts the guard
+    # reacts; a guard that never fires would be worse than none, because it
+    # would look like coverage.
+    # ------------------------------------------------------------------
+
+    def assert_guard_failure(
+        self, completed: "subprocess.CompletedProcess[str]", guard: str, fragment: str
+    ) -> None:
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertIn(guard, report["error"])
+        self.assertIn(fragment, report["error"])
+
+    def test_report_exposes_semantic_guard_counts(self) -> None:
+        completed = self.run_verifier()
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        counts = json.loads(completed.stdout)["semantic_guard_counts"]
+        self.assertEqual(counts["callsite_selectors_checked"], 234)
+        self.assertEqual(counts["finding_producer_bindings_checked"], 358)
+        # Pinned deliberately: this count carries the honesty property of the
+        # whole mechanism.  Leaving it unpinned would let a real new defect be
+        # silenced by pasting its key into the table with nothing to notice.
+        self.assertEqual(counts["known_defects_recorded"], 29)
+
+    def test_widening_allowed_kinds_retires_the_recorded_reachability_defects(
+        self,
+    ) -> None:
+        """F0102's three adopter-side producers are recorded as unreachable.
+
+        Allowing profile.schema-conformance to run as ADOPTER_SNAPSHOT makes
+        load_adopter_schemas reachable, so the recorded defects must retire and
+        the baseline must be updated rather than left stale.
+        """
+
+        def widen(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "profile.schema-conformance":
+                    check["allowed_evaluation_kinds"] = [
+                        "ADOPTER_SNAPSHOT",
+                        "CENTRAL_SELF_CHECK",
+                    ]
+
+        with CandidatePair(catalog_mutator=widen) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "evaluation_kind_reachability", "F0102:D-3253@3253"
+        )
+
+    def test_narrowing_allowed_kinds_strands_owned_findings(self) -> None:
+        """Restricting a check to a kind its producers cannot reach fails closed.
+
+        adoption.schema-conformance owns F0013/F0014, whose producers run only
+        on the adopter path; forcing the check to CENTRAL_SELF_CHECK leaves
+        them with no runnable owner.
+        """
+
+        def narrow(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "adoption.schema-conformance":
+                    check["allowed_evaluation_kinds"] = ["CENTRAL_SELF_CHECK"]
+
+        with CandidatePair(catalog_mutator=narrow) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "evaluation_kind_reachability", "new semantic defect"
+        )
+
+    def test_relaxing_the_block_only_rule_retires_a_recorded_defect(self) -> None:
+        def relax(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0018":
+                    entry["context_effect_rules"] = [
+                        {"when": "an advisory context", "gate_effect": "WARN"},
+                        {
+                            "when": "the registered condition is established",
+                            "gate_effect": "BLOCK",
+                        },
+                    ]
+
+        with CandidatePair(catalog_mutator=relax) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "gate_effect_recovery", "no longer present"
+        )
+
+    def test_new_warn_to_block_escalation_fails_closed(self) -> None:
+        def escalate(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0030":
+                    entry["context_effect_rules"] = [
+                        {
+                            "when": "the registered condition is established",
+                            "gate_effect": "BLOCK",
+                        }
+                    ]
+
+        with CandidatePair(catalog_mutator=escalate) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "gate_effect_recovery", "D-1626->F0030|warn-to-block"
+        )
+
+    def test_correcting_a_stale_selector_retires_a_recorded_defect(self) -> None:
+        def correct(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                if row["group_id"] != "U-1242":
+                    continue
+                for projection in (row.get("target") or {}).get("projections") or []:
+                    if (
+                        projection.get("callsite_selector")
+                        == "load_yaml@4210 in check_stage_readiness"
+                    ):
+                        projection["callsite_selector"] = (
+                            "load_yaml@4210 in check_adoption_stage"
+                        )
+
+        with CandidatePair(mapping_mutator=correct) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "no longer present"
+        )
+
+    def test_dispatch_projections_resolve_at_their_own_callsite(self) -> None:
+        """Reachability must use the projection's callsite, not the row's line.
+
+        adoption.document-parse owns F0005-F0012, whose rows cite shared
+        loaders (`load_yaml`, `load_json`) that every entrypoint can reach.
+        Judged from those shared lines the comparison is vacuous; judged at the
+        dispatched callsites the findings are adopter-only, so restricting the
+        check to CENTRAL_SELF_CHECK must strand them.
+        """
+
+        def narrow(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "adoption.document-parse":
+                    check["allowed_evaluation_kinds"] = ["CENTRAL_SELF_CHECK"]
+
+        with CandidatePair(catalog_mutator=narrow) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "evaluation_kind_reachability", "new semantic defect"
+        )
+
+    def test_missing_allowed_evaluation_kinds_cannot_bypass_the_guard(self) -> None:
+        def drop(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "adoption.schema-conformance":
+                    del check["allowed_evaluation_kinds"]
+
+        with CandidatePair(catalog_mutator=drop) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "allowed_evaluation_kinds", json.loads(completed.stdout)["error"]
+        )
+
+    def test_empty_allowed_evaluation_kinds_cannot_bypass_the_guard(self) -> None:
+        def empty(catalog: dict) -> None:
+            for check in catalog["public_checks"]:
+                if check["check_id"] == "adoption.schema-conformance":
+                    check["allowed_evaluation_kinds"] = []
+
+        with CandidatePair(catalog_mutator=empty) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "declares no allowed_evaluation_kinds",
+            json.loads(completed.stdout)["error"],
+        )
+
+    def test_inert_fact_property_cannot_silence_the_escalation_guard(self) -> None:
+        """A BLOCK-only finding has no WARN rule for any fact to select."""
+
+        def escalate(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0030":
+                    entry["context_effect_rules"] = [
+                        {
+                            "when": "the registered condition is established",
+                            "gate_effect": "BLOCK",
+                        }
+                    ]
+                    entry["fact_schema"] = {
+                        "closed": True,
+                        "null_allowed": False,
+                        "properties": {"inert": {"type": "string", "enum": ["X"]}},
+                        "required": [],
+                    }
+
+        with CandidatePair(catalog_mutator=escalate) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "gate_effect_recovery", "D-1626->F0030|warn-to-block"
+        )
+
+    def test_error_demoted_to_warn_only_fails_closed(self) -> None:
+        """The de-escalation rule must be able to fire, not just exist."""
+
+        def demote(catalog: dict) -> None:
+            for entry in catalog["findings"]["allocated_entries"]:
+                if entry["code"] == "F0013":
+                    entry["context_effect_rules"] = [
+                        {
+                            "when": "the registered condition is established",
+                            "gate_effect": "WARN",
+                        }
+                    ]
+
+        with CandidatePair(catalog_mutator=demote) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "gate_effect_recovery", "|error-to-warn"
+        )
+
+    def test_via_clause_naming_an_unknown_function_fails_closed(self) -> None:
+        def tamper(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                for projection in (row.get("target") or {}).get("projections") or []:
+                    selector = projection.get("callsite_selector") or ""
+                    if " via " in selector and "@" in selector.split(" via ")[1]:
+                        projection["callsite_selector"] = (
+                            selector.split(" via ")[0]
+                            + " via totally_made_up_name@6763"
+                        )
+                        return
+
+        with CandidatePair(mapping_mutator=tamper) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "via-nonexistent"
+        )
+
+    def test_bogus_selector_line_fails_closed(self) -> None:
+        def tamper(mapping: dict) -> None:
+            for row in mapping["semantic_mapping"]["group_rows"]:
+                if row["group_id"] != "U-1242":
+                    continue
+                for projection in (row.get("target") or {}).get("projections") or []:
+                    selector = projection.get("callsite_selector") or ""
+                    if selector.startswith("load_yaml@4210"):
+                        projection["callsite_selector"] = (
+                            "load_yaml@9999 in check_adoption_stage"
+                        )
+
+        with CandidatePair(mapping_mutator=tamper) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assert_guard_failure(
+            completed, "callsite_selector_accuracy", "new semantic defect"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

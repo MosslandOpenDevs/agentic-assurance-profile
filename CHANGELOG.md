@@ -4,6 +4,40 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+- Tooling (review-only): added three mechanical semantic guards to
+  [scripts/verify_diagnostic_catalog_candidate.py](scripts/verify_diagnostic_catalog_candidate.py),
+  each derived from the bound v0.4.0 blob rather than from the candidate's own
+  assertions. **Evaluation-kind reachability** builds the validator call graph
+  and fails when a finding's producers cannot be reached in any evaluation kind
+  its owning check is allowed to run in — a condition with no runnable owner,
+  the false-green shape [V0.5-DESIGN.md](docs/V0.5-DESIGN.md) §3.1 states v0.5
+  aims to remove ("a check that did not run can never appear green"; the design
+  is non-normative). Dispatched projections resolve at their own callsite, because a
+  dispatch row's source lines sit in a shared loader every entrypoint can reach
+  and judging reachability there would be vacuous. **Gate-effect recovery**
+  fails on a `report.warn` producer routed to a BLOCK-only finding, and on the
+  more dangerous inverse, a `report.error` demoted to a WARN-only identity.
+  **Callsite-selector accuracy** checks each selector's callee, enclosing
+  function, and `via` clause against the AST, rejecting any that names a
+  function the bound blob does not define.
+
+  `validate_catalog` now also requires every public check to declare a
+  non-empty `allowed_evaluation_kinds` drawn from the closed entrypoint
+  vocabulary, so a check can no longer exempt itself from reachability review
+  by omitting the field.
+
+  The guards run against `KNOWN_R1_SEMANTIC_DEFECTS`, an explicit table of the
+  29 defects the r1 review established. It fails closed in both directions: a
+  new defect fails, and a recorded defect that disappears also fails, so a
+  repair must shrink the table in the same change. This records existing debt
+  rather than suppressing it — nothing is added to the table to make a run pass.
+
+  Review-only tooling: not imported by the validator, the `aap` CLI, or either
+  workflow, and it cannot accept a catalog or authorize runtime use. No adopter
+  obligation, schema, template, validator, workflow, or candidate byte changes.
+  Adds 13 regression tests (500 total, was 487), each asserting that a guard
+  fires for a specific reason rather than that the suite stays green.
+
 - Docs: restructured the README to about half its length (~490 → ~245 lines).
   The sections that duplicated the detailed docs — Adoption model, Public
   repository safety, Repository layout, and the issue-model sections — now give

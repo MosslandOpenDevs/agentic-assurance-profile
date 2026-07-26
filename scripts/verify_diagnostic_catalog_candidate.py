@@ -32,6 +32,73 @@ from typing import Any, Iterable, Iterator
 
 
 REVIEW_SCOPE = "REVIEW_ONLY_NOT_RUNTIME_OR_ACCEPTANCE"
+
+SUPPRESSED_PROJECTION_DISPOSITIONS = frozenset(
+    {"SUPPRESSED_DUPLICATE", "SUPPRESSED_INTERNAL_FALLBACK"}
+)
+
+# The bound validator's three top-level entrypoints and the evaluation kind each
+# one runs as.  A producer reachable only from `run_adopter` cannot be reported
+# by a check restricted to CENTRAL_SELF_CHECK.
+ENTRYPOINT_EVALUATION_KINDS = {
+    "run_adopter": "ADOPTER_SNAPSHOT",
+    "run_drift": "ADOPTER_TRANSITION",
+    "run_self_check": "CENTRAL_SELF_CHECK",
+}
+
+# Semantic defects the r1 review established against the bound v0.4 blob, kept
+# here so the guards can fail closed on anything NEW while the recorded ones
+# remain visible and countable.  This is an explicit debt record, not a
+# suppression: `validate_semantic_guards` also fails when a recorded defect
+# disappears, so revision 2 must shrink this table in the same change that
+# repairs the entry.  Do not add to it to make a run pass.
+KNOWN_R1_SEMANTIC_DEFECTS: dict[str, tuple[str, ...]] = {
+    # F0102's owning check profile.schema-conformance allows only
+    # CENTRAL_SELF_CHECK, but these three producers live in
+    # load_adopter_schemas, whose only caller is run_adopter.  No
+    # ADOPTER_SNAPSHOT check owns adopter-side schema-resource invalidity.
+    "evaluation_kind_reachability": (
+        "F0102:D-3253@3253",
+        "F0102:D-3255@3255",
+        "F0102:D-3263@3263",
+    ),
+    # D-4604 is a report.warn emitted before check_lite_file(), so it fires on a
+    # valid lite bundle, yet it lands on BLOCK-only F0018 under a PRESERVE
+    # disposition.  It is the only such projection among all 16 warn callsites,
+    # and r1 contains no error-to-WARN de-escalation at all.
+    "gate_effect_recovery": ("D-4604->F0018|warn-to-block",),
+    # 25 selector bindings name `check_stage_readiness`, which the bound blob
+    # never defines; the actual enclosing function is check_adoption_stage
+    # (lines 4063-4522).  Every cited line number is correct, so the bindings
+    # still resolve — hence recorded rather than blocking.
+    "callsite_selector_accuracy": (
+        "D-1808:read_project_text_file@4246 in check_stage_readiness(system)|enclosing-nonexistent",
+        "D-1808:read_project_text_file@4282 in check_stage_readiness(reviewed prose)|enclosing-nonexistent",
+        "D-1808:read_project_text_file@4308 in check_stage_readiness(root guides)|enclosing-nonexistent",
+        "D-1808:read_project_text_file@4346 in check_stage_readiness(review record)|enclosing-nonexistent",
+        "D-1810:read_project_text_file@4246 in check_stage_readiness(system)|enclosing-nonexistent",
+        "D-1810:read_project_text_file@4282 in check_stage_readiness(reviewed prose)|enclosing-nonexistent",
+        "D-1810:read_project_text_file@4308 in check_stage_readiness(root guides)|enclosing-nonexistent",
+        "D-1810:read_project_text_file@4346 in check_stage_readiness(review record)|enclosing-nonexistent",
+        "D-1815:read_project_text_file@4246 in check_stage_readiness(system)|enclosing-nonexistent",
+        "D-1815:read_project_text_file@4282 in check_stage_readiness(reviewed prose)|enclosing-nonexistent",
+        "D-1815:read_project_text_file@4308 in check_stage_readiness(root guides)|enclosing-nonexistent",
+        "D-1815:read_project_text_file@4346 in check_stage_readiness(review record)|enclosing-nonexistent",
+        "D-1822:read_project_text_file@4246 in check_stage_readiness(system)|enclosing-nonexistent",
+        "D-1822:read_project_text_file@4282 in check_stage_readiness(reviewed prose)|enclosing-nonexistent",
+        "D-1822:read_project_text_file@4308 in check_stage_readiness(root guides)|enclosing-nonexistent",
+        "D-1822:read_project_text_file@4346 in check_stage_readiness(review record)|enclosing-nonexistent",
+        "D-1825:read_project_text_file@4246 in check_stage_readiness(system)|enclosing-nonexistent",
+        "D-1825:read_project_text_file@4282 in check_stage_readiness(reviewed prose)|enclosing-nonexistent",
+        "D-1825:read_project_text_file@4308 in check_stage_readiness(root guides)|enclosing-nonexistent",
+        "D-1825:read_project_text_file@4346 in check_stage_readiness(review record)|enclosing-nonexistent",
+        "U-1242:load_yaml@4210 in check_stage_readiness|enclosing-nonexistent",
+        "U-1251:load_yaml@4210 in check_stage_readiness|enclosing-nonexistent",
+        "U-1253:load_yaml@4210 in check_stage_readiness|enclosing-nonexistent",
+        "U-1255:load_yaml@4210 in check_stage_readiness|enclosing-nonexistent",
+        "U-1257:load_yaml@4210 in check_stage_readiness|enclosing-nonexistent",
+    ),
+}
 DEFAULT_CATALOG = "docs/evidence/v0.5/diagnostic-catalog/catalog-r1.json"
 DEFAULT_MAPPING = (
     "docs/evidence/v0.5/diagnostic-catalog/legacy-v0.4.0-mapping-r1.json"
@@ -1161,6 +1228,22 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
         checks[check_id] = check
         for role in require_unique_strings(check.get("semantic_input_roles"), f"check {check_id} semantic_input_roles"):
             require(role in input_roles, f"check {check_id} uses unregistered semantic input role {role}")
+        # A check that declares no evaluation kind, or an unregistered one,
+        # would silently exempt itself from reachability review.  The kind
+        # vocabulary is closed by the bound validator's entrypoints.
+        kinds = require_unique_strings(
+            check.get("allowed_evaluation_kinds"),
+            f"check {check_id} allowed_evaluation_kinds",
+        )
+        require(
+            bool(kinds),
+            f"check {check_id} declares no allowed_evaluation_kinds",
+        )
+        unknown = sorted(set(kinds) - set(ENTRYPOINT_EVALUATION_KINDS.values()))
+        require(
+            not unknown,
+            f"check {check_id} declares unregistered evaluation kind(s) {unknown}",
+        )
     for check_id, check in checks.items():
         dependencies = require_unique_strings(check.get("proposed_dependency_check_ids"), f"check {check_id} dependencies")
         require(check_id not in dependencies, f"check {check_id} depends on itself")
@@ -2596,6 +2679,390 @@ def validate_compatibility_changes(
     return len(entries)
 
 
+def analyze_semantic_reachability(source: bytes) -> dict[str, Any]:
+    """Derive the call graph, enclosing scopes, and emitter levels by line.
+
+    These facts support the semantic guards below.  They are read from the same
+    bound blob the rest of the verifier uses; nothing is imported or executed.
+    """
+
+    try:
+        text = source.decode("utf-8")
+    except UnicodeDecodeError as exc:  # pragma: no cover - covered upstream
+        fail(f"bound scripts/validate.py is not UTF-8: {exc}")
+    try:
+        tree = ast.parse(text, filename="scripts/validate.py")
+    except (SyntaxError, ValueError, RecursionError) as exc:  # pragma: no cover
+        fail(f"cannot parse bound scripts/validate.py: {exc}")
+
+    enclosing: dict[int, str] = {}
+    funcdefs: set[str] = set()
+
+    def scope(node: ast.AST, name: str | None = None) -> None:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            name = node.name
+            funcdefs.add(name)
+            for line in range(node.lineno, (node.end_lineno or node.lineno) + 1):
+                enclosing[line] = name
+        for child in ast.iter_child_nodes(node):
+            scope(child, name)
+
+    scope(tree)
+
+    calls_at_line: dict[int, set[str]] = defaultdict(set)
+    call_graph: dict[str, set[str]] = defaultdict(set)
+    emitter_level: dict[int, str] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        callee = (
+            func.id
+            if isinstance(func, ast.Name)
+            else (func.attr if isinstance(func, ast.Attribute) else None)
+        )
+        if callee:
+            calls_at_line[node.lineno].add(callee)
+            owner = enclosing.get(node.lineno)
+            if owner:
+                call_graph[owner].add(callee)
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr in {"error", "warn", "ok"}
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "report"
+        ):
+            emitter_level[node.lineno] = func.attr
+
+    def reachable_from(entry: str) -> set[str]:
+        seen: set[str] = set()
+        stack = [entry]
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            for callee in call_graph.get(current, ()):
+                if callee in funcdefs and callee not in seen:
+                    stack.append(callee)
+        return seen
+
+    missing = sorted(set(ENTRYPOINT_EVALUATION_KINDS) - funcdefs)
+    require(
+        not missing,
+        f"bound validator does not define expected entrypoint(s): {missing}",
+    )
+    return {
+        "enclosing": enclosing,
+        "funcdefs": funcdefs,
+        "calls_at_line": calls_at_line,
+        "emitter_level": emitter_level,
+        "reachable": {
+            entry: reachable_from(entry) for entry in ENTRYPOINT_EVALUATION_KINDS
+        },
+    }
+
+
+def selector_line(selector: str | None) -> int | None:
+    """The primary ``@line`` of a callsite selector, or None if it has none."""
+
+    if not selector:
+        return None
+    head, _, _ = selector.partition(" via ")
+    head, _, _ = head.partition(" in ")
+    _, _, raw = head.strip().rpartition("@")
+    try:
+        return int(raw.strip().split()[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def iter_finding_targets(
+    node: Any,
+    row: dict[str, Any],
+    out: list[tuple[str, dict[str, Any], int | None]],
+    selector: str | None = None,
+) -> None:
+    """Every (finding code, owning row, resolved callsite line) in this row.
+
+    The callsite line matters: a dispatch row's own ``source_selectors`` point
+    at a shared helper such as ``load_yaml`` or ``schema_errors``, which every
+    entrypoint can reach.  Reachability judged from that shared line is
+    vacuously satisfiable, so the projection's own callsite is threaded through
+    and preferred where one exists.
+    """
+
+    if not isinstance(node, dict):
+        return
+    if node.get("kind") == "FINDING" and node.get("finding_code"):
+        out.append((str(node["finding_code"]), row, selector_line(selector)))
+        return
+    for projection in node.get("projections") or []:
+        if projection.get("disposition") in SUPPRESSED_PROJECTION_DISPOSITIONS:
+            continue
+        iter_finding_targets(
+            projection.get("target") or {},
+            row,
+            out,
+            projection.get("callsite_selector") or selector,
+        )
+    for variant in node.get("variants") or []:
+        iter_finding_targets(variant.get("target") or {}, row, out, selector)
+        for projection in variant.get("callsite_projections") or []:
+            if projection.get("disposition") in SUPPRESSED_PROJECTION_DISPOSITIONS:
+                continue
+            iter_finding_targets(
+                projection.get("target") or {},
+                row,
+                out,
+                projection.get("callsite_selector") or selector,
+            )
+
+
+def iter_callsite_selectors(
+    node: Any, group_id: str, out: list[tuple[str, str]]
+) -> None:
+    """Every (group id, callsite selector) pair, including nested dispatch."""
+
+    if not isinstance(node, dict):
+        return
+    for projection in node.get("projections") or []:
+        selector = projection.get("callsite_selector")
+        if selector:
+            out.append((group_id, str(selector)))
+        iter_callsite_selectors(projection.get("target") or {}, group_id, out)
+    for variant in node.get("variants") or []:
+        iter_callsite_selectors(variant.get("target") or {}, group_id, out)
+        for projection in variant.get("callsite_projections") or []:
+            selector = projection.get("callsite_selector")
+            if selector:
+                out.append((group_id, str(selector)))
+            iter_callsite_selectors(projection.get("target") or {}, group_id, out)
+
+
+def row_source_lines(row: dict[str, Any]) -> list[int]:
+    selectors = row.get("source_selectors") or {}
+    lines = list(selectors.get("direct_emitter_lines") or [])
+    lines.extend(selectors.get("upstream_producer_lines") or [])
+    return [int(line) for line in lines]
+
+
+def guard_evaluation_kind_reachability(
+    catalog_data: dict[str, Any],
+    pairs: list[tuple[str, dict[str, Any], int | None]],
+    reach: dict[str, Any],
+) -> set[str]:
+    """A finding must be reachable in at least one kind its check may run in.
+
+    v0.4 fails closed at every bound producer.  If the only entrypoints that can
+    reach a producer are excluded by the owning check's allowed evaluation
+    kinds, that condition has no runnable owner and cannot report at all.  That
+    is the false-green shape docs/V0.5-DESIGN.md section 3.1 states v0.5 aims to
+    remove ("a check that did not run can never appear green").  The design is
+    non-normative, so this is a stated goal rather than an obligation.
+    """
+
+    defects: set[str] = set()
+    enclosing = reach["enclosing"]
+    for code, row, callsite in pairs:
+        finding = catalog_data["findings"].get(code)
+        if not finding:
+            continue
+        check = catalog_data["checks"].get(finding.get("owning_check_id")) or {}
+        # validate_catalog requires a non-empty closed set, so an absent or
+        # empty value can no longer silently disable this guard.
+        allowed = set(check.get("allowed_evaluation_kinds") or [])
+        # Prefer the projection's own callsite: a dispatch row's source lines
+        # sit in a shared helper reachable from every entrypoint, which would
+        # make the comparison vacuous.
+        lines = [callsite] if callsite is not None else row_source_lines(row)
+        for line in lines:
+            function = enclosing.get(line)
+            if not function:
+                continue
+            kinds = {
+                kind
+                for entry, kind in ENTRYPOINT_EVALUATION_KINDS.items()
+                if function in reach["reachable"][entry]
+            }
+            if not kinds:
+                # Reachable from no entrypoint at all: the mapping binds a
+                # producer the bound blob can never execute.  Stricter than a
+                # kind mismatch, so it is reported separately rather than
+                # skipped.
+                defects.add(f"{code}:{row.get('group_id')}@{line}|unreachable")
+            elif not kinds & allowed:
+                defects.add(f"{code}:{row.get('group_id')}@{line}")
+    return defects
+
+
+def guard_gate_effect_recovery(
+    catalog_data: dict[str, Any],
+    pairs: list[tuple[str, dict[str, Any]]],
+    reach: dict[str, Any],
+) -> set[str]:
+    """A v0.4 result level must not silently change gate class.
+
+    Escalation: ``report.warn`` cannot change the v0.4 exit code, so routing
+    such a producer to a finding whose only context rule is BLOCK changes
+    adopter-visible behaviour.  ``effects == {"BLOCK"}`` already settles this —
+    a finding with no WARN rule has nothing a bounded fact could select — so no
+    fact-count test is applied.  Testing one would let an inert optional
+    property silence the guard without a baseline edit.
+
+    De-escalation is the more dangerous direction and is checked too: a v0.4
+    ``report.error`` is a completed blocking failure, and demoting one to a
+    WARN-only identity would let a condition that fails the build today pass
+    it tomorrow.  No such row exists in r1, so its baseline is empty.
+
+    Levels are read from the row's own source lines: the emitted level is a
+    property of the producer, not of the callsite it is dispatched to.
+    """
+
+    defects: set[str] = set()
+    level = reach["emitter_level"]
+    for code, row, _callsite in pairs:
+        finding = catalog_data["findings"].get(code)
+        if not finding:
+            continue
+        effects = {
+            rule.get("gate_effect")
+            for rule in (finding.get("context_effect_rules") or [])
+        }
+        levels = {level.get(line) for line in row_source_lines(row)} - {None}
+        if "warn" in levels and effects == {"BLOCK"}:
+            defects.add(f"{row.get('group_id')}->{code}|warn-to-block")
+        if "error" in levels and effects == {"WARN"}:
+            defects.add(f"{row.get('group_id')}->{code}|error-to-warn")
+    return defects
+
+
+def guard_callsite_selector_accuracy(
+    mapping: dict[str, Any], reach: dict[str, Any]
+) -> tuple[set[str], int]:
+    """Every callsite selector must describe the bound source it names.
+
+    The line locator is authoritative, but a selector that names a function the
+    bound blob never defines cannot be resolved by a reader or an implementer.
+    """
+
+    selectors: list[tuple[str, str]] = []
+    for row in mapping["semantic_mapping"]["group_rows"]:
+        iter_callsite_selectors(row.get("target") or {}, str(row["group_id"]), selectors)
+
+    enclosing = reach["enclosing"]
+    funcdefs = reach["funcdefs"]
+    calls_at_line = reach["calls_at_line"]
+    defects: set[str] = set()
+    for group_id, selector in selectors:
+        rest, _, via = selector.partition(" via ")
+        head, _, enclosing_claim = rest.partition(" in ")
+        name, _, raw_line = head.strip().rpartition("@")
+        try:
+            line = int(raw_line.strip().split()[0])
+        except (ValueError, IndexError):
+            defects.add(f"{group_id}:{selector}|unparseable")
+            continue
+        simple = name.strip().split(".")[-1]
+        called = {item.split(".")[-1] for item in calls_at_line.get(line, set())}
+        if simple not in called:
+            defects.add(f"{group_id}:{selector}|primary")
+            continue
+        if enclosing_claim:
+            claim = enclosing_claim.split("(")[0].strip().split(".")[-1]
+            actual = enclosing.get(line)
+            if claim and actual and claim != actual:
+                shape = "nonexistent" if claim not in funcdefs else "wrong"
+                defects.add(f"{group_id}:{selector}|enclosing-{shape}")
+        if via:
+            via_name, _, via_raw = via.strip().rpartition("@")
+            try:
+                via_line: int | None = int(via_raw.strip().split()[0])
+            except (ValueError, IndexError):
+                # No parsable line.  The clause may still name a function, and
+                # a name the blob never defines is the same defect the
+                # enclosing check reports, so the name is still validated.
+                via_name, via_line = via.strip(), None
+            via_simple = via_name.split("(")[0].strip()
+            # A multi-word prose label such as "direct drift probe" is not a
+            # function reference and is not checkable; an identifier is.
+            if via_simple.isidentifier():
+                if via_simple not in funcdefs:
+                    defects.add(f"{group_id}:{selector}|via-nonexistent")
+                elif via_line is not None:
+                    # The mapping uses both readings of "via X@L": X is called
+                    # at L, and L lies inside X.  Accept either.
+                    calls_it = via_simple in {
+                        item.split(".")[-1]
+                        for item in calls_at_line.get(via_line, set())
+                    }
+                    inside_it = enclosing.get(via_line) == via_simple
+                    if not (calls_it or inside_it):
+                        defects.add(f"{group_id}:{selector}|via")
+    return defects, len(selectors)
+
+
+def validate_semantic_guards(
+    catalog_data: dict[str, Any],
+    mapping: dict[str, Any],
+    sources: dict[str, bytes],
+) -> dict[str, int]:
+    """Run the semantic guards against the recorded known-defect baseline.
+
+    These classes are not decidable from the candidate alone; each is derived
+    from the bound v0.4 blob.  ``KNOWN_R1_SEMANTIC_DEFECTS`` records the exact
+    defects the r1 review already established, so a *new* defect fails closed
+    while recorded ones stay visible.  A recorded defect that disappears also
+    fails, which forces the baseline to shrink as revision 2 repairs it rather
+    than silently masking later regressions.
+    """
+
+    reach = analyze_semantic_reachability(sources["scripts/validate.py"])
+    pairs: list[tuple[str, dict[str, Any], int | None]] = []
+    for row in mapping["semantic_mapping"]["group_rows"]:
+        iter_finding_targets(row.get("target") or {}, row, pairs)
+
+    selector_defects, selector_count = guard_callsite_selector_accuracy(mapping, reach)
+    observed = {
+        "evaluation_kind_reachability": guard_evaluation_kind_reachability(
+            catalog_data, pairs, reach
+        ),
+        "gate_effect_recovery": guard_gate_effect_recovery(catalog_data, pairs, reach),
+        "callsite_selector_accuracy": selector_defects,
+    }
+
+    unknown_keys = sorted(set(KNOWN_R1_SEMANTIC_DEFECTS) - set(observed))
+    require(
+        not unknown_keys,
+        "KNOWN_R1_SEMANTIC_DEFECTS names no such guard: "
+        f"{unknown_keys}. A table key matching no guard would inflate the "
+        "recorded count while enforcing nothing.",
+    )
+    for guard, found in sorted(observed.items()):
+        known = set(KNOWN_R1_SEMANTIC_DEFECTS[guard])
+        introduced = sorted(found - known)
+        require(
+            not introduced,
+            f"{guard}: new semantic defect(s) not in the recorded r1 baseline: "
+            f"{introduced}",
+        )
+        repaired = sorted(known - found)
+        require(
+            not repaired,
+            f"{guard}: recorded r1 defect(s) no longer present: {repaired}. "
+            "Remove them from KNOWN_R1_SEMANTIC_DEFECTS in the same change that "
+            "repairs them.",
+        )
+
+    return {
+        "callsite_selectors_checked": selector_count,
+        "finding_producer_bindings_checked": len(pairs),
+        "known_defects_recorded": sum(
+            len(value) for value in KNOWN_R1_SEMANTIC_DEFECTS.values()
+        ),
+    }
+
+
 def validate_review_artifact_hash_references(
     catalog: dict[str, Any],
     mapping: dict[str, Any],
@@ -2680,6 +3147,7 @@ def derive_candidate_verification(
     compatibility_change_count = validate_compatibility_changes(
         compatibility_changes, catalog, mapping
     )
+    semantic_guard_counts = validate_semantic_guards(catalog_data, mapping, sources)
     expected_inventory = build_normalized_inventory(
         catalog, mapping, analysis, workflows
     )
@@ -2720,6 +3188,7 @@ def derive_candidate_verification(
             "terminal_family_count": terminal_count,
             "phase0_case_count": phase0_count,
             "compatibility_change_count": compatibility_change_count,
+            "semantic_guard_counts": semantic_guard_counts,
             "authority_reference_count": authority_reference_count,
             "normalized_inventory_payload_sha256": expected_inventory[
                 "payload_sha256"
