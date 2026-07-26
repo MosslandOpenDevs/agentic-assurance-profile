@@ -1955,11 +1955,17 @@ def validate_terminal_mapping(
     require(terminal.get("family_count") == len(families), "terminal family count mismatch")
     family_ids: list[str] = []
     provider_domains = set(require_mapping(terminal.get("provider_domains"), "terminal provider domains"))
-    contract = terminal.get("typed_reference_contract")
-    typed_contract = require_mapping(contract, "terminal typed_reference_contract") if contract is not None else None
-    if typed_contract is not None:
-        require(typed_contract.get("closed") is True, "terminal typed-reference contract is not closed")
-        require(typed_contract.get("on_unregistered_or_unlisted_reference") == "REJECT", "terminal typed-reference contract must reject unknown references")
+    # `schema_version == 2` is already hard-required above, and that schema IS
+    # the typed-reference regime, so the contract cannot be optional: omitting
+    # it used to route every family into the pre-typed branch below, which
+    # skipped the legacy-key rejection and every owner/finding/reason shape and
+    # catalog-membership check.  `target_check` is validated nowhere else, so a
+    # mapping could name a check that does not exist and still pass.
+    typed_contract = require_mapping(
+        terminal.get("typed_reference_contract"), "terminal typed_reference_contract"
+    )
+    require(typed_contract.get("closed") is True, "terminal typed-reference contract is not closed")
+    require(typed_contract.get("on_unregistered_or_unlisted_reference") == "REJECT", "terminal typed-reference contract must reject unknown references")
 
     locator_re = re.compile(r"(.+):([1-9][0-9]*)(?:-([1-9][0-9]*))?\Z")
     registered_reason_codes: set[str] = set()
@@ -1988,14 +1994,6 @@ def validate_terminal_mapping(
             require(path in source_line_counts, f"terminal family {family_id} locator path is outside exact source")
             start = int(match.group(2)); end = int(match.group(3) or match.group(2))
             require(1 <= start <= end <= source_line_counts[path], f"terminal family {family_id} locator is out of range")
-
-        if typed_contract is None:
-            for reason in require_list(family.get("target_reason_codes", []), f"terminal family {family_id} target reasons"):
-                require(reason in catalog_data["reasons"], f"terminal family {family_id} has unknown reason {reason}")
-            finding = family.get("target_finding")
-            if isinstance(finding, str) and FINDING_RE.fullmatch(finding):
-                require(finding in catalog_data["findings"], f"terminal family {family_id} has unknown finding")
-            continue
 
         for legacy_key in ("target_reason_codes", "target_check", "target_finding"):
             require(legacy_key not in family, f"terminal family {family_id} retains untyped {legacy_key}")

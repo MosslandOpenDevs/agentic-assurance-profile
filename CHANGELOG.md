@@ -44,7 +44,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   Review-only tooling: not imported by the validator, the `aap` CLI, or either
   workflow, and it cannot accept a catalog or authorize runtime use. No adopter
   obligation, schema, template, validator, workflow, or candidate byte changes.
-  Adds 21 regression tests (508 total, was 487), each asserting that a guard
+  Also closes a pre-existing terminal-crosswalk bypass: `typed_reference_contract`
+  was optional while `schema_version: 2` was hard-required, so omitting the one
+  key routed all 41 families into the pre-typed branch, skipping the legacy-key
+  rejection and every owner, finding, reason, and catalog-membership check.
+  `target_check` is validated nowhere else, so a family could name a check that
+  does not exist and still pass. The contract is now required and the pre-typed
+  branch removed.
+
+  Adds 22 regression tests (509 total, was 487), each asserting that a guard
   fires for a specific reason rather than that the suite stays green.
 
 - Docs: restructured the README to about half its length (~490 → ~245 lines).

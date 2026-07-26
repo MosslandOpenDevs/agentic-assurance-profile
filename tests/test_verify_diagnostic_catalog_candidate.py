@@ -938,6 +938,38 @@ class DiagnosticCatalogCandidateVerifierTests(unittest.TestCase):
         # And the innermost-segment comparison still holds on its own.
         self.assertEqual(probe("read_project_text_file@3669 in require"), set())
 
+    def test_dropping_the_typed_reference_contract_cannot_bypass_terminal_checks(
+        self,
+    ) -> None:
+        """`schema_version: 2` IS the typed regime, so its contract is required.
+
+        Omitting it previously routed every family into the pre-typed branch,
+        which skipped the legacy-key rejection and every owner, finding, reason
+        and catalog-membership check.  `target_check` is validated nowhere
+        else, so a family could name a check that does not exist.
+        """
+
+        def tamper(mapping: dict) -> None:
+            terminal = mapping["terminal_mapping"]
+            terminal.pop("typed_reference_contract", None)
+            for family in terminal["families"]:
+                family.pop("target_owner_ref", None)
+                family.pop("finding_source_ref", None)
+                family.pop("reason_source_refs", None)
+                family["target_check"] = "assurance.NOT-A-REAL-CHECK"
+            # Keep the coverage summary consistent, which is what made the
+            # original bypass reachable.
+            terminal["coverage_summary"]["reason_code_count"] = 0
+
+        with CandidatePair(mapping_mutator=tamper) as pair:
+            completed = self.run_verifier(
+                catalog=pair.catalog, mapping=pair.mapping
+            )
+        self.assertEqual(completed.returncode, 1, completed.stdout)
+        self.assertIn(
+            "typed_reference_contract", json.loads(completed.stdout)["error"]
+        )
+
     def test_missing_context_effect_rules_cannot_bypass_the_guard(self) -> None:
         """An absent rule list would match no effect set and silence the guard."""
 
