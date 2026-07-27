@@ -4,15 +4,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-- Docs (`v0.5.1` closeout candidate): added the non-normative
+- Docs (`v0.5.1` closeout): added the non-normative
   [v0.5.1 scope closeout](docs/V0.5.1-CLOSEOUT.md). It distinguishes
   maintainer observations, external hypotheses, repository facts, and unknown
   adopter outcomes; defines AAP's present boundary as an assurance/governance
   layer rather than a product-test runner or exhaustive audit; scope-freezes
-  further v0.5 architecture and diagnostic-candidate expansion while retaining
+  further v0.5 architecture and diagnostic-expansion track work while retaining
   the released candidate-integrity verifier and tests as a frozen central CI
-  surface; and records evidence-gated maintenance, reopening, pilot,
-  convergence, and stop rules.
+  surface; and records the ordinary-maintenance boundary, evidence-gated
+  reopening of that track, pilot, convergence, and stop rules.
   Added an agent-led
   [Minimum Effective Adoption](docs/ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints)
   path that separates a mechanically valid `DRAFT` from a focused
@@ -24,13 +24,15 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   effectiveness choices are bounded-pilot hypotheses, not conformance facts or
   measured outcome claims. The human
   [review guide](docs/REVIEW-GUIDE.md#fast-path) now opens with the matching
-  at-most-two-reply path. README, Korean README, CONTRIBUTING, and the frozen
+  two-touchpoint path. README, Korean README, CONTRIBUTING, and the frozen
   design's permitted lifecycle metadata point to the same direction.
   Corrected the released diagnostic-candidate documentation's verifier-test
   count from 23 to 24.
   Documentation only; no normative profile obligation, schema, template,
-  validator, or workflow behavior changes, and no required migration or action
-  for existing adopters. Intended semver: patch. Adopter impact: none.
+  validator, or reusable-workflow runtime behavior changes. Existing adopters
+  need no migration or action. The MEA sequence is revised informative guidance
+  for new adoptions and voluntary re-baselining. Intended semver: patch.
+  Adopter impact: guidance only.
 
 - Docs: restructured the README to about half its length (~490 → ~245 lines).
   The sections that duplicated the detailed docs — Adoption model, Public

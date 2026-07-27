@@ -172,9 +172,16 @@ The normal path targets at most two human decision touchpoints:
    review record and reviewed merge may satisfy the durable human act required
    for `HUMAN_REVIEWED`.
 
+“Fixed audit budget” means a predeclared elapsed-time, agent-effort, or change
+cap, together with the two named assessment passes. Record the chosen unit and
+limit during scope confirmation. If the baseline reply requests corrections,
+one bounded confirmation of the revised packet may be necessary; it remains
+part of the baseline decision touchpoint and does not reopen discovery.
+
 The decision packet targets one page. When completeness does not fit, use a
-one-page decision index with a bounded annex; never omit a critical owner
-decision to meet the page target.
+one-page decision index with an annex bounded by the predeclared scope and the
+listed owner decisions; it does not reopen discovery. Never omit a critical
+owner decision to meet the page target.
 
 For an active adoption, the packet contains:
 
@@ -248,9 +255,10 @@ completion conditions hold:
 - every profile- and stage-mandatory enforcement and verification reference is
   present, and every remaining non-mandatory critical evidence gap has a
   reproducible manual check or an explicit open residual;
-- every critical or high-impact candidate finding surfaced within the
-  predeclared scope and the two passes is assigned `REMEDIATE_SEPARATELY`,
-  `RECORD_AS_OPEN_RESIDUAL`, `DEFER`, or `REJECT`; and
+- every candidate finding surfaced within the predeclared scope and the two
+  passes that would have residual `impact: high` or `impact: critical` is
+  assigned `REMEDIATE_SEPARATELY`, `RECORD_AS_OPEN_RESIDUAL`, `DEFER`, or
+  `REJECT`; and
 - the applicable `HUMAN_REVIEWED` stage conditions are met.
 
 For an archived adoption, stop when exclusive eligibility and all four §6.6
@@ -259,8 +267,8 @@ complete, material uncertainty is explicitly recorded, and the applicable
 `HUMAN_REVIEWED` stage conditions are met. The active completion list above
 does not apply.
 
-If the declared time or change budget is reached first, stop discovery and
-hand off the bounded result. When a stage-mandatory obligation, an
+If the declared audit budget is reached first, stop discovery and hand off the
+bounded result. When a stage-mandatory obligation, an
 undispositioned critical contradiction, or a required owner decision remains
 unresolved, retain `DRAFT` and defer the `HUMAN_REVIEWED` baseline rather than
 silently trimming scope.
@@ -268,10 +276,10 @@ silently trimming scope.
 Do not wait for an open-ended audit to produce zero findings or consume a full
 budget after the substantive conditions already hold. In an active repository,
 a new permanent invariant, control, or regression test should protect a
-reproduced defect, an explicit user promise, or a named critical safety,
-security, integrity, or governance case. An isolated speculative finding is
-recorded or rejected; it is not automatically promoted into permanent
-machinery.
+reproduced defect, an explicit user or operator promise, or a named critical
+safety, security, integrity, or governance case. An isolated speculative
+finding is recorded or rejected; it is not automatically promoted into
+permanent machinery.
 
 After an active baseline, the agent handles ordinary scoped changes and returns
 to the human only for authority that cannot be delegated: purpose or contract

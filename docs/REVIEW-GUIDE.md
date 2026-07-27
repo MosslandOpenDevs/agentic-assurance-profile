@@ -8,10 +8,11 @@ This guide is written in English because English is the repository's canonical l
 
 ## Fast path
 
-You should need at most two brief replies. The first confirms the owner,
-repository boundary, candidate profile triggers, existing artifacts to reuse,
-and audit budget after the agent's cheap scan. Your initial instruction may
-already supply that decision; the agent should not ask it twice.
+You should normally see two planned decision touchpoints, not a stream of
+questions. The first confirms the owner, repository boundary, candidate
+profile triggers, existing artifacts to reuse, and audit budget after the
+agent's cheap scan. Your initial instruction may already supply that decision;
+the agent should not ask it twice.
 
 If the agent follows
 [Minimum Effective Adoption](ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints),
@@ -28,8 +29,8 @@ repository is eligible for the exclusive profile, pin and root-guide status,
 the four required historical facts, and any material uncertainty. It does not
 invent active claims, invariants, controls, tests, or residuals.
 
-You do not edit the YAML and you do not answer once per finding. Reply once in
-plain language with one of:
+You do not edit the YAML and you do not answer once per finding. Return one
+consolidated reply in plain language with one of:
 
 - “approve this as the `HUMAN_REVIEWED` baseline”;
 - the named corrections you want; or
@@ -38,6 +39,10 @@ plain language with one of:
 The agent translates that answer into the artifacts and durable review record.
 The single packet still covers the owner decisions explained below; it changes
 their presentation, not who has authority to make them.
+
+If you request corrections, one bounded confirmation of the revised packet may
+be necessary. That confirmation remains part of the same baseline decision
+cycle; it does not authorize a new open-ended assessment.
 
 A general baseline approval accepts no residual. In the same reply, you may
 explicitly name each residual you accept and give its reason and review

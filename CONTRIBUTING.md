@@ -2,12 +2,15 @@
 
 This document describes how to propose changes to the OpenDevs Agentic Assurance Profile repository. Decision authority is defined in [GOVERNANCE.md](GOVERNANCE.md); the release process is defined in [RELEASING.md](RELEASING.md).
 
-The proposed current development direction is the non-normative
-[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md): v0.5 architecture and diagnostic
-expansion would become scope-frozen, and maintenance or reopening proposals
-would meet its evidence gates. The closeout remains a proposal until its
-maintainer-reviewed pull request is merged; it does not override the
-governance or security routes below.
+The non-normative [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md) records a
+development direction that takes effect only when the exact
+maintainer-reviewed head of
+[PR #78](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/78)
+is merged. In that accepted state, the v0.5 architecture and
+diagnostic-expansion track is scope-frozen, and proposals to reopen or expand
+that track must meet its evidence gates. While the pull request remains open,
+the direction remains proposed. Ordinary maintenance and feature work outside
+that track continue under the usual governance, security, and release rules.
 
 ## 1. Where to raise what
 

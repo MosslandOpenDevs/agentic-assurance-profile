@@ -6,10 +6,13 @@
 **Repository:** `MosslandOpenDevs/agentic-assurance-profile`  
 **Current maturity:** reference profile, not a certification scheme
 
-**Development direction:** the proposed [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)
-would, if approved and merged after maintainer review, scope-freeze the v0.5
-architecture and diagnostic-expansion track and center further work on
-low-friction adoption and bounded adopter evidence.
+**Development direction:** the non-normative
+[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md) records a direction that takes
+effect only when the exact maintainer-reviewed head of
+[PR #78](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/78)
+is merged: scope-freeze the v0.5 architecture and diagnostic-expansion track
+and center further work on low-friction adoption and bounded adopter evidence.
+While that pull request remains open, the direction remains proposed.
 
 > **Normative status:** [PROFILE.md](PROFILE.md) is the normative text. This README and all translations are informative summaries; where they disagree, PROFILE.md governs.
 
@@ -161,7 +164,7 @@ The full state/work model, the stable-ID namespaces, the Issue/PR routing (centr
 
 Adoption begins by **classifying the profile, not by copying files** — the applicable profile set is a *finding* about what the repository is and promises, determined from evidence before any file is written, and it sizes everything downstream. Layout follows from that classification, never from repository size: a confirmed `core`-only repository may use the `layout: lite` single-`assurance.yaml` form, while any specialized active profile — or the exclusive `archived` profile — uses the split layout with one file per register. The upstream profile is pinned by version and full commit SHA — never a floating `main`, never a copy-modified untracked local fork. Creating the files alone is not adoption; it ends with a human decision, not a merge.
 
-For the proposed low-friction path, use
+For the low-friction path designated when that closeout is accepted, use
 [Minimum Effective Adoption](docs/ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints):
 the agent prepares the reconstruction, evidence, artifacts, and validation;
 the human normally confirms scope once and reviews one consolidated decision
@@ -221,8 +224,8 @@ The release process is defined in [RELEASING.md](RELEASING.md). The root `VERSIO
 ## Contributing
 
 The [v0.5 working design](docs/V0.5-DESIGN.md) is a frozen historical record.
-The proposed current direction, maintenance admission rules, and reopening
-criteria are in the non-normative
+The direction, v0.5-track freeze boundary, and reopening criteria that take
+effect on acceptance are in the non-normative
 [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md).
 
 Use public Issues for profile clarification, non-sensitive schema or validator defects, workflow-compatibility questions, documentation improvements, and proposals that expose no active vulnerability. **Do not** use public Issues for suspected exploitable vulnerabilities — follow [SECURITY.md](SECURITY.md).

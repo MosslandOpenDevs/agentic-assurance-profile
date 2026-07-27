@@ -8,10 +8,13 @@
 **저장소:** `MosslandOpenDevs/agentic-assurance-profile`  
 **현재 성숙도:** 참조 프로필이며 인증 제도가 아님
 
-**개발 방향:** [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)이 maintainer
-검토를 거쳐 승인·merge되면 v0.5 아키텍처·진단 확장 track의 범위를
-동결하고, 이후 작업의 중심을 부담이 적은 채택과 범위가 정해진 adopter
-증거로 옮깁니다.
+**개발 방향:** 비규범 문서인
+[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)은 maintainer가 정확한 head를
+검토한 [PR #78](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/78)이
+merge될 때 효력이 생기는 방향을 기록합니다. 그 방향은 v0.5
+아키텍처·진단 확장 track의 범위를 동결하고, 이후 작업의 중심을 부담이
+적은 채택과 범위가 정해진 adopter 증거로 옮깁니다. PR이 열려 있는
+동안에는 제안 상태입니다.
 
 > **규범 상태:** [PROFILE.md](PROFILE.md)가 규범 문서입니다. 이 README와 모든 번역은 참고용 요약이며, 서로 다를 경우 PROFILE.md가 우선합니다.
 
@@ -163,7 +166,7 @@ assurance 자료에는 공개 등급(disclosure class)이 붙습니다 — `PUBL
 
 채택은 **파일 복사가 아니라 프로필 분류에서 시작합니다.** 해당하는 프로필 집합은 저장소가 무엇이고 무엇을 약속하는가에 대한 *판정*이며, 파일을 하나라도 쓰기 전에 증거로 정하고, 그 뒤의 모든 것의 규모를 결정합니다. 구성(layout)은 그 분류를 따라 정해지지 저장소 크기로 정해지지 않습니다. `core` 하나만으로 확인된 저장소는 `layout: lite`의 `assurance.yaml` 단일 파일 형태를 쓸 수 있고, specialized active 프로필이 하나라도 있거나 배타적인 `archived` 프로필이면 레지스터마다 파일을 따로 두는 split 구성을 씁니다. 상위 프로필은 버전과 전체 commit SHA로 고정(pin)하며 — 유동적인 `main`도, 복사해 고친 버전 추적 없는 로컬 fork도 안 됩니다. 파일을 만들었다고 채택이 아닙니다. 채택은 merge가 아니라 사람의 결정으로 끝납니다.
 
-부담을 줄이기 위해 제안하는 방식은
+closeout이 승인되면 지정되는 부담이 적은 채택 경로는
 [Minimum Effective Adoption](docs/ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints)
 입니다. 에이전트가 시스템 복원, 증거, 산출물, 검증을
 준비하고, 사람은 보통 범위를 한 번 확인한 뒤 통합된 결정 묶음 하나만
@@ -223,8 +226,9 @@ release 절차는 [RELEASING.md](RELEASING.md)에 정의되어 있습니다. 루
 ## 기여 방법
 
 [v0.5 작업 설계](docs/V0.5-DESIGN.md)는 동결된 역사 기록입니다.
-제안된 현재 방향, 유지보수 변경의 진입 조건, 기능 재개 조건은 비규범
-문서인 [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)에 있습니다.
+승인 시 효력이 생기는 방향, v0.5 아키텍처·진단 확장 track의 동결
+범위와 재개 조건은 비규범 문서인
+[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)에 있습니다.
 
 프로필 내용을 분명히 하려는 질문, 민감하지 않은 schema·validator 결함, workflow 호환성 질문, 문서 개선, 현재 유효한 취약점을 드러내지 않는 제안은 공개 Issue로 다룹니다. 악용이 의심되는 취약점은 공개 Issue에 올리지 **말고** [SECURITY.md](SECURITY.md)를 따릅니다.
 
