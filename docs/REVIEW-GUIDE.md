@@ -6,6 +6,50 @@ This guide is written in English because English is the repository's canonical l
 
 [ADOPTION.md §0](ADOPTION.md) tells the agent how to prepare an adoption proposal. This page is the mirror image: it tells you, the human owner, what that proposal is and what it needs from you.
 
+## Fast path
+
+You should normally see two planned decision touchpoints, not a stream of
+questions. The first confirms the owner, repository boundary, candidate
+profile triggers, existing artifacts to reuse, and audit budget after the
+agent's cheap scan. Your initial instruction may already supply that decision;
+the agent should not ask it twice.
+
+If the agent follows
+[Minimum Effective Adoption](ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints),
+you normally receive one decision packet that targets one page. It contains
+the proposed repository boundary and profiles, purpose and non-goals, the
+ranked invariant set, every critical claim and material behavior needing your
+decision, applicable public wording, and grouped critical or high-impact
+residuals. If completeness does not fit, the first page is an index into a
+bounded annex; the agent must not omit a critical decision to meet the target.
+Detailed code evidence and YAML stay behind links.
+
+For an `archived` repository, the packet is narrower: evidence that the
+repository is eligible for the exclusive profile, pin and root-guide status,
+the four required historical facts, and any material uncertainty. It does not
+invent active claims, invariants, controls, tests, or residuals.
+
+You do not edit the YAML and you do not answer once per finding. Return one
+consolidated reply in plain language with one of:
+
+- “approve this as the `HUMAN_REVIEWED` baseline”;
+- the named corrections you want; or
+- “defer”, with the reason or missing information.
+
+The agent translates that answer into the artifacts and durable review record.
+The single packet still covers the owner decisions explained below; it changes
+their presentation, not who has authority to make them.
+
+If you request corrections, one bounded confirmation of the revised packet may
+be necessary. That confirmation remains part of the same baseline decision
+cycle; it does not authorize a new open-ended assessment.
+
+A general baseline approval accepts no residual. In the same reply, you may
+explicitly name each residual you accept and give its reason and review
+trigger; the agent should provide copyable wording. Anything not named remains
+`OPEN`. A critical residual can become `ACCEPTED` only when you, the human
+owner, explicitly accept its ID.
+
 ## Who this is for
 
 You are the named human owner of a repository — the person the profile's authority rules point at ([PROFILE.md §3](../PROFILE.md)). Perhaps you build software fluently but have never used words like *invariant*, *residual*, or *defeater* in this technical sense. That is the expected starting point, not a problem: every term in this guide is defined in plain language in the [Glossary](GLOSSARY.md), and nothing below assumes you know the vocabulary in advance.
@@ -61,31 +105,56 @@ The archaeology finds behaviors: the code limits login attempts, expires session
 
 **Documents in the repository do not count as your approval.** In an agent-built repository the comments, READMEs, and design notes were mostly written by agents too — an agent citing "the docs say this is intentional" may be citing another agent. Your agent is expected to check who authored such prose before treating it as intent — and a document *without* agent markers is not necessarily human-written either, since many agents leave no trace. Either way, it is your answer in this review — not any committed text — that settles the classification and supplies any required human authority.
 
-**Fewer is stronger.** A healthy register holds roughly 5–15 invariants — the things that must never break. If your agent brings you thirty, ask it to rank them and keep the top tier; every entry you confirm is something you will re-examine whenever a change touches it.
+**Fewer is stronger.** MEA normally starts with roughly 5–10 ranked
+invariants; a mature register may fall in the broader 5–15 working range.
+Neither number is a cap. If your agent brings you thirty, ask it to rank and
+deduplicate them, but do not drop a genuinely critical invariant merely to
+meet a target; every retained critical invariant still needs your intent
+decision.
 
 **With your answer,** the agent updates the intent classification in the invariants file and, for `INTENDED`, `COMPATIBILITY`, or `DEPRECATED`, records you as the human authority.
 
 ### 3. Residual disposition
 
-**The real question:** here is a known limitation — do you carry it, or do we fix it?
+**The real question:** here is a known limitation — do we keep it open, accept
+it, or resolve it through a separate fix?
 
-The proposal will list residuals: things that are imperfect and known to be imperfect ([Glossary §1](GLOSSARY.md)). For each one you have three answers:
+The proposal will list residuals: things that are imperfect and known to be
+imperfect ([Glossary §1](GLOSSARY.md)). For each one you have three answers:
 
-- **Accept** — you knowingly carry the risk. This is an explicit recorded decision: the register stores your name (`accepted_by`), the non-future date (`accepted_at`), and your reason, plus a review date after which the question comes back.
-- **Reject** — you disagree that this is tolerable; it becomes work to schedule.
-- **Remediate** — fix it now; the agent scopes a separate change for it.
+- **Keep open** — do not accept or close it. It stays `OPEN` with an owner and
+  review trigger; remediation can be scheduled separately.
+- **Accept** — you knowingly carry the risk. This is an explicit recorded
+  decision: the register stores your name (`accepted_by`), the non-future date
+  (`accepted_at`), your reason, and the review trigger.
+- **Resolve** — use this only after evidence shows the limitation no longer
+  applies. The register becomes `RESOLVED` and records the grounds and
+  remediation reference. Asking for a fix leaves it `OPEN` until that separate
+  change is complete.
 
 **A good answer** is again one sentence, with a reason: "accept — we run one server and will all year" beats a bare "accept". The profile's goal is **not zero residuals but OWNED residuals** — a project with ten accepted, dated, owner-named residuals is in better shape than a project claiming to have none. What the profile prohibits is hidden limitations, not limitations ([PROFILE.md §2.8](../PROFILE.md), [§12](../PROFILE.md)).
 
 One boundary to know: an agent can draft a residual and recommend a disposition, but it is forbidden from accepting a critical one for you ([PROFILE.md §15](../PROFILE.md)). If a critical residual shows up pre-accepted, something went wrong — say so.
 
-**With your answer,** the agent updates the residual register: accepted items get your name, date, rationale, and review date; the rest become scheduled work.
+**With your answer,** the agent updates the residual register: accepted items
+get your name, date, rationale, and review trigger; grounded completed fixes
+become `RESOLVED`; everything else stays `OPEN`. If you reject the premise of a
+candidate finding as unsupported, the agent records that rejection in the
+review record rather than creating a residual.
 
-### 4. Public claim wording
+### 4. Critical claims, public wording, and limitations
 
-**The real question:** does this public promise say more than we can prove?
+**The real question:** what does this project claim, and does any public promise
+say more than the evidence supports?
 
-If the repository makes public claims — "your data is encrypted", "history is verifiable" — the profile requires the wording to stay within what the evidence supports ([PROFILE.md §8](../PROFILE.md)). The agent will flag claims that overreach their evidence.
+The owner review covers every critical claim, including operator-facing or
+internal claims, not only public prose. If the repository makes public claims
+— "your data is encrypted", "history is verifiable" — the profile also
+requires the wording to stay within what the evidence supports
+([PROFILE.md §8](../PROFILE.md)). Under `trust-critical`, explicit claims,
+limitations, and proof-strength classification are mandatory. The agent will
+ask you to confirm the critical claim and flag wording that overreaches its
+evidence.
 
 **A good answer** usually doesn't delete the claim; it adds an honest limit line. "All data is encrypted" backed only by transport encryption becomes "data is encrypted in transit; at-rest encryption is not currently claimed". The claim gets smaller and becomes true.
 

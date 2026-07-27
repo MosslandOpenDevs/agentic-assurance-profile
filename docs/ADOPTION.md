@@ -11,11 +11,17 @@ To start adoption in an existing repository, give the coding agent a pointer to 
 ```text
 Read docs/ADOPTION.md of MosslandOpenDevs/agentic-assurance-profile
 at commit <FULL_40_CHARACTER_SHA>, then begin adoption of this repository.
-This is an existing repository, so follow the brownfield sequence in §4:
-1. Classify the profile from evidence (§4.0) — determine which §5
-   profiles apply from what this repository is and promises; do not
-   assume `core`, and cite file:line for each trigger that fires.
-2. If the classification is active, perform the read-only archaeology
+This is an existing repository, so follow the agent-led MEA interaction
+contract in §1.1 and the brownfield sequence in §4:
+1. Run a cheap read-only trigger scan (§4.0). Propose the repository
+   boundary and candidate profiles from what this repository is and
+   promises; do not assume `core`, and cite file:line for each trigger.
+2. Use the first human decision touchpoint to confirm the named owner,
+   repository boundary, candidate triggers, existing artifacts to reuse,
+   and fixed audit budget. If the human's kick-off instruction already
+   stated these, summarize the recorded scope and do not request a
+   redundant reply.
+3. If the classification is active, perform the read-only archaeology
    (§4.1) and behavior classification (§4.2) without changing any
    functional code. If it is `archived`, follow §4.1's narrower path:
    establish with evidence that the repository is retained solely for
@@ -23,25 +29,27 @@ This is an existing repository, so follow the brownfield sequence in §4:
    and has no active operation, functional maintenance, or feature
    development; reconstruct only the four §6.6 historical facts;
    do not fabricate active registers.
-3. Copy the templates and draft the artifacts for the classified
+4. Copy the templates and draft the artifacts for the classified
    profile(s) and layout (§3).
-4. Finish with a written proposal listing everything that requires
-   human review under §4.3 — the active-system decisions for an
-   active profile, or the exclusive classification and four facts for
-   `archived`. Do not declare adoption complete; approval decisions
-   belong to the human owner.
-5. Optionally, before opening the pull request, run the §3.6.1
-   local pre-flight from the pinned checkout and resolve or record
-   any findings; it is a convenience self-check, not the gate of
-   record and not owner approval.
-6. Keep all changes on a branch and open a draft pull request;
+5. Ask no per-finding questions. After one fresh-context challenge pass,
+   finish with the consolidated decision packet in §1.1, covering every
+   decision that requires human review under §4.3 — the active-system
+   decisions for an active profile, or the exclusive classification and
+   four facts for `archived`. Do not declare adoption complete; approval
+   decisions belong to the human owner.
+6. Optionally, before opening the pull request, run the §3.6.1
+   local pre-flight from the pinned checkout and triage any findings
+   under §1.1; do not fold functional remediation into this read-only
+   assessment. It is a convenience self-check, not the gate of record
+   and not owner approval.
+7. Keep all changes on a branch and open a draft pull request;
    do not merge to the default branch — merging is the human
    owner's act after the §4.3 review.
-7. End with a handoff summary addressed to the human owner,
+8. End with a handoff summary addressed to the human owner,
    written in the owner's working language: state first that
    nothing is decided yet and the pull request must not be merged
-   until the owner has answered; then list each decision the
-   owner must make, in plain language (see docs/REVIEW-GUIDE.md).
+   until the owner has answered the consolidated packet; then list
+   its decisions in plain language (see docs/REVIEW-GUIDE.md).
    Never describe the draft as 'settled', 'complete', or 'done'.
 ```
 
@@ -55,6 +63,239 @@ Before creating any file, confirm:
 2. **Profiles are chosen by classification, not by default.** Determine the profile set from what the repository is and promises, per §4.0 — the smallest set that *covers every trigger that fires*, which is not the same as starting at `core` and escalating later. Active specialized profiles inherit `core` obligations without needing `core` in the declaration: for an active classification, declare `[core]` only when no specialized trigger fires; otherwise list the fired specialized profiles. `archived` is the exclusive alternative. An agent may propose the set, with `file:line` evidence for each fired trigger; the selection remains provisional until the human owner reviews it (§4.3).
 3. **For an active adoption, the existing change workflow is identified.** OpenSpec, Spec Kit, ADR/RFC, an issue-driven process, or a minimal one — the profile reuses it rather than replacing it. This becomes the `specification_workflow` entry in the adoption file. An `archived` adopter MAY omit that optional block when no archival-record workflow exists; it must not invent an active workflow merely to fill the template.
 4. **Public repositories have private security intake.** A `SECURITY.md` and GitHub Private Vulnerability Reporting (or an equivalent restricted channel) should exist before assurance artifacts are published; see [../SECURITY.md](../SECURITY.md) and [DISCLOSURE-AND-ISSUES.md](DISCLOSURE-AND-ISSUES.md).
+
+### 1.1 Minimum Effective Adoption: agent-led with two human decision touchpoints
+
+The mechanically smallest adoption and the focused baseline intended to
+deliver practical value are not the same:
+
+| Level | Meaning |
+|---|---|
+| **Minimum valid structure** | A `DRAFT` that passes the schema, required-artifact checks, and every applicable stage-independent semantic check. It is a scaffold, not evidence that the repository's important behavior is protected. |
+| **Minimum Effective Adoption (MEA)** | A focused, owner-reviewed baseline over the repository's important promises and failure modes. `HUMAN_REVIEWED` is the normal first destination when its stage conditions are actually met. |
+| **Conformance claim** | The stronger, bounded claim in [PROFILE.md §17](../PROFILE.md). Pursue `CONFORMANT` only when the project needs to make that claim. |
+
+MEA is an informative operating pattern, not a new conformance stage and not a
+lighter profile. The agent must still classify every trigger honestly and
+satisfy the artifacts and decisions required by every applicable profile.
+“Minimum” means the smallest high-value slice inside that correct
+classification, not declaring `core` to avoid specialized obligations.
+“Effective” names the design objective, not a measured outcome: the practical
+value, the roughly five-to-ten target, the two-pass assessment, and the
+two-touchpoint interaction budget are hypotheses to test in the bounded real
+adoption described by
+[the v0.5.1 closeout §12](V0.5.1-CLOSEOUT.md#12-bounded-adopter-pilot), not
+conformance facts.
+
+For an **active** adoption, the recommended first slice is:
+
+1. reuse the repository's existing architecture, specification, test, CI,
+   deployment, and decision artifacts through mappings instead of duplicating
+   them;
+2. record a human-approved purpose, boundary, and two or three deliberate
+   non-goals;
+3. target roughly five to ten invariants after ranking and deduplication,
+   selected from real incidents, user promises, and critical safety or
+   integrity boundaries; include every identified critical invariant even when
+   that makes the set larger;
+4. for every `service` critical invariant, and every active critical invariant
+   recorded as `VERIFIED`, record at least one committed enforcement reference
+   and one verification reference. An evidence-gap residual does not substitute
+   for these mandatory references. For other critical invariants, add the
+   available references and record a missing mechanism or evidence as an open
+   residual;
+5. initially map only the two to four components whose changes carry the
+   highest risk, when component routing adds useful signal;
+6. keep only material, owned residuals rather than turning every review
+   observation into a permanent register entry; and
+7. run both AAP validation and the project's normal tests. `aap check` validates
+   the assurance snapshot; it does not execute the product tests named by the
+   project.
+
+For an exclusive **`archived`** adoption, use a different, narrower slice:
+
+1. establish with repository evidence that `archived` is actually eligible and
+   declare it alone;
+2. pin the upstream version and commit and install the two root guides with the
+   required reading order;
+3. reconstruct the historical purpose, known material limitations, and last
+   supported revision or explicit absence of one; and
+4. record those facts, together with the no-current-use/operation/functional-
+   maintenance/feature-development statement, in the mapped system artifact
+   and have the owner confirm them.
+
+Do not invent active claims, invariants, controls, tests, defeaters, or
+residuals merely to make an archived adoption resemble an active one.
+
+For a `core`-only repository, the four-file lite path in §3.0 is the minimum
+valid structure. MEA's intended value comes from the selected content and
+executable project checks, not from adding more AAP files.
+
+**Focus narrows content, never obligation coverage.** A specialized repository
+uses the required split layout and represents every applicable §6 obligation:
+
+| Profile | Floor that the focused slice does not remove |
+|---|---|
+| `service` | Threat model; enforcement and verification references for every critical invariant; bounded release or deployment evidence |
+| `trust-critical` | Public or user-facing claims and explicit limitations; proof-strength classification; audit/remediation separation; secret and privileged-access boundaries; private intake for a public repository |
+| `data-curation` | Stable identifiers, source provenance and versions, fact/judgment separation, model or rubric history, and override/migration audit trails |
+| `agent-runtime` | Delegated authority, tool and high-impact-action controls, retry/idempotency/deadline semantics where applicable, incident evidence, and human override or safe stop |
+
+At `HUMAN_REVIEWED`, all required mechanical gates have passed and the owner
+has completed the applicable owner decisions, including honestly recorded
+gaps. That stage does not assert that every non-mechanical obligation is
+satisfied. Only an explicit `CONFORMANT` declaration and its attributable
+full-scope approval make that claim. The validator cannot establish the
+substantive adequacy of deployment evidence, trust practices, data controls,
+or runtime controls.
+
+#### Default interaction contract
+
+AAP adoption is agent-led and batch-oriented. The agent performs the trigger
+scan, read-only archaeology, behavior classification, evidence collection,
+deduplication, artifact drafting, and mechanical validation. It must not make
+the human owner answer questions that the repository, tests, history, or
+runtime evidence can answer.
+
+The normal path targets at most two human decision touchpoints:
+
+1. **Scope confirmation.** After a cheap initial scan, the agent presents at
+   most a short paragraph naming the proposed repository boundary, the named
+   human owner, candidate profile triggers with `file:line` evidence, existing
+   artifacts it will reuse, and the fixed audit budget. The human replies with
+   approval or corrections. When the kick-off instruction already states and
+   authorizes this scope, it is the first decision touchpoint; do not ask the
+   same question again. No functional code is changed.
+2. **Baseline decision.** After the reconstruction and one fresh-context
+   challenge pass, the agent presents one decision packet. The human approves
+   it, supplies grouped corrections, or defers the baseline. The resulting
+   review record and reviewed merge may satisfy the durable human act required
+   for `HUMAN_REVIEWED`.
+
+“Fixed audit budget” means a predeclared elapsed-time, agent-effort, or change
+cap, together with the two named assessment passes. Record the chosen unit and
+limit during scope confirmation. If the baseline reply requests corrections,
+one bounded confirmation of the revised packet may be necessary; it remains
+part of the baseline decision touchpoint and does not reopen discovery.
+
+The decision packet targets one page. When completeness does not fit, use a
+one-page decision index with an annex bounded by the predeclared scope and the
+listed owner decisions; it does not reopen discovery. Never omit a critical
+owner decision to meet the page target.
+
+For an active adoption, the packet contains:
+
+1. repository boundary and proposed profile set, with each fired trigger and
+   the strongest counterargument;
+2. purpose and two or three non-goals;
+3. every identified critical invariant and material behavior needing an intent
+   decision, with evidence and a plain-language choice mapped to `INTENDED`,
+   `ACCIDENTAL`, `COMPATIBILITY`, `DEPRECATED`, or `UNKNOWN`;
+4. every critical claim, plus public wording and limitations where applicable
+   (mandatory under `trust-critical`);
+5. each critical or high-impact residual, plus every residual proposed for
+   acceptance, identified by ID and impact with a recommended disposition,
+   rationale, and review trigger; and
+6. one final question: approve this as the `HUMAN_REVIEWED` baseline, return
+   named corrections, or defer?
+
+For an archived adoption, replace that active-system packet with the evidence
+for exclusive `archived` eligibility, the pin and root-guide status, the four
+§6.6 historical facts, any material uncertainty in those facts, and the same
+approve/correct/defer question.
+
+Detailed evidence, YAML, mappings, command output, and lower-impact findings
+belong behind links. The agent writes those artifacts; the owner does not have
+to translate the decision packet into repository syntax.
+
+One consolidated reply may record several residual decisions, but a blanket
+baseline approval never accepts a residual. For each acceptance, the human
+reply must name the residual ID and state the rationale and review trigger;
+several IDs may be handled in the same reply. Acceptance of a critical
+residual must be explicitly stated by the human owner. Otherwise the residual
+remains `OPEN`.
+
+Keep two vocabularies separate:
+
+- candidate-finding triage is `REMEDIATE_SEPARATELY`,
+  `RECORD_AS_OPEN_RESIDUAL`, `DEFER`, or `REJECT`; and
+- an existing residual is kept `OPEN`, changed to `ACCEPTED` only after the
+  required human act, or changed to `RESOLVED` only after grounded resolution
+  with a remediation reference.
+
+The audit records a scheduled remediation as a separate issue or change; it
+does not modify functional code inside the read-only assessment. Preserve a
+rejection reason in the review record without manufacturing a residual when no
+uncertainty remains.
+
+The agent does not interrupt the owner once per finding. It records
+non-critical ambiguity as `UNKNOWN` or an open residual and batches related
+questions. It requests an extra immediate decision only when work cannot
+continue safely because the repository boundary or human authority is missing,
+or when public handling may expose sensitive security information.
+
+#### Completion and expansion rules
+
+The initial assessment normally consists of one reconstruction pass and one
+fresh-context challenge pass. A third pass requires an undispositioned
+release-blocking finding or a material change to the reviewed scope.
+Run the challenge in a new agent context with the fixed scope, relevant
+contracts, drafted artifacts or diff, and verification evidence, but without
+the drafting conversation. It is independent of the drafter's narrative, not
+blind to the evidence needed to review it; the stricter separation rule for
+critical work in [PROFILE.md §10](../PROFILE.md) still governs.
+
+For an active adoption, stop discovery immediately when the substantive
+completion conditions hold:
+
+- every identified critical invariant and every material behavior selected for
+  intent review within the predeclared scope has the required owner
+  disposition;
+- no critical contradiction remains untriaged;
+- every profile- and stage-mandatory enforcement and verification reference is
+  present, and every remaining non-mandatory critical evidence gap has a
+  reproducible manual check or an explicit open residual;
+- every candidate finding surfaced within the predeclared scope and the two
+  passes that would have residual `impact: high` or `impact: critical` is
+  assigned `REMEDIATE_SEPARATELY`, `RECORD_AS_OPEN_RESIDUAL`, `DEFER`, or
+  `REJECT`; and
+- the applicable `HUMAN_REVIEWED` stage conditions are met.
+
+For an archived adoption, stop when exclusive eligibility and all four §6.6
+facts are evidenced and owner-confirmed, the pin and required artifacts are
+complete, material uncertainty is explicitly recorded, and the applicable
+`HUMAN_REVIEWED` stage conditions are met. The active completion list above
+does not apply.
+
+If the declared audit budget is reached first, stop discovery and hand off the
+bounded result. When a stage-mandatory obligation, an
+undispositioned critical contradiction, or a required owner decision remains
+unresolved, retain `DRAFT` and defer the `HUMAN_REVIEWED` baseline rather than
+silently trimming scope.
+
+Do not wait for an open-ended audit to produce zero findings or consume a full
+budget after the substantive conditions already hold. In an active repository,
+a new permanent invariant, control, or regression test should protect a
+reproduced defect, an explicit user or operator promise, or a named critical
+safety, security, integrity, or governance case. An isolated speculative
+finding is recorded or rejected; it is not automatically promoted into
+permanent machinery.
+
+After an active baseline, the agent handles ordinary scoped changes and returns
+to the human only for authority that cannot be delegated: purpose or contract
+changes; critical claims or invariants; any new affirmative
+`INTENDED`/`COMPATIBILITY`/`DEPRECATED` disposition; public claim wording and
+limitations; critical control or evidence-obligation weakening; profile
+reclassification; acceptance of any residual (with critical acceptance
+reserved to the owner); restricted or embargoed disclosure; and adoption-stage
+advancement. Unless one of the immediate safety exceptions above applies,
+batch these decisions into the next packet rather than interrupting the owner
+item by item.
+
+For an archived baseline, the agent may prepare factual and assurance-metadata
+updates, but any renewed operation, functional maintenance, or feature
+development stops until the owner reclassifies the repository under every
+applicable active profile.
 
 ## 2. Pinning: version and commit
 
@@ -458,7 +699,15 @@ Practical notes:
 - For an active adoption, record the reconstruction in the system description; [templates/SYSTEM.md](../templates/SYSTEM.md) mirrors this list section by section. For `archived`, complete its §0 prompts instead.
 - Evidence discipline applies from the first line: each non-`UNKNOWN` material conclusion cites concrete evidence — file and line, database constraint, test name, command output, endpoint response, artifact digest, deployment record, or runtime metric. An AI-generated explanation is not evidence by itself.
 - Check the provenance of prose evidence. In an agent-built repository most comments, READMEs, and notes are themselves agent-authored: before citing one as intent authority, `git blame` the lines and inspect the introducing commit's authorship (for example `Co-Authored-By:` trailers, bot committer identities, agent-session branch names). Agent-authored prose may be cited as a *description* of behavior, never as *human intent* — that classification stays `UNKNOWN` until the owner confirms it in the §4.3 review. The check only sorts prose into two bins — *disqualified* (an agent marker is present) and *provenance-uncertain* (no marker, which proves nothing: many agents leave none, and humans commit agent-written text under their own names). It never yields "definitely human"; provenance-uncertain prose is presented to the owner as a candidate, and the owner's §4.3 answer is what settles it. The line that matters is the human act, not the typist: an agent-drafted record of an explicit owner decision, anchored by the owner's reviewed merge, is valid authority (second-pilot lesson — an agent cited an agent-written comment as intent and caught its own circular reasoning). Machine-verifiable evidence (schema constraints, live response headers, command output, code behavior) is unaffected.
-- For an active adoption, keep the invariant register small: roughly 5–15 invariants per repository — the things that must never break, not the full specification. The real cost of an invariant is not writing it but re-examining it on every change that touches its scope; an exhaustive register stops being read and starts to rot. If the archaeology surfaces thirty candidates, that is a ranking exercise for the §4.3 review, not thirty register entries.
+- For an active adoption, keep the invariant register small: MEA begins with
+  roughly 5–10 ranked invariants, while a mature register may fall in the
+  broader 5–15 working range. Neither is a cap; retain every identified
+  critical invariant. These are the things that must never break, not the full
+  specification. The real cost of an invariant is not writing it but
+  re-examining it on every change that touches its scope; an exhaustive
+  register stops being read and starts to rot. If the archaeology surfaces
+  thirty candidates, that is a ranking exercise for the §4.3 review, not
+  thirty register entries.
 
 ### 4.2 Behavior classification
 
