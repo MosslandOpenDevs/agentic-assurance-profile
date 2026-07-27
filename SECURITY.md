@@ -68,7 +68,8 @@ Releases are listed here as they are published. Between releases, the draft on t
 
 | Version | Supported |
 |---|---|
-| `v0.5.0` | Yes — current release |
+| `v0.5.1` | Yes — current release |
+| `v0.5.0` | Yes — previous release; upgrade at convenience (v0.5.1 adds revised adoption guidance and the non-normative v0.5-track closeout; it changes no adopter obligation or runtime behavior, so no migration is required) |
 | `v0.4.0` | Yes — previous release; upgrade at convenience (v0.5.0 adds the optional `aap check` local CLI and the v0.5 governance/design records; it changes no adopter obligation, so a v0.4.0 adoption remains conforming) |
 | `v0.3.2` | Yes — previous release; upgrade at convenience (v0.4.0 requires an invariant for every active adoption, restricts `layout: lite` to `core` alone, gives the two root guides a reading-order and an unfilled-placeholder obligation, and fixes a false accept that let an adoption reach `CONFORMANT` with both root guides left as untouched upstream templates) |
 | `v0.3.1` | Yes — previous release; upgrade at convenience (v0.3.2 closes a fail-open on symlinked base registers and change-controls recorded decisions — residual acceptance, terminal dispositions, unset judgement values, assurance-graph edges) |

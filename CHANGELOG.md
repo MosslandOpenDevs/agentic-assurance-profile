@@ -4,6 +4,31 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
+Nothing yet.
+
+## v0.5.1 — 2026-07-27
+
+A documentation-and-template-only patch that records the accepted v0.5-track
+closeout, introduces a bounded Minimum Effective Adoption path, and makes the
+README entry path shorter and more executable for agents and humans. It
+preserves all released profile, schema, validator, CLI, and reusable-workflow
+behavior.
+
+**Semver classification (`PROFILE.md` §16):** patch — informative guidance,
+project direction, and template guidance and presentation only; no obligation
+is added, tightened, weakened, or removed, and no runtime behavior changes.
+
+**Review class (`GOVERNANCE.md` §2):**
+`SOLE_OWNER_ATTESTED + AUTOMATION_VERIFIED` — no second active maintainer.
+Independent agent reviews recorded in
+[#78](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/78)
+are technical evidence, not approving reviews.
+
+**Adopter impact / upgrade actions:** none. Existing adopters need no
+migration, artifact change, or repeated baseline decision. Adopters who want
+the revised guidance may re-pin at their convenience; the Minimum Effective
+Adoption sequence applies to new adoptions and voluntary re-baselining.
+
 - Docs (`v0.5.1` closeout): added the non-normative
   [v0.5.1 scope closeout](docs/V0.5.1-CLOSEOUT.md). It distinguishes
   maintainer observations, external hypotheses, repository facts, and unknown
@@ -31,13 +56,12 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
   Documentation only; no normative profile obligation, schema, template,
   validator, or reusable-workflow runtime behavior changes. Existing adopters
   need no migration or action. The MEA sequence is revised informative guidance
-  for new adoptions and voluntary re-baselining. Intended semver: patch.
-  Adopter impact: guidance only.
+  for new adoptions and voluntary re-baselining. Adopter impact: guidance only.
 
-- Docs: restructured the README to about half its length (~490 → ~245 lines).
-  The sections that duplicated the detailed docs — Adoption model, Public
-  repository safety, Repository layout, and the issue-model sections — now give
-  a short overview and point to the canonical `docs/` ([ADOPTION.md](docs/ADOPTION.md),
+- Docs: restructured the README by replacing sections that duplicated the
+  detailed docs — Adoption model, Public repository safety, Repository layout,
+  and the issue-model sections — with a short overview and pointers to the
+  canonical `docs/` ([ADOPTION.md](docs/ADOPTION.md),
   [DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md)); the executable
   adoption path is promoted to a dedicated **Adopting the profile (for an AI
   agent or a human)** section so an agent that enters via the README can still
