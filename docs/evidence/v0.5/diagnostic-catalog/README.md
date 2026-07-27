@@ -8,7 +8,7 @@ Slice 50B. It allocates the first proposed diagnostic catalog and maps the
 exact v0.4.0 semantic and terminal surface into that catalog. It changes no
 adopter-facing validator behavior, adopter workflow, profile, schema, template,
 Phase 0 ledger, report format, or existing CI job/status identity. It does add
-a review-only verifier and 23 verifier regression tests. The existing
+a review-only verifier and 24 verifier regression tests. The existing
 `unittest discover` step therefore expands the repository `self-check` pass
 predicate to include those tests. The only workflow-file change sets the
 `self-check` checkout depth so the verifier can read the exact bound Git

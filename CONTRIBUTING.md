@@ -2,6 +2,13 @@
 
 This document describes how to propose changes to the OpenDevs Agentic Assurance Profile repository. Decision authority is defined in [GOVERNANCE.md](GOVERNANCE.md); the release process is defined in [RELEASING.md](RELEASING.md).
 
+The proposed current development direction is the non-normative
+[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md): v0.5 architecture and diagnostic
+expansion would become scope-frozen, and maintenance or reopening proposals
+would meet its evidence gates. The closeout remains a proposal until its
+maintainer-reviewed pull request is merged; it does not override the
+governance or security routes below.
+
 ## 1. Where to raise what
 
 The complete routing rules are in [docs/DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md) §3. In summary:
