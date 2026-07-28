@@ -2,28 +2,16 @@
 
 > A lightweight, evidence-oriented adoption profile for software substantially built or maintained by AI coding agents.
 
-**Status:** Released — current release on the [releases page](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases)  
-**Repository:** `MosslandOpenDevs/agentic-assurance-profile`  
+**Status:** Released — current release on the [releases page](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases)<br>
+**Repository:** `MosslandOpenDevs/agentic-assurance-profile`<br>
 **Current maturity:** reference profile, not a certification scheme
-
-**Development direction:** the non-normative
-[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md) records a direction that takes
-effect only when the exact maintainer-reviewed head of
-[PR #78](https://github.com/MosslandOpenDevs/agentic-assurance-profile/pull/78)
-is merged: scope-freeze the v0.5 architecture and diagnostic-expansion track
-and center further work on low-friction adoption and bounded adopter evidence.
-While that pull request remains open, the direction remains proposed.
 
 > **Normative status:** [PROFILE.md](PROFILE.md) is the normative text. This README and all translations are informative summaries; where they disagree, PROFILE.md governs.
 
-Code generation is cheap; the reasoning around it is not. This profile keeps that reasoning as durable, inspectable repository artifacts:
-
-- why the system is designed this way;
-- which properties must remain true;
-- which controls actually enforce those properties;
-- which evidence supports the project's claims;
-- which counterarguments, limitations, and residual risks remain;
-- which decisions still require explicit human authority.
+Code generation is cheap; the reasoning around it is not. The OpenDevs
+Agentic Assurance Profile (AAP) keeps intent, claims, invariants, enforcement,
+evidence, defeaters, residual risk, and human decisions as durable,
+inspectable repository artifacts.
 
 Its working chain is:
 
@@ -40,7 +28,10 @@ Intent
 
 A project can adopt the profile without changing editor, programming language, agent vendor, deployment platform, or existing specification workflow.
 
-**Told to "apply this profile" to a repository (human or AI agent)?** Go to [Adopting the profile](#adopting-the-profile-for-an-ai-agent-or-a-human).
+**Start here:** [adopt AAP](#adopting-the-profile-for-an-ai-agent-or-a-human)
+· [review an adoption draft](docs/REVIEW-GUIDE.md)
+· [use the three-layer baseline without AAP](docs/CODING-AGENT-BASELINE.md)
+· [report a vulnerability](SECURITY.md)
 
 ---
 
@@ -62,15 +53,9 @@ This profile treats the following as first-class project artifacts:
 | Defeater | What concrete reason might make the claim false or incomplete? |
 | Residual | What known uncertainty, limitation, or accepted risk remains? |
 
-The objective is not to eliminate all uncertainty. It is to make the boundary between demonstrated properties and remaining doubt inspectable.
-
----
-
-## Origins
-
-This profile descends from a question Donald Knuth answered for an earlier era. *TeX: The Program* treated a program as something to be explained to people, not merely executed: the reasoning, the invariants, and the argument for correctness were part of the work itself. AI coding agents invert the economics that once made that discipline optional. Implementation is now cheap. Design rationale, invariants, evidence, and known limitations are not — and they are what a project loses when code outpaces the record of intent.
-
-The immediate origin is practical. [Passport](https://passport.moss.land), a Mossland project, was built almost entirely by AI coding agents, without a conventional code editor. Working that way makes the gap concrete: the owner's role shifts from writing code to governing claims, invariants, evidence, and residual risk — and that governance needs a durable, inspectable form. This profile is that form.
+The objective is not to eliminate all uncertainty. It is to make the boundary
+between demonstrated properties and remaining doubt inspectable. That boundary
+is the assurance artifact.
 
 ---
 
@@ -102,6 +87,22 @@ It is not:
 
 ---
 
+## Origins
+
+AAP draws on the literate-programming idea exemplified by Donald Knuth's
+*TeX: The Program*: reasoning, invariants, and the argument for correctness
+are part of the work, not merely commentary on executable code. AI coding
+agents change the economics—implementation is cheap; durable rationale,
+evidence, and known limitations are not.
+
+The practical catalyst was [Passport](https://passport.moss.land), a Mossland
+project built almost entirely by AI coding agents without a conventional code
+editor. It made the owner's changing role concrete: from writing code to
+governing claims, invariants, evidence, and residual risk. AAP gives that
+governance a durable, inspectable form.
+
+---
+
 ## Relationship to existing practices
 
 This profile is intentionally a thin coordination layer rather than a replacement ecosystem.
@@ -118,41 +119,32 @@ This profile is intentionally a thin coordination layer rather than a replacemen
 | OpenSSF Security Insights | Machine-readable public description of security practices and posture |
 | This profile | Traceability among intent, claims, invariants, evidence, defeaters, and residuals |
 
-An adopting project should reuse what it already has. The profile should not create a parallel document system merely to rename existing artifacts.
-
-Where a mechanism above produces output, the profile references that output rather than regenerating it: a specification workflow supplies intent and change scope, verification tooling and attestations supply evidence, review findings supply defeater candidates. [docs/MAPPINGS.md §5](docs/MAPPINGS.md) shows how to reference that output from the registers without overstating what it proves. Some parts no tool supplies: intent, claim wording, defeater disposition, and residual acceptance stay human decisions ([PROFILE.md §3](PROFILE.md)).
+Reuse existing artifacts instead of creating a parallel document system. AAP
+references their output rather than regenerating it: specifications supply
+intent and scope; verification and attestations supply evidence; review
+findings supply defeater candidates. Intent, claim wording, defeater
+disposition, and residual acceptance remain human decisions
+([PROFILE.md §3](PROFILE.md#3-authority)). [docs/MAPPINGS.md §5](docs/MAPPINGS.md#5-mapping-external-tool-output-into-the-evidence-position) shows
+how to map existing output without overstating what it proves.
 
 ---
 
 ## A three-layer starting pattern—even without AAP
 
-> **Informative scope:** A project can use this model- and tool-neutral starting
-> pattern without adopting AAP. Using it is not AAP adoption or conformance,
-> does not prove that a system is secure or correct, and does not replace a
-> complete engineering or security program.
+> **Informative scope:** This model- and tool-neutral pattern can be used
+> without AAP. It neither establishes AAP adoption or conformance nor proves
+> security or correctness, and it does not replace a complete engineering or
+> security program.
 
-Even without AAP, a repository can separate three linked layers:
-
-| Layer | Practical starting point |
+| Layer | Role |
 |---|---|
-| Persistent agent instructions | A root `AGENTS.md` or equivalent tells agents where canonical contracts live, which commands to run, what authority they have, and when to stop. It links to history rather than accumulating it. |
-| Durable contract records | An existing specification, ADR set, schema registry, or—if none exists—`docs/SYSTEM_CONTRACTS.md` records a falsifiable contract, its decision authority and scope, known producers and consumers, enforcement, verification, and gaps. |
-| Controls, verification, and gates | Runtime guards and constraints prevent invalid states; tests and analysis check them; risk-appropriate required checks block an affected merge or release; retained results identify the exact bounded subject they support—a revision, build or release, artifact digest, or deployment—and the applicable execution context. |
+| Persistent agent instructions | Point agents to canonical contracts, commands, authority boundaries, and stop conditions. |
+| Durable contract records | State the authorized, scoped, falsifiable contract and its known gaps. |
+| Controls, verification, and gates | Controls prevent violations; verification checks them; gates block unacceptable changes; evidence names the bounded subject it supports. |
 
-For a contract-affecting change, the agent should cite an existing approved
-source of intent or mark the contract as an unresolved candidate, inspect the
-declared producer-to-consumer scope and record unknowns, explain the control or
-verification gap behind a reproduced defect, and avoid obtaining a green
-result by weakening the relevant check. Tests verify; they do not automatically
-enforce production behavior.
-
-The concrete [`AGENTS.md` procedure, contract record, regression-sensitivity
-test, and CI-gate examples](docs/CODING-AGENT-BASELINE.md) make the distinctions
-executable. Suggested paths, `rg`, an approximately 50-line local procedure,
-and numeric recurrence or implementation-count triggers are examples or
-project-local heuristics—not universal requirements. Reuse equivalent existing
-artifacts. A project that later adopts AAP maps them into its applicable AAP
-records instead of maintaining a parallel contract system.
+The [detailed guide](docs/CODING-AGENT-BASELINE.md) provides concrete
+procedures and examples. Reuse equivalent existing artifacts; an AAP adopter
+maps them into its applicable AAP records instead of duplicating them.
 
 ---
 
@@ -160,11 +152,28 @@ records instead of maintaining a parallel contract system.
 
 > **Public assurance is a sanitized projection of project knowledge, not the project's complete private security record.**
 
-Applying this profile to a public repository does not require publishing actionable weaknesses: public transparency and responsible vulnerability handling are separate obligations. Keep a **two-ledger** split — a public assurance view (safe for the repo and its users) and a restricted security record (private advisory or another access-controlled system) for anything still actionable or sensitive. Safe-to-publish material includes product purpose and non-goals, high-level trust boundaries, stable claims and invariants, and sanitized evidence status; secrets, privileged topology, unpatched reproduction steps, and reporter identity stay restricted. When uncertain, route privately first — content committed publicly cannot be made meaningfully private by deleting the latest version.
+Public transparency and responsible vulnerability handling are separate
+obligations. Keep a **two-ledger** split: a public assurance view for sanitized
+project state, and an access-controlled security record for actionable or
+sensitive material. Purpose, non-goals, high-level trust boundaries, stable
+claims and invariants, and sanitized evidence status may be public. Secrets,
+privileged topology, unpatched reproduction steps, private evidence, and
+reporter identity stay restricted. When uncertain, route privately first;
+deleting a later revision cannot make committed information private.
 
-Assurance material carries a disclosure class — `PUBLIC`, `SUMMARY_ONLY`, `RESTRICTED`, or `EMBARGOED` (defined in [PROFILE.md §13](PROFILE.md) and [docs/GLOSSARY.md](docs/GLOSSARY.md)). A control may be published as "under restricted review" only when that status does not itself reveal the attack path; omit even the status when disclosure would create material risk.
+Assurance material should carry a disclosure class: `PUBLIC`, `SUMMARY_ONLY`,
+`RESTRICTED`, or `EMBARGOED` ([PROFILE.md §13](PROFILE.md#13-public-and-restricted-disclosure),
+[docs/GLOSSARY.md](docs/GLOSSARY.md)). A control may be described as "under
+restricted review" only when even that status does not reveal the attack path.
 
-**Security reporting** — every public adopting repository must ship a `SECURITY.md`, enable GitHub **Private Vulnerability Reporting**, route suspected exploitable vulnerabilities away from public Issues into a draft Security Advisory for triage and coordinated disclosure, and publish only a sanitized profile update after a fix or disclosure is approved.
+**Security reporting:** suspected exploitable findings must go through the
+repository's private security process, never a public Issue. Before assurance
+artifacts are published, a public adopter should provide a `SECURITY.md` and
+GitHub **Private Vulnerability Reporting** or an equivalent restricted channel.
+Public `trust-critical` adopters are required to maintain private
+vulnerability-reporting and disclosure procedures. After remediation and
+coordinated disclosure, the public profile may be updated with a sanitized
+summary.
 
 See [SECURITY.md](SECURITY.md) and [Disclosure and issue model](docs/DISCLOSURE-AND-ISSUES.md) for the security-reporting lifecycle and how disclosure classes route through issues and advisories.
 
@@ -176,17 +185,18 @@ The division of responsibility is simple:
 
 > **Profile artifacts describe durable project state. Issues track work required to change or clarify that state.**
 
-`PROFILE.md` plus the local claims, invariants, and residuals are the durable truth; Issues, pull requests, CI evidence, Security Advisories, and release tags are the work and evidence that move that state. Closing an Issue or merging a pull request does **not** by itself resolve an assurance item — a change lands only when the durable artifacts (claims, invariants, residuals) and their evidence are updated too.
+`PROFILE.md` defines the profile; an adopter's system, claims, invariants,
+defeaters, and residuals record durable project state. Issues, pull requests,
+CI evidence, Security Advisories, and release tags are the work and evidence
+that move that state. Closing an Issue or merging a pull request does **not**
+by itself resolve an assurance item: all affected durable artifacts and their
+evidence must be updated too.
 
-Profile requirements and local assurance items carry stable IDs (`AAP-CORE-004`, `CLAIM-IDENTITY-002`, `INV-AUTH-007`, `RES-DATA-003`). Issues and pull requests reference those IDs; the IDs are never derived from GitHub issue numbers, which may be moved, closed, duplicated, or split while the assurance item persists. Each relevant Issue and PR states its affected IDs:
-
-```markdown
-## Affected assurance IDs
-
-- AAP-CORE-004
-- INV-AUTH-007
-- RES-DATA-003
-```
+Profile requirements and local assurance items use stable semantic IDs such
+as `AAP-CORE-004`, `CLAIM-IDENTITY-002`, `INV-AUTH-007`, and `RES-DATA-003`.
+Material Issues and pull requests should reference their affected IDs. The IDs
+are never derived from GitHub issue numbers, which may be moved, closed,
+duplicated, or split while the assurance item persists.
 
 The full state/work model, the stable-ID namespaces, the Issue/PR routing (central profile vs. adopting project vs. private security report), `Closes #` vs. `Related to #` rules, and the closure-vs-resolution lifecycle are in [docs/DISCLOSURE-AND-ISSUES.md](docs/DISCLOSURE-AND-ISSUES.md).
 
@@ -194,27 +204,34 @@ The full state/work model, the stable-ID namespaces, the Issue/PR routing (centr
 
 ## Adopting the profile (for an AI agent or a human)
 
-Adoption begins by **classifying the profile, not by copying files** — the applicable profile set is a *finding* about what the repository is and promises, determined from evidence before any file is written, and it sizes everything downstream. Layout follows from that classification, never from repository size: a confirmed `core`-only repository may use the `layout: lite` single-`assurance.yaml` form, while any specialized active profile — or the exclusive `archived` profile — uses the split layout with one file per register. The upstream profile is pinned by version and full commit SHA — never a floating `main`, never a copy-modified untracked local fork. Creating the files alone is not adoption; it ends with a human decision, not a merge.
+Adoption begins by **classifying the profile, not by copying files**. The
+applicable set is an evidence-based finding about what the repository is and
+promises. Layout follows that classification, not repository size: confirmed
+`core`-only projects may use the `layout: lite` single-`assurance.yaml` form;
+specialized active profiles and the exclusive `archived` profile use the split
+layout. Files alone do not constitute adoption; a human owner decides.
 
-For the low-friction path designated when that closeout is accepted, use
-[Minimum Effective Adoption](docs/ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints):
-the agent prepares the reconstruction, evidence, artifacts, and validation;
-the human normally confirms scope once and reviews one consolidated decision
+The recommended low-friction path is
+[Minimum Effective Adoption](docs/ADOPTION.md#11-minimum-effective-adoption-agent-led-with-two-human-decision-touchpoints).
+The agent prepares the reconstruction, evidence, artifacts, and validation;
+the human normally confirms scope and reviews one consolidated decision
 packet. `DRAFT` is a scaffold, `HUMAN_REVIEWED` is the normal first
 destination, and `CONFORMANT` is pursued only when the project needs that
-claim. “Effective,” the initial target size, and the interaction budget are
-design hypotheses for a bounded real-project pilot, not measured outcome
-claims.
+claim. “Effective,” the initial target size, and the interaction budget remain
+pilot hypotheses, not measured outcome claims.
+MEA is informative, not a new stage or lighter profile: it narrows the initial
+slice, never the applicable obligations, and `HUMAN_REVIEWED` is not a
+conformance claim.
 
-**If you were told to "apply this profile" to a repository — even from a bare prompt with nothing but this link — do not begin by copying templates.** First confirm a **named human owner or governing body exists** ([docs/ADOPTION.md §1](docs/ADOPTION.md)); adoption cannot proceed without one. Then:
+**If you were told to "apply this profile" to a repository — even from a bare prompt with nothing but this link — do not begin by copying templates.** First confirm a **named human owner or governing body exists** ([docs/ADOPTION.md §1](docs/ADOPTION.md#1-prerequisites)); adoption cannot proceed without one. Then:
 
-1. **Pin** this profile by both version *and* full 40-character commit SHA. A floating `main` is not a valid pin ([Versioning](#versioning), [docs/ADOPTION.md §2](docs/ADOPTION.md)).
-2. **Classify** the target from what it *is and promises*, never from its size ([docs/ADOPTION.md §4.0](docs/ADOPTION.md); the triggers and suggested profile set are in [PROFILE.md §5](PROFILE.md)). Bias toward escalation. Declare `[core]` only for an active repository where no specialized trigger fires; select `archived` only as an exclusive alternative when evidence establishes full reference-only eligibility. Write the set into `adoption.yaml`'s enforced `profiles:` field — not only the handoff prose.
-3. **Follow** the applicable path in [docs/ADOPTION.md §4](docs/ADOPTION.md): the active path is read-only reconstruction (§4.1) and behavior classification (§4.2) **without changing functional code**, then the §4.3 review items and §4.4 staged remediation; the `archived` path is the narrower §4.1/§4.3 branch that records the four §6.6 historical facts.
-4. *(optional)* Before handoff, run the [§3.6.1 `aap check` pre-flight](docs/ADOPTION.md) (or full §3.6 validation) from your pinned checkout to catch structural gaps early — `python3 scripts/aap.py check --project-root /path/to/your/repo` (exit `0` pass / `1` findings / `2` setup / `3` internal). It is a convenience self-check, **not the gate of record and not owner approval**; the reusable workflow remains the enforced gate.
+1. **Resolve the pin without writing adopter files:** identify both the version and full 40-character commit SHA. For a release, use its tagged commit and confirm that `VERSION` matches. Record both when the adoption artifacts are created; a floating `main` is not valid ([Versioning](#versioning), [docs/ADOPTION.md §2](docs/ADOPTION.md#2-pinning-version-and-commit)).
+2. **Classify** the target from what it *is and promises*, never from its size ([docs/ADOPTION.md §4.0](docs/ADOPTION.md#40-classify-the-profile-first); the triggers and suggested profile set are in [PROFILE.md §5](PROFILE.md#5-adoption-profiles)). When trigger evidence is genuine but ambiguous in degree, bias toward escalation. Declare `[core]` only for an active repository where no specialized trigger fires; select `archived` only as an exclusive alternative when evidence establishes full reference-only eligibility. Write the set into `adoption.yaml`'s enforced `profiles:` field — not only the handoff prose.
+3. **Follow** the applicable path in [docs/ADOPTION.md §4](docs/ADOPTION.md#4-brownfield-adoption): the active path is read-only reconstruction (§4.1) and behavior classification (§4.2) **without changing functional code**, then the §4.3 review items and §4.4 staged remediation; the `archived` path is the narrower §4.1/§4.3 branch that records the four §6.6 historical facts.
+4. *(optional)* Before handoff, run the [§3.6.1 `aap check` pre-flight](docs/ADOPTION.md#361-convenience-pre-flight-aap-check-alpha) from the pinned checkout to catch structural gaps early: `python3 scripts/aap.py check --project-root /path/to/your/repo`. It is a convenience self-check, **not the gate of record and not owner approval**; the reusable workflow remains the enforced gate.
 5. **Hand off** on a branch as a draft pull request — **do not merge.** Merging is the human owner's act after the §4.3 review. Close with a summary in the owner's working language stating that nothing is decided yet and listing each decision the owner must make ([docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md)); never describe the draft as settled, complete, or done.
 
-The [§0 kick-off prompt](docs/ADOPTION.md) is the fuller form of this instruction — give an agent that prompt rather than a bare "apply the profile"; the steps above hold even when all you were given is this link. Map existing repository conventions onto profile artifacts via [docs/MAPPINGS.md](docs/MAPPINGS.md) instead of creating parallel files. Owners reviewing a draft start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are in [docs/GLOSSARY.md](docs/GLOSSARY.md).
+The [§0 kick-off prompt](docs/ADOPTION.md#0-quick-start-for-ai-agents) is the fuller form of this instruction — give an agent that prompt rather than a bare "apply the profile"; the steps above hold even when all you were given is this link. Map existing repository conventions onto profile artifacts via [docs/MAPPINGS.md](docs/MAPPINGS.md) instead of creating parallel files. Owners reviewing a draft start at [docs/REVIEW-GUIDE.md](docs/REVIEW-GUIDE.md); unfamiliar terms are in [docs/GLOSSARY.md](docs/GLOSSARY.md).
 
 ---
 
@@ -226,10 +243,10 @@ Top-level layout of this central repository:
 .
 ├── PROFILE.md        # sole normative text — the obligations this profile governs
 ├── README.md         # this overview (README.ko.md is the Korean translation)
-├── schemas/          # JSON Schemas for the adopter YAML artifacts (claims, defeaters, invariants, residuals, adoption)
-├── scripts/          # validate.py — the `aap` validator (see docs/ADOPTION.md §3.6)
-├── templates/        # files an adopter copies into their repo (assurance YAML, AGENTS.md, github/ scaffolding, …)
-├── docs/             # informative guides: ADOPTION.md, REVIEW-GUIDE.md, MAPPINGS.md, CODING-AGENT-BASELINE.md, …
+├── schemas/          # JSON Schemas for adopter artifacts
+├── scripts/          # aap.py entry point and validate.py validation engine
+├── templates/        # adopter files and GitHub scaffolding
+├── docs/             # adoption, review, mapping, and baseline guides
 └── .github/          # this repo's own CODEOWNERS, issue/PR templates, and CI workflows
 ```
 
@@ -239,13 +256,16 @@ Root also holds the usual governance files (CHANGELOG, CONTRIBUTING, GOVERNANCE,
 
 ## Versioning
 
-The profile should use semantic versioning and publish tagged releases.
+The profile uses semantic versioning and publishes tagged releases.
 
 - **Major:** removes, weakens, or materially changes an obligation.
 - **Minor:** adds backward-compatible requirements, profiles, or fields.
 - **Patch:** clarifies wording or fixes schemas without changing intended obligations.
 
-Before `v1.0.0` the profile is under active development. Under this project's governing interpretation of semantic versioning's initial-development latitude, adding or tightening an obligation is a minor change (and may require new content from a previously conforming adoption), called out in the changelog with its adopter impact. This is the profile's stated `0.x` operating policy, not a universal SemVer rule. From `v1.0.0`, materially changing an obligation is major.
+Before `v1.0.0`, adding or tightening an obligation is minor and is called out
+in the changelog with its adopter impact. This is the project's stated `0.x`
+policy, not a universal SemVer rule. From `v1.0.0`, materially changing an
+obligation is major.
 
 Adopting repositories pin both the human-readable version and the exact commit SHA. Upgrades are explicit project changes with impact review.
 
@@ -256,32 +276,27 @@ The release process is defined in [RELEASING.md](RELEASING.md). The root `VERSIO
 ## Contributing
 
 The [v0.5 working design](docs/V0.5-DESIGN.md) is a frozen historical record.
-The direction, v0.5-track freeze boundary, and reopening criteria that take
-effect on acceptance are in the non-normative
-[v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md).
+The accepted, non-normative [v0.5.1 closeout](docs/V0.5.1-CLOSEOUT.md)
+scope-freezes the v0.5 architecture and diagnostic-expansion track, centers
+current work on low-friction adoption and bounded adopter evidence, and
+defines the evidence required to reopen that track.
 
 Use public Issues for profile clarification, non-sensitive schema or validator defects, workflow-compatibility questions, documentation improvements, and proposals that expose no active vulnerability. **Do not** use public Issues for suspected exploitable vulnerabilities — follow [SECURITY.md](SECURITY.md).
 
 A pull request should identify: affected profile IDs; behavioral and compatibility impact; evidence added or changed; new, resolved, or modified residuals; disclosure classification; and the Issue or advisory it addresses.
 
-Decision authority and approval rules for the normative text, schemas, and templates are defined in [GOVERNANCE.md](GOVERNANCE.md).
+Contribution mechanics are in [CONTRIBUTING.md](CONTRIBUTING.md); decision
+authority for the normative text, schemas, and templates is in
+[GOVERNANCE.md](GOVERNANCE.md).
 
 ---
 
 ## Design principle
 
-The profile does not ask a project to claim that its uncertainty is zero.
-
-It asks the project to state, for a specific revision or release:
-
-- what it intends;
-- what it claims;
-- what prevents violation;
-- what evidence exists;
-- what could still defeat the claim;
-- where the remaining uncertainty stops.
-
-That boundary is the assurance artifact.
+AAP does not ask a project to claim zero uncertainty. For a specific revision
+or release, it records intent and claims, what prevents their violation, the
+supporting evidence and possible defeaters, and the boundary of what remains
+unknown. That boundary is the assurance artifact.
 
 ---
 
@@ -295,4 +310,5 @@ This repository uses three licenses, split by path:
 | [LICENSE-docs](LICENSE-docs) | CC-BY-4.0 | `PROFILE.md`, `README.md`, `README.ko.md`, `docs/`, `SECURITY.md`, and all other prose |
 | [templates/LICENSE](templates/LICENSE) | CC0-1.0 | Everything under `templates/` |
 
-Code uses Apache-2.0 so the schemas, validator, and workflow automation are reusable under a standard, patent-aware license. Prose uses CC-BY-4.0 so it can be shared and adapted with attribution. Templates use CC0-1.0 so copying them into adopting repositories carries no attribution obligation.
+Code is Apache-2.0, prose is CC-BY-4.0, and copy-ready adopter templates are
+CC0-1.0.
