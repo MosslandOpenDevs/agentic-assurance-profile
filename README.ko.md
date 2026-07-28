@@ -126,6 +126,39 @@ OpenDevs Agentic Assurance Profile의 성격은 다음과 같습니다.
 
 ---
 
+## AAP를 채택하지 않아도 적용할 수 있는 3층 시작 패턴
+
+> **범위:** 아래 내용은 AAP를 채택하지 않고도 사용할 수 있는
+> 정보 제공 목적의 모델·도구 중립적 시작 패턴입니다. 이를 사용한다고
+> AAP 채택이나 적합이 성립하지 않고, 시스템의 보안성이나 정확성이
+> 입증되지도 않으며, 완전한 엔지니어링 또는 보안 프로그램을 대체하지
+> 않습니다.
+
+AAP 없이도 저장소는 서로 연결된 세 층을 분리할 수 있습니다.
+
+| 층 | 실용적인 시작점 |
+|---|---|
+| 지속적 에이전트 지침 | 루트 `AGENTS.md` 또는 동등한 파일에서 canonical contract의 위치, 실행할 명령, 에이전트의 권한, 중단 조건을 알려 줍니다. 변경별 발견 사항이나 설계·사고의 역사를 누적하지 않고 해당 기록을 가리킵니다. |
+| 오래 남는 계약 기록 | 기존 명세, ADR 모음, schema registry 또는—그런 산출물이 없을 때만—`docs/SYSTEM_CONTRACTS.md`에 반증 가능한 계약, 결정 권한과 범위, 알려진 생산자와 소비자, 강제, 검증, 공백을 기록합니다. |
+| 통제·검증·게이트 | runtime guard와 constraint가 유효하지 않은 상태를 막고, 테스트와 분석이 이를 검사하며, 위험에 비례한 required check가 영향을 받는 merge나 release를 차단합니다. 보존한 결과는 그것이 실제로 뒷받침하는 정확한 대상—revision, build 또는 release, artifact digest, deployment—과 해당 실행 맥락을 밝힙니다. |
+
+계약에 영향을 줄 수 있는 변경에서 에이전트는 기존에 승인된 의도
+근거를 인용하거나 그 계약을 아직 결정되지 않은 후보로 표시해야 합니다.
+선언한 생산자-소비자 범위를 조사해 미확인 부분을 기록하고, 재현한 결함이
+빠져나간 통제 또는 검증 공백을 설명하며, 관련 검사를 약화해 녹색
+결과를 만들어서는 안 됩니다. 테스트는 검증하지만 production 동작을
+자동으로 강제하지는 않습니다.
+
+구체적인 [`AGENTS.md` 절차, 계약 기록, 회귀 민감도 검사, CI 게이트
+예시](docs/CODING-AGENT-BASELINE.md)는 이 구분을 실행 가능한 형태로
+보여 줍니다. 제안한 경로, `rg`, 약 50줄의 로컬 절차, 재발 횟수나 구현
+개수에 따른 trigger는 보편적 요구사항이 아니라 예시 또는 프로젝트별
+휴리스틱입니다. 같은 역할을 하는 기존 산출물을 재사용하십시오. 나중에
+AAP를 채택하는 프로젝트는 병렬 계약 체계를 유지하지 말고 이 산출물을
+해당 AAP 기록에 대응시켜야 합니다.
+
+---
+
 ## 공개 저장소에서의 안전
 
 > **공개 assurance는 프로젝트가 아는 것을 공개해도 안전하도록 정제해 내놓은 단면이지, 프로젝트의 비공개 보안 기록 전체가 아닙니다.**
@@ -199,7 +232,7 @@ closeout이 승인되면 지정되는 부담이 적은 채택 경로는
 ├── schemas/          # JSON Schemas for the adopter YAML artifacts (claims, defeaters, invariants, residuals, adoption)
 ├── scripts/          # validate.py — the `aap` validator (see docs/ADOPTION.md §3.6)
 ├── templates/        # files an adopter copies into their repo (assurance YAML, AGENTS.md, github/ scaffolding, …)
-├── docs/             # informative guides: ADOPTION.md, DISCLOSURE-AND-ISSUES.md, GLOSSARY.md, REVIEW-GUIDE.md, MAPPINGS.md
+├── docs/             # informative guides: ADOPTION.md, REVIEW-GUIDE.md, MAPPINGS.md, CODING-AGENT-BASELINE.md, …
 └── .github/          # this repo's own CODEOWNERS, issue/PR templates, and CI workflows
 ```
 
