@@ -124,6 +124,38 @@ Where a mechanism above produces output, the profile references that output rath
 
 ---
 
+## A three-layer starting pattern—even without AAP
+
+> **Informative scope:** A project can use this model- and tool-neutral starting
+> pattern without adopting AAP. Using it is not AAP adoption or conformance,
+> does not prove that a system is secure or correct, and does not replace a
+> complete engineering or security program.
+
+Even without AAP, a repository can separate three linked layers:
+
+| Layer | Practical starting point |
+|---|---|
+| Persistent agent instructions | A root `AGENTS.md` or equivalent tells agents where canonical contracts live, which commands to run, what authority they have, and when to stop. It links to history rather than accumulating it. |
+| Durable contract records | An existing specification, ADR set, schema registry, or—if none exists—`docs/SYSTEM_CONTRACTS.md` records a falsifiable contract, its decision authority and scope, known producers and consumers, enforcement, verification, and gaps. |
+| Controls, verification, and gates | Runtime guards and constraints prevent invalid states; tests and analysis check them; risk-appropriate required checks block an affected merge or release; retained results identify the exact bounded subject they support—a revision, build or release, artifact digest, or deployment—and the applicable execution context. |
+
+For a contract-affecting change, the agent should cite an existing approved
+source of intent or mark the contract as an unresolved candidate, inspect the
+declared producer-to-consumer scope and record unknowns, explain the control or
+verification gap behind a reproduced defect, and avoid obtaining a green
+result by weakening the relevant check. Tests verify; they do not automatically
+enforce production behavior.
+
+The concrete [`AGENTS.md` procedure, contract record, regression-sensitivity
+test, and CI-gate examples](docs/CODING-AGENT-BASELINE.md) make the distinctions
+executable. Suggested paths, `rg`, an approximately 50-line local procedure,
+and numeric recurrence or implementation-count triggers are examples or
+project-local heuristics—not universal requirements. Reuse equivalent existing
+artifacts. A project that later adopts AAP maps them into its applicable AAP
+records instead of maintaining a parallel contract system.
+
+---
+
 ## Public repository safety
 
 > **Public assurance is a sanitized projection of project knowledge, not the project's complete private security record.**
@@ -197,7 +229,7 @@ Top-level layout of this central repository:
 ├── schemas/          # JSON Schemas for the adopter YAML artifacts (claims, defeaters, invariants, residuals, adoption)
 ├── scripts/          # validate.py — the `aap` validator (see docs/ADOPTION.md §3.6)
 ├── templates/        # files an adopter copies into their repo (assurance YAML, AGENTS.md, github/ scaffolding, …)
-├── docs/             # informative guides: ADOPTION.md, DISCLOSURE-AND-ISSUES.md, GLOSSARY.md, REVIEW-GUIDE.md, MAPPINGS.md
+├── docs/             # informative guides: ADOPTION.md, REVIEW-GUIDE.md, MAPPINGS.md, CODING-AGENT-BASELINE.md, …
 └── .github/          # this repo's own CODEOWNERS, issue/PR templates, and CI workflows
 ```
 

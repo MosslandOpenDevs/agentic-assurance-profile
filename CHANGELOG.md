@@ -4,7 +4,17 @@ All notable changes to the OpenDevs Agentic Assurance Profile will be documented
 
 ## Unreleased
 
-Nothing yet.
+- Docs: added an explicitly informative
+  [three-layer starting pattern for AI coding-agent-assisted development](docs/CODING-AGENT-BASELINE.md)
+  that projects can use without adopting AAP. It separates persistent agent
+  instructions, durable contract records, and executable controls,
+  verification, and change gates; supplies concrete repository-instruction,
+  contract-record, regression-sensitivity, test-replacement, recurrence-review,
+  and bounded-subject evidence examples; and distinguishes examples and
+  project-local heuristics from requirements. `README.md` and `README.ko.md`
+  provide matching entry-point summaries. Documentation only: no normative
+  profile obligation, schema, template, validator, or reusable-workflow
+  behavior changes, and existing adopters need no migration or action.
 
 ## v0.5.1 — 2026-07-27
 
