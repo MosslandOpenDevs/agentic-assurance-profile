@@ -1,5 +1,10 @@
 # OpenDevs Agentic Assurance Profile
 
+<!-- opendevs-badges:start -->
+[![CI](https://github.com/MosslandOpenDevs/agentic-assurance-profile/actions/workflows/self-check.yml/badge.svg)](https://github.com/MosslandOpenDevs/agentic-assurance-profile/actions/workflows/self-check.yml)
+[![License: mixed](https://img.shields.io/badge/License-mixed-64748b?style=flat)](README.md#license)
+<!-- opendevs-badges:end -->
+
 > A lightweight, evidence-oriented adoption profile for software substantially built or maintained by AI coding agents.
 
 **Status:** Released — current release on the [releases page](https://github.com/MosslandOpenDevs/agentic-assurance-profile/releases)<br>
