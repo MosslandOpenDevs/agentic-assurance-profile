@@ -1,5 +1,10 @@
 # OpenDevs Agentic Assurance Profile
 
+<!-- opendevs-badges:start -->
+[![CI](https://github.com/MosslandOpenDevs/agentic-assurance-profile/actions/workflows/self-check.yml/badge.svg)](https://github.com/MosslandOpenDevs/agentic-assurance-profile/actions/workflows/self-check.yml)
+[![License: mixed](https://img.shields.io/badge/License-mixed-64748b?style=flat)](README.md#license)
+<!-- opendevs-badges:end -->
+
 > **번역 안내:** 이 문서는 영어 [README.md](README.md)의 참고용 번역입니다. 번역과 영어 원문이 다르면 영어 원문이 우선합니다.
 
 > AI 코딩 에이전트가 상당 부분을 만들거나 유지보수하는 소프트웨어를 위한, 가볍고 증거 중심적인 채택 프로필입니다.
